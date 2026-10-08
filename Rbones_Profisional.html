@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NicEman Studio 3D — Animação e Rigging Profissional</title>
+    <style>
+        :root {
+            --bg-app: #121214;
+            --panel-bg: #1e1e24;
+            --panel-header: #27272f;
+            --border-color: #3f3f46;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --input-bg: #27272f;
+            --timeline-bg: #18181b;
+            --timeline-ruler: #27272f;
+            --frame-cell: #22222b;
+            --keyframe-dot: #6366f1;
+            --tween-line: #a855f7;
+        }
+
+        body.light-theme {
+            --bg-app: #f1f5f9;
+            --panel-bg: #ffffff;
+            --panel-header: #e2e8f0;
+            --border-color: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --success-color: #059669;
+            --danger-color: #dc2626;
+            --warning-color: #d97706;
+            --input-bg: #f8fafc;
+            --timeline-bg: #e2e8f0;
+            --timeline-ruler: #cbd5e1;
+            --frame-cell: #ffffff;
+            --keyframe-dot: #4f46e5;
+            --tween-line: #9333ea;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            user-select: none;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 48px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 200;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-color);
+        }
+
+        .topbar-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        #sidebar {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            width: 320px;
+            height: calc(100vh - 48px - 130px);
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 150;
+            box-shadow: 4px 0 16px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(-320px);
+        }
+
+        .sidebar-header {
+            padding: 12px 16px;
+            background: var(--panel-header);
+            font-weight: 600;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            background: var(--panel-header);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background: var(--border-color);
+            opacity: 0.95;
+        }
+
+        button.primary {
+            background: var(--accent-color);
+            color: #ffffff;
+            border-color: transparent;
+        }
+        button.primary:hover {
+            background: var(--accent-hover);
+        }
+
+        button.success { background: var(--success-color); color: #fff; border-color: transparent; }
+        button.danger { background: var(--danger-color); color: #fff; border-color: transparent; }
+        button.warning { background: var(--warning-color); color: #fff; border-color: transparent; }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-group button {
+            flex: 1;
+        }
+
+        select, input[type="file"], input[type="number"], input[type="text"] {
+            width: 100%;
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 11px;
+            outline: none;
+        }
+        select:focus, input:focus {
+            border-color: var(--accent-color);
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .control-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .checkbox-row input {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+        }
+        input[type="range"] {
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        details.section-group {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+        details.section-group summary {
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--panel-header);
+            cursor: pointer;
+            color: var(--text-main);
+            user-select: none;
+        }
+        .section-body {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .status-text {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        #bone-details {
+            position: absolute;
+            top: 60px;
+            right: 16px;
+            width: 280px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 150;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .coord-group {
+            display: flex;
+            gap: 6px;
+        }
+        .coord-field {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        .coord-field label {
+            font-size: 9px;
+            font-weight: bold;
+        }
+        .coord-field input {
+            text-align: center;
+            font-size: 10px;
+            padding: 4px;
+        }
+
+        #toggle-sidebar {
+            position: absolute;
+            top: 56px;
+            left: 10px;
+            z-index: 210;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        #flash-timeline-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 130px;
+            background: var(--timeline-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            z-index: 200;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+        }
+        
+        .timeline-controls {
+            height: 36px;
+            background: var(--panel-header);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .timeline-field {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            border-left: 1px solid var(--border-color);
+            padding-left: 10px;
+            margin-left: 4px;
+        }
+        .timeline-field input {
+            width: 44px;
+            text-align: center;
+        }
+
+        .timeline-scroll-area {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+            background: var(--bg-app);
+            cursor: pointer;
+        }
+
+        .timeline-ruler {
+            height: 22px;
+            background: var(--timeline-ruler);
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .ruler-mark {
+            width: 22px;
+            min-width: 22px;
+            height: 100%;
+            border-right: 1px solid var(--border-color);
+            font-size: 9px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .timeline-track {
+            height: 72px;
+            display: flex;
+            background: var(--bg-app);
+            position: relative;
+        }
+
+        .frame-cell {
+            width: 22px;
+            min-width: 22px;
+            height: 100%;
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            box-sizing: border-box;
+            position: relative;
+            background: var(--frame-cell);
+            pointer-events: auto;
+            transition: background 0.1s;
+        }
+        .frame-cell:hover {
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .frame-cell.has-keyframe::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--keyframe-dot);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            box-shadow: 0 0 4px var(--keyframe-dot);
+        }
+
+        .frame-cell.is-interpolated::before {
+            content: '';
+            position: absolute;
+            top: calc(50% - 1px);
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--tween-line);
+            z-index: 1;
+        }
+
+        .frame-cell.active-frame {
+            border-left: 2px solid var(--danger-color);
+            border-right: 2px solid var(--danger-color);
+        }
+        .frame-cell.active-frame::before {
+            content: '';
+            position: absolute;
+            top: -22px;
+            left: -1px;
+            width: 100%;
+            height: 22px;
+            background: rgba(239, 68, 68, 0.25);
+            border-top: 2px solid var(--danger-color);
+            z-index: 10;
+        }
+
+        #context-menu {
+            display: none;
+            position: absolute;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            border-radius: 6px;
+            padding: 4px 0;
+            width: 180px;
+        }
+        .context-menu-item {
+            padding: 8px 14px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .context-menu-item:hover {
+            background: var(--accent-color);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div id="topbar">
+    <div class="brand">
+        <span>🧊 NicEman Studio 3D</span>
+    </div>
+    <div class="topbar-group">
+        <button id="btn-theme-toggle" title="Alternar Tema Claro/Escuro">🌓 Tema</button>
+        <button id="btn-center-scene" class="primary" title="Centralizar Visualização">🎯 Centralizar Cena</button>
+    </div>
+</div>
+
+<button id="toggle-sidebar" title="Recolher/Expandir Menu">☰</button>
+
+<div id="sidebar">
+    <div class="sidebar-header">
+        <span>🎛️ Painel de Controle</span>
+    </div>
+    <div class="sidebar-content">
+
+        <details class="section-group" open>
+            <summary>📁 Projeto & Modelo 3D</summary>
+            <div class="section-body">
+                <div class="control-block">
+                    <label>Carregar Modelo (OBJ/FBX/glTF/GLB):</label>
+                    <input type="file" id="file-input" accept=".obj, .fbx, .gltf, .glb">
+                    <span id="model-status" class="status-text">Nenhum modelo carregado.</span>
+                </div>
+
+                <div id="embedded-anim-container" class="control-block" style="display: none;">
+                    <label>Animações (Mixamo / Embutidas):</label>
+                    <select id="embedded-anim-select"></select>
+                    <button id="btn-bake-anim" class="warning" style="margin-top: 4px;">📌 Converter Mixamo em Keyframes</button>
+                </div>
+
+                <div class="control-block">
+                    <label>Sessão Local:</label>
+                    <div class="btn-group">
+                        <button id="btn-save-session" class="success">💾 Salvar</button>
+                        <button id="btn-load-session" class="warning">📂 Carregar</button>
+                    </div>
+                </div>
+
+                <div class="control-block">
+                    <label>Exportar / Importar Projeto JSON:</label>
+                    <div class="btn-group">
+                        <button id="btn-save-anim" class="primary">📦 Exportar</button>
+                        <button id="btn-load-anim" class="warning">📂 Importar</button>
+                    </div>
+                    <input type="file" id="anim-file-input" accept=".json" style="display: none;">
+                </div>
+            </div>
+        </details>
+
+        <details class="section-group">
+            <summary>🎨 Gerenciar Texturas PBR</summary>
+            <div class="section-body">
+                <div class="control-block">
+                    <label>Base Color / Albedo:</label>
+                    <input type="file" id="map-albedo" accept="image/png, image/jpeg">
+                </div>
+                <div class="control-block">
+                    <label>Normal Map:</label>
+                    <input type="file" id="map-normal" accept="image/png, image/jpeg">
+                </div>
+                <div class="control-block">
+                    <label>Roughness Map:</label>
+                    <input type="file" id="map-roughness" accept="image/png, image/jpeg">
+                </div>
+                <div class="control-block">
+                    <label>Metalness Map:</label>
+                    <input type="file" id="map-metalness" accept="image/png, image/jpeg">
+                </div>
+                <div class="control-block">
+                    <label>Ambient Occlusion (AO):</label>
+                    <input type="file" id="map-ao" accept="image/png, image/jpeg">
+                </div>
+                <span id="texture-status" class="status-text">Texturas originais preservadas.</span>
+            </div>
+        </details>
+
+        <details class="section-group">
+            <summary>💡 Ambiente & Iluminação</summary>
+            <div class="section-body">
+                <div class="control-block">
+                    <label>Preset de Iluminação:</label>
+                    <select id="ambient-light-select">
+                        <option value="neutral">💡 Neutra / Padrão</option>
+                        <option value="daylight">☀️ Luz Diurna</option>
+                        <option value="sunset">🌅 Pôr do Sol</option>
+                        <option value="night">🌙 Noite / Luar</option>
+                        <option value="studio">🎬 Estúdio / Softbox</option>
+                        <option value="cyberpunk">🛈 Neon / Cyberpunk</option>
+                        <option value="fire">🔥 Fogo / Lareira</option>
+                        <option value="forest">🌲 Floresta Mística</option>
+                        <option value="abyssal">🌊 Oceano Profundo</option>
+                        <option value="synthwave">🌆 Synthwave Retrô</option>
+                        <option value="dramatic_sunset">🌇 Pôr do Sol Dramático</option>
+                    </select>
+                </div>
+
+                <div class="slider-row">
+                    <label>Força da Luz Principal:</label>
+                    <input type="range" id="light-intensity-slider" min="0.0" max="4.0" step="0.1" value="1.5">
+                </div>
+                <div class="slider-row">
+                    <label>Distância da Luz (X/Z):</label>
+                    <input type="range" id="light-distance-slider" min="50" max="600" step="10" value="180">
+                </div>
+                <div class="slider-row">
+                    <label>Altura da Luz (Y):</label>
+                    <input type="range" id="light-height-slider" min="-50" max="500" step="10" value="200">
+                </div>
+                <button id="btn-move-light" class="primary">💡 Mover Luz com o Mouse</button>
+            </div>
+        </details>
+
+        <details class="section-group">
+            <summary>👁️ Renderização & Visualização</summary>
+            <div class="section-body">
+                <div class="control-block">
+                    <label>Modo de Renderização / Shader:</label>
+                    <select id="render-mode-select">
+                        <option value="normal">Padrão (Texturado / Original)</option>
+                        <option value="metallic">Metálico Refletivo</option>
+                        <option value="toon">Cartoon / Toon Shader</option>
+                        <option value="wireframe">Wireframe</option>
+                        <option value="glass">Vidro Transparente</option>
+                        <option value="matcap">Escultura / Argila Cinza</option>
+                        <option value="normals">Normais de Superfície (RGB)</option>
+                        <option value="xray">Raio-X</option>
+                        <option value="clay">Argila Vermelha (Terracota)</option>
+                        <option value="gold">Ouro Polido</option>
+                        <option value="hologram">Holograma Tron</option>
+                        <option value="neon_glow">Neon Glow Cyber</option>
+                        <option value="depth">Mapa de Profundidade</option>
+                        <option value="bounding_box">Caixa Delimitadora</option>
+                        <option value="unlit">Unlit (Sem Sombra)</option>
+                    </select>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="chk-ground" checked>
+                    <label for="chk-ground">Exibir Chão Infinito (Piso/Grade)</label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="chk-skeleton" checked>
+                    <label for="chk-skeleton">Exibir Esqueleto</label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="chk-pickers" checked>
+                    <label for="chk-pickers">Exibir Juntas Interativas</label>
+                </div>
+
+                <div class="slider-row">
+                    <label>Tamanho das Juntas:</label>
+                    <input type="range" id="picker-radius-slider" min="0.5" max="6.0" step="0.2" value="2.5">
+                </div>
+                <div class="slider-row">
+                    <label>Opacidade da Malha:</label>
+                    <input type="range" id="opacity-slider" min="0.0" max="1.0" step="0.05" value="1.0">
+                </div>
+            </div>
+        </details>
+
+        <details class="section-group" open>
+            <summary>🛠️ Ferramentas de Rig / Gizmo</summary>
+            <div class="section-body">
+                <label>Modo de Manipulação:</label>
+                <div class="btn-group">
+                    <button id="btn-mode-translate" class="primary">Mover</button>
+                    <button id="btn-mode-rotate">Rotacionar</button>
+                    <button id="btn-mode-scale">Escala</button>
+                </div>
+                <button id="btn-select-root" class="primary" style="margin-top: 4px;">🦴 Selecionar Raiz do Esqueleto</button>
+                <span class="status-text">Dica: Use <b>Shift + Clique</b> para selecionar múltiplos bones.</span>
+            </div>
+        </details>
+
+    </div>
+</div>
+
+<div id="bone-details">
+    <div class="sidebar-header">
+        <span id="selected-bone-name">Osso Selecionado</span>
+        <button onclick="document.getElementById('bone-details').style.display='none'" style="border:none; background:transparent; font-weight:bold; cursor:pointer;">✕</button>
+    </div>
+    <div class="section-body">
+        <label>Posição:</label>
+        <div class="coord-group">
+            <div class="coord-field"><label>X</label><input type="number" id="pos-x" step="0.1"></div>
+            <div class="coord-field"><label>Y</label><input type="number" id="pos-y" step="0.1"></div>
+            <div class="coord-field"><label>Z</label><input type="number" id="pos-z" step="0.1"></div>
+        </div>
+
+        <label>Rotação (°):</label>
+        <div class="coord-group">
+            <div class="coord-field"><label>X</label><input type="number" id="rot-x" step="1"></div>
+            <div class="coord-field"><label>Y</label><input type="number" id="rot-y" step="1"></div>
+            <div class="coord-field"><label>Z</label><input type="number" id="rot-z" step="1"></div>
+        </div>
+    </div>
+</div>
+
+<div id="flash-timeline-container">
+    <div class="timeline-controls">
+        <button id="btn-play" class="primary">► Play</button>
+        <button id="btn-add-keyframe" class="success">F6 - Keyframe</button>
+        <button id="btn-clear-keyframe" class="danger">F7 - Limpar</button>
+        <button id="btn-insert-space" class="warning" title="Inserir espaço de 1 frame e interpolar">➕ Inserir Frame</button>
+        <button id="btn-undo" title="Desfazer (Ctrl+Z)">↩ Undo</button>
+        
+        <div class="timeline-field">
+            <label for="fps-input">FPS:</label>
+            <input type="number" id="fps-input" value="30" min="1" max="60">
+        </div>
+
+        <div class="timeline-field">
+            <label for="total-frames-input">Fim:</label>
+            <input type="number" id="total-frames-input" value="60" min="2" max="1000">
+        </div>
+
+        <span style="font-size: 11px; margin-left: auto; font-weight: 600;">
+            Frame: <strong id="current-frame-text" style="color: var(--accent-color);">1</strong> / <span id="total-frames-text">60</span>
+        </span>
+    </div>
+
+    <div class="timeline-scroll-area" id="timeline-scroll">
+        <div class="timeline-ruler" id="timeline-ruler"></div>
+        <div class="timeline-track" id="timeline-track"></div>
+    </div>
+</div>
+
+<div id="context-menu">
+    <div class="context-menu-item" id="ctx-copy">📋 Copiar Keyframe</div>
+    <div class="context-menu-item" id="ctx-paste">📋 Colar Keyframe</div>
+    <div class="context-menu-item" id="ctx-remove">🗑️ Remover Frame</div>
+    <div class="context-menu-item" id="ctx-clear">❌ Limpar Keyframe</div>
+    <div class="context-menu-item" id="ctx-save-transparent" style="border-top: 1px solid var(--border-color); color: var(--success-color);">📷 Salvar PNG Fundo Transparente</div>
+    <div class="context-menu-item" id="ctx-save-current" style="color: var(--success-color);">📷 Salvar PNG Atual</div>
+</div>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+
+<script>
+const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+const sidebar = document.getElementById('sidebar');
+toggleSidebarBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    toggleSidebarBtn.style.left = sidebar.classList.contains('collapsed') ? '10px' : '330px';
+    toggleSidebarBtn.innerHTML = sidebar.classList.contains('collapsed') ? '☰' : '✕';
+});
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x121214);
+
+const groundGroup = new THREE.Group();
+const gridHelper = new THREE.GridHelper(2000, 200, 0x52525b, 0x27272a);
+gridHelper.position.y = -0.01;
+groundGroup.add(gridHelper);
+
+const planeGeo = new THREE.PlaneGeometry(10000, 10000);
+const planeMat = new THREE.MeshStandardMaterial({ 
+    color: 0x18181b, 
+    roughness: 0.8, 
+    metalness: 0.2,
+    side: THREE.DoubleSide
+});
+const groundMesh = new THREE.Mesh(planeGeo, planeMat);
+groundMesh.rotation.x = -Math.PI / 2;
+groundMesh.receiveShadow = true;
+groundGroup.add(groundMesh);
+scene.add(groundGroup);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight - 130), 0.1, 5000);
+camera.position.set(0, 100, 250);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight - 130);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const orbit = new OrbitControls(camera, renderer.domElement);
+orbit.target.set(0, 90, 0);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+dirLight.position.set(100, 200, 150);
+scene.add(dirLight);
+
+const extraLightsGroup = new THREE.Group();
+scene.add(extraLightsGroup);
+
+function applyLightingPreset(preset) {
+    while (extraLightsGroup.children.length > 0) {
+        const obj = extraLightsGroup.children[0];
+        extraLightsGroup.remove(obj);
+        if (obj.dispose) obj.dispose();
+    }
+
+    switch (preset) {
+        case 'daylight':
+            ambientLight.color.setHex(0xcae5ff);
+            ambientLight.intensity = 0.9;
+            dirLight.color.setHex(0xfffaed);
+            dirLight.intensity = 2.0;
+            dirLight.position.set(120, 250, 100);
+            break;
+        case 'sunset':
+            ambientLight.color.setHex(0xffaa77);
+            ambientLight.intensity = 0.7;
+            dirLight.color.setHex(0xff5500);
+            dirLight.intensity = 2.5;
+            dirLight.position.set(-200, 40, -100);
+            break;
+        case 'night':
+            ambientLight.color.setHex(0x112244);
+            ambientLight.intensity = 0.4;
+            dirLight.color.setHex(0x6688ff);
+            dirLight.intensity = 0.8;
+            dirLight.position.set(-80, 180, -80);
+            break;
+        case 'studio':
+            ambientLight.color.setHex(0xffffff);
+            ambientLight.intensity = 0.6;
+            dirLight.color.setHex(0xffffff);
+            dirLight.intensity = 1.2;
+            dirLight.position.set(150, 150, 150);
+            const fillLight = new THREE.DirectionalLight(0xddeeff, 0.6);
+            fillLight.position.set(-150, 100, 150);
+            extraLightsGroup.add(fillLight);
+            const rimLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            rimLight.position.set(0, 150, -200);
+            extraLightsGroup.add(rimLight);
+            break;
+        case 'cyberpunk':
+            ambientLight.color.setHex(0x220033);
+            ambientLight.intensity = 0.5;
+            dirLight.color.setHex(0x00ffff);
+            dirLight.intensity = 1.8;
+            dirLight.position.set(-150, 100, 100);
+            const magentaPoint = new THREE.PointLight(0xff007f, 3.0, 500);
+            magentaPoint.position.set(150, 80, -50);
+            extraLightsGroup.add(magentaPoint);
+            break;
+        case 'fire':
+            ambientLight.color.setHex(0x330d00);
+            ambientLight.intensity = 0.5;
+            dirLight.color.setHex(0xff4500);
+            dirLight.intensity = 2.2;
+            dirLight.position.set(0, 20, 80);
+            break;
+        case 'forest':
+            ambientLight.color.setHex(0x0a220a);
+            ambientLight.intensity = 0.8;
+            dirLight.color.setHex(0x88ff88);
+            dirLight.intensity = 1.6;
+            dirLight.position.set(80, 200, 50);
+            break;
+        case 'abyssal':
+            ambientLight.color.setHex(0x000a1a);
+            ambientLight.intensity = 0.3;
+            dirLight.color.setHex(0x0088cc);
+            dirLight.intensity = 1.2;
+            dirLight.position.set(0, 250, 0);
+            break;
+        case 'synthwave':
+            ambientLight.color.setHex(0x20002b);
+            ambientLight.intensity = 0.6;
+            dirLight.color.setHex(0xff007f);
+            dirLight.intensity = 2.5;
+            dirLight.position.set(-100, 100, -100);
+            break;
+        case 'dramatic_sunset':
+            ambientLight.color.setHex(0x401000);
+            ambientLight.intensity = 0.6;
+            dirLight.color.setHex(0xff3300);
+            dirLight.intensity = 3.0;
+            dirLight.position.set(-300, 30, -50);
+            break;
+        case 'neutral':
+        default:
+            ambientLight.color.setHex(0xffffff);
+            ambientLight.intensity = 1.2;
+            dirLight.color.setHex(0xffffff);
+            dirLight.intensity = 1.5;
+            dirLight.position.set(100, 200, 150);
+            break;
+    }
+    document.getElementById('light-intensity-slider').value = dirLight.intensity;
+}
+
+document.getElementById('ambient-light-select').addEventListener('change', (e) => {
+    applyLightingPreset(e.target.value);
+    saveEnvironmentSettings();
+});
+
+document.getElementById('light-intensity-slider').addEventListener('input', (e) => {
+    dirLight.intensity = parseFloat(e.target.value);
+    saveEnvironmentSettings();
+});
+
+document.getElementById('light-distance-slider').addEventListener('input', (e) => {
+    const dist = parseFloat(e.target.value);
+    const currentHeight = dirLight.position.y;
+    const angle = Math.atan2(dirLight.position.z, dirLight.position.x);
+    dirLight.position.x = Math.cos(angle) * dist;
+    dirLight.position.z = Math.sin(angle) * dist;
+    dirLight.position.y = currentHeight;
+    saveEnvironmentSettings();
+});
+
+document.getElementById('light-height-slider').addEventListener('input', (e) => {
+    dirLight.position.y = parseFloat(e.target.value);
+    saveEnvironmentSettings();
+});
+
+const SETTINGS_KEY = 'nice_man_studio_settings';
+const SESSION_PROJECT_KEY = 'nice_man_studio_session';
+
+function saveEnvironmentSettings() {
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch(e) {}
+    settings.theme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+    settings.showSkeleton = document.getElementById('chk-skeleton').checked;
+    settings.showPickers = document.getElementById('chk-pickers').checked;
+    settings.showGround = document.getElementById('chk-ground').checked;
+    settings.pickerRadius = document.getElementById('picker-radius-slider').value;
+    settings.meshOpacity = document.getElementById('opacity-slider').value;
+    settings.ambientPreset = document.getElementById('ambient-light-select').value;
+    settings.renderMode = document.getElementById('render-mode-select').value;
+    settings.lightIntensity = dirLight.intensity;
+    settings.lightPosition = [dirLight.position.x, dirLight.position.y, dirLight.position.z];
+    settings.cameraPos = [camera.position.x, camera.position.y, camera.position.z];
+    settings.cameraTarget = [orbit.target.x, orbit.target.y, orbit.target.z];
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function loadEnvironmentSettings() {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (!saved) return;
+    try {
+        const settings = JSON.parse(saved);
+        if (settings.theme === 'light') {
+            document.body.classList.add('light-theme');
+            scene.background.setHex(0xf1f5f9);
+            planeMat.color.setHex(0xe2e8f0);
+        }
+        if (settings.showSkeleton !== undefined) document.getElementById('chk-skeleton').checked = settings.showSkeleton;
+        if (settings.showPickers !== undefined) document.getElementById('chk-pickers').checked = settings.showPickers;
+        if (settings.showGround !== undefined) {
+            document.getElementById('chk-ground').checked = settings.showGround;
+            groundGroup.visible = settings.showGround;
+        }
+        if (settings.pickerRadius !== undefined) document.getElementById('picker-radius-slider').value = settings.pickerRadius;
+        if (settings.meshOpacity !== undefined) document.getElementById('opacity-slider').value = settings.meshOpacity;
+        if (settings.ambientPreset !== undefined) {
+            document.getElementById('ambient-light-select').value = settings.ambientPreset;
+            applyLightingPreset(settings.ambientPreset);
+        }
+        if (settings.lightIntensity !== undefined) {
+            dirLight.intensity = settings.lightIntensity;
+            document.getElementById('light-intensity-slider').value = settings.lightIntensity;
+        }
+        if (settings.lightPosition) dirLight.position.set(...settings.lightPosition);
+        if (settings.renderMode !== undefined) {
+            document.getElementById('render-mode-select').value = settings.renderMode;
+            applyRenderMode(settings.renderMode);
+        }
+        if (settings.cameraPos) camera.position.set(...settings.cameraPos);
+        if (settings.cameraTarget) {
+            orbit.target.set(...settings.cameraTarget);
+            orbit.update();
+        }
+    } catch (e) {
+        console.warn('Erro ao carregar configurações:', e);
+    }
+}
+orbit.addEventListener('end', saveEnvironmentSettings);
+
+const undoStack = [];
+const redoStack = [];
+const MAX_HISTORY = 30;
+
+function pushState() {
+    const snapshot = new Map();
+    keyframesMap.forEach((pose, frameIdx) => {
+        const poseCopy = pose.map(p => ({
+            position: p.position.clone(),
+            quaternion: p.quaternion.clone(),
+            scale: p.scale.clone()
+        }));
+        snapshot.set(frameIdx, poseCopy);
+    });
+    undoStack.push({ snapshot, totalFrames });
+    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+    redoStack.length = 0;
+}
+
+function undo() {
+    if (undoStack.length === 0) return;
+    const currentSnapshot = new Map();
+    keyframesMap.forEach((pose, frameIdx) => {
+        const poseCopy = pose.map(p => ({
+            position: p.position.clone(),
+            quaternion: p.quaternion.clone(),
+            scale: p.scale.clone()
+        }));
+        currentSnapshot.set(frameIdx, poseCopy);
+    });
+    redoStack.push({ snapshot: currentSnapshot, totalFrames });
+    const prevStateObj = undoStack.pop();
+    totalFrames = prevStateObj.totalFrames;
+    document.getElementById('total-frames-input').value = totalFrames;
+    restoreState(prevStateObj.snapshot);
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+    const currentSnapshot = new Map();
+    keyframesMap.forEach((pose, frameIdx) => {
+        const poseCopy = pose.map(p => ({
+            position: p.position.clone(),
+            quaternion: p.quaternion.clone(),
+            scale: p.scale.clone()
+        }));
+        currentSnapshot.set(frameIdx, poseCopy);
+    });
+    undoStack.push({ snapshot: currentSnapshot, totalFrames });
+    const nextStateObj = redoStack.pop();
+    totalFrames = nextStateObj.totalFrames;
+    document.getElementById('total-frames-input').value = nextStateObj.totalFrames;
+    restoreState(nextStateObj.snapshot);
+}
+
+function restoreState(snapshotMap) {
+    keyframesMap.clear();
+    snapshotMap.forEach((pose, frameIdx) => {
+        const poseCopy = pose.map(p => ({
+            position: p.position.clone(),
+            quaternion: p.quaternion.clone(),
+            scale: p.scale.clone()
+        }));
+        keyframesMap.set(frameIdx, poseCopy);
+    });
+    buildFlashTimelineUI();
+    applyPoseForFrame(currentFrame);
+}
+
+let copiedKeyframeData = null;
+let selectedBones = [];
+const pivotObject = new THREE.Object3D();
+scene.add(pivotObject);
+
+const initialStates = new Map();
+let prevPivotPosition = new THREE.Vector3();
+let prevPivotQuaternion = new THREE.Quaternion();
+let prevPivotScale = new THREE.Vector3();
+
+const transformControls = new TransformControls(camera, renderer.domElement);
+transformControls.setMode('translate');
+
+transformControls.addEventListener('dragging-changed', (event) => {
+    orbit.enabled = !event.value;
+    if (event.value) {
+        if (transformControls.object === dirLight) return; 
+        pushState();
+        prevPivotPosition.copy(pivotObject.position);
+        prevPivotQuaternion.copy(pivotObject.quaternion);
+        prevPivotScale.copy(pivotObject.scale);
+        initialStates.clear();
+        selectedBones.forEach(bone => {
+            initialStates.set(bone, {
+                position: bone.position.clone(),
+                quaternion: bone.quaternion.clone(),
+                scale: bone.scale.clone(),
+                worldPosition: bone.getWorldPosition(new THREE.Vector3()),
+                worldQuaternion: bone.getWorldQuaternion(new THREE.Quaternion()),
+                worldScale: bone.getWorldScale(new THREE.Vector3())
+            });
+        });
+    }
+});
+
+transformControls.addEventListener('change', () => {
+    if (transformControls.object === dirLight) {
+        saveEnvironmentSettings();
+        return;
+    }
+    if (transformControls.dragging && selectedBones.length > 0) {
+        const mode = transformControls.getMode();
+        if (mode === 'translate') {
+            const deltaPos = pivotObject.position.clone().sub(prevPivotPosition);
+            selectedBones.forEach(bone => {
+                bone.position.add(deltaPos);
+            });
+            prevPivotPosition.copy(pivotObject.position);
+        } else if (mode === 'rotate') {
+            const deltaRot = pivotObject.quaternion.clone().multiply(prevPivotQuaternion.clone().invert());
+            selectedBones.forEach(bone => {
+                const init = initialStates.get(bone);
+                if (init) {
+                    const worldPos = init.worldPosition.clone().sub(pivotObject.position);
+                    worldPos.applyQuaternion(deltaRot);
+                    worldPos.add(pivotObject.position);
+                    if (bone.parent) bone.parent.worldToLocal(worldPos);
+                    bone.position.copy(worldPos);
+
+                    const targetWorldRot = deltaRot.clone().multiply(init.worldQuaternion);
+                    if (bone.parent) {
+                        const parentWorldRot = bone.parent.getWorldQuaternion(new THREE.Quaternion());
+                        bone.quaternion.copy(parentWorldRot.invert().multiply(targetWorldRot));
+                    } else {
+                        bone.quaternion.copy(targetWorldRot);
+                    }
+                }
+            });
+        } else if (mode === 'scale') {
+            const scaleFactor = new THREE.Vector3(
+                pivotObject.scale.x / prevPivotScale.x,
+                pivotObject.scale.y / prevPivotScale.y,
+                pivotObject.scale.z / prevPivotScale.z
+            );
+            selectedBones.forEach(bone => {
+                const init = initialStates.get(bone);
+                if (init) {
+                    const localPos = init.worldPosition.clone().sub(pivotObject.position);
+                    localPos.multiply(scaleFactor);
+                    const newWorldPos = pivotObject.position.clone().add(localPos);
+                    if (bone.parent) bone.parent.worldToLocal(newWorldPos);
+                    bone.position.copy(newWorldPos);
+                    bone.scale.copy(init.scale.clone().multiply(scaleFactor));
+                }
+            });
+        }
+        updateUIInputs();
+        saveKeyframe(currentFrame, false, false);
+    }
+});
+scene.add(transformControls);
+
+let isMovingLight = false;
+document.getElementById('btn-move-light').addEventListener('click', () => {
+    isMovingLight = !isMovingLight;
+    const btn = document.getElementById('btn-move-light');
+    if (isMovingLight) {
+        transformControls.attach(dirLight);
+        btn.innerText = '✅ Parar de Mover Luz';
+        btn.className = 'success';
+    } else {
+        transformControls.detach();
+        btn.innerText = '💡 Mover Luz com o Mouse';
+        btn.className = 'primary';
+    }
+});
+
+let characterGroup = null;
+let skeletonHelper = null;
+let bonePickers = [];
+let boneMap = new Map();
+let allBones = [];
+let originalMaterials = new Map();
+
+const loadedTextures = { map: null, normalMap: null, roughnessMap: null, metalnessMap: null, aoMap: null };
+const textureLoader = new THREE.TextureLoader();
+
+function handleTextureUpload(inputId, mapType, isSRGB = false) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            textureLoader.load(e.target.result, (texture) => {
+                texture.colorSpace = isSRGB ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+                loadedTextures[mapType] = texture;
+                applyTexturesToModel();
+                document.getElementById('texture-status').innerText = `Mapa ${mapType} aplicado com sucesso!`;
+            });
+        };
+    });
+}
+handleTextureUpload('map-albedo', 'map', true);
+handleTextureUpload('map-normal', 'normalMap', false);
+handleTextureUpload('map-roughness', 'roughnessMap', false);
+handleTextureUpload('map-metalness', 'metalnessMap', false);
+handleTextureUpload('map-ao', 'aoMap', false);
+
+function applyTexturesToModel() {
+    if (!characterGroup) return;
+    characterGroup.traverse((child) => {
+        if (child.isMesh) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach(mat => {
+                if (loadedTextures.map) mat.map = loadedTextures.map;
+                if (loadedTextures.normalMap) mat.normalMap = loadedTextures.normalMap;
+                if (loadedTextures.roughnessMap) mat.roughnessMap = loadedTextures.roughnessMap;
+                if (loadedTextures.metalnessMap) mat.metalnessMap = loadedTextures.metalnessMap;
+                if (loadedTextures.aoMap) mat.aoMap = loadedTextures.aoMap;
+                mat.needsUpdate = true;
+            });
+        }
+    });
+}
+
+let mixer = null;
+let animations = [];
+let activeAction = null;
+let loadedFileName = "";
+let totalFrames = 60;
+let currentFrame = 0;
+let keyframesMap = new Map();
+let isPlaying = false;
+let playInterval = null;
+let targetFPS = 30;
+let pngExportCounter = 1;
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hoveredBone = null; // Rastreia o osso sob o mouse
+
+document.getElementById('file-input').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    loadedFileName = file.name;
+    const ext = loadedFileName.split('.').pop().toLowerCase();
+    document.getElementById('model-status').innerText = `Modelo: ${loadedFileName}`;
+    const reader = new FileReader();
+    if (ext === 'obj') {
+        reader.readAsText(file);
+        reader.onload = (e) => loadOBJFromText(e.target.result);
+    } else {
+        reader.readAsArrayBuffer(file);
+        reader.onload = (e) => {
+            if (ext === 'fbx') loadFBXFromArrayBuffer(e.target.result);
+            else if (ext === 'gltf' || ext === 'glb') loadGLTFFromArrayBuffer(e.target.result);
+        };
+    }
+});
+
+function processLoadedModel(model, modelAnimations = []) {
+    clearCurrentModel();
+    characterGroup = model;
+    scene.add(characterGroup);
+    characterGroup.scale.setScalar(1);
+    allBones.push(characterGroup);
+
+    skeletonHelper = new THREE.SkeletonHelper(characterGroup);
+    skeletonHelper.material.linewidth = 2;
+    scene.add(skeletonHelper);
+
+    const radius = parseFloat(document.getElementById('picker-radius-slider').value);
+    
+    characterGroup.traverse((child) => {
+        if (child.isMesh) {
+            originalMaterials.set(child, child.material);
+            child.material.side = THREE.DoubleSide;
+            child.material.transparent = true;
+            child.material.opacity = parseFloat(document.getElementById('opacity-slider').value);
+            if (child.material.map) {
+                child.material.map.colorSpace = THREE.SRGBColorSpace;
+                child.material.needsUpdate = true;
+            }
+        }
+        if (child.isBone) {
+            child.matrixAutoUpdate = true;
+            if (!allBones.includes(child)) {
+                allBones.push(child);
+            }
+            const pickerGeo = new THREE.SphereGeometry(radius, 16, 16);
+            // Cor padrão inicial: Laranja (0xff6600)
+            const pickerMat = new THREE.MeshBasicMaterial({ color: 0xff6600, depthTest: false, transparent: true, opacity: 0.9 });
+            const picker = new THREE.Mesh(pickerGeo, pickerMat);
+            picker.renderOrder = 999;
+            child.add(picker); 
+            
+            bonePickers.push(picker);
+            boneMap.set(picker, child);
+        }
+    });
+
+    applyTexturesToModel();
+    animations = modelAnimations;
+    const animSelect = document.getElementById('embedded-anim-select');
+    const animContainer = document.getElementById('embedded-anim-container');
+    animSelect.innerHTML = '<option value="">Nenhuma (Timeline Manual)</option>';
+    if (animations.length > 0) {
+        mixer = new THREE.AnimationMixer(characterGroup);
+        animations.forEach((clip, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.innerText = clip.name || `Animação ${index + 1}`;
+            animSelect.appendChild(opt);
+        });
+        animContainer.style.display = 'flex';
+    } else {
+        animContainer.style.display = 'none';
+    }
+
+    applyRenderMode(document.getElementById('render-mode-select').value);
+    saveKeyframe(0, true, false);
+    buildFlashTimelineUI();
+    selectFrame(0);
+    selectBone(characterGroup, false);
+    updateVisibility();
+}
+
+function applyRenderMode(mode) {
+    if (!characterGroup) return;
+    const opacity = parseFloat(document.getElementById('opacity-slider').value);
+    characterGroup.traverse((child) => {
+        if (!child.isMesh) return;
+        const origMat = originalMaterials.get(child) || child.material;
+        switch (mode) {
+            case 'metallic':
+                child.material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.95, roughness: 0.1, transparent: opacity < 1.0, opacity });
+                break;
+            case 'toon':
+                child.material = new THREE.MeshToonMaterial({ color: 0x6366f1, transparent: opacity < 1.0, opacity });
+                break;
+            case 'wireframe':
+                child.material = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true, transparent: opacity < 1.0, opacity });
+                break;
+            case 'glass':
+                child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, opacity: 1.0, transparent: true, roughness: 0.05, ior: 1.5 });
+                break;
+            case 'matcap':
+                child.material = new THREE.MeshMatcapMaterial({ color: 0xdddddd, transparent: opacity < 1.0, opacity });
+                break;
+            case 'normals':
+                child.material = new THREE.MeshNormalMaterial({ transparent: opacity < 1.0, opacity });
+                break;
+            case 'xray':
+                child.material = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: Math.min(opacity, 0.4), depthWrite: false });
+                break;
+            case 'clay':
+                child.material = new THREE.MeshStandardMaterial({ color: 0xb25238, roughness: 0.9, transparent: opacity < 1.0, opacity });
+                break;
+            case 'gold':
+                child.material = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.2, transparent: opacity < 1.0, opacity });
+                break;
+            case 'hologram':
+                child.material = new THREE.MeshBasicMaterial({ color: 0x22d3ee, wireframe: true, transparent: true, opacity: Math.min(opacity, 0.6) });
+                break;
+            case 'neon_glow':
+                child.material = new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: opacity < 1.0, opacity });
+                break;
+            case 'depth':
+                child.material = new THREE.MeshDepthMaterial({ transparent: opacity < 1.0, opacity });
+                break;
+            case 'bounding_box':
+                child.material = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true, transparent: opacity < 1.0, opacity });
+                break;
+            case 'unlit':
+                child.material = new THREE.MeshBasicMaterial({ color: 0xffffff, map: origMat.map || null, transparent: opacity < 1.0, opacity });
+                break;
+            case 'normal':
+            default:
+                child.material = origMat;
+                child.material.transparent = opacity < 1.0;
+                child.material.opacity = opacity;
+                break;
+        }
+        child.material.needsUpdate = true;
+    });
+}
+
+document.getElementById('render-mode-select').addEventListener('change', (e) => {
+    applyRenderMode(e.target.value);
+    saveEnvironmentSettings();
+});
+
+document.getElementById('chk-ground').addEventListener('change', (e) => {
+    groundGroup.visible = e.target.checked;
+    saveEnvironmentSettings();
+});
+
+function loadFBXFromArrayBuffer(ab) { const loader = new FBXLoader(); const fbx = loader.parse(ab, ''); processLoadedModel(fbx, fbx.animations || []); }
+function loadGLTFFromArrayBuffer(ab) { const loader = new GLTFLoader(); loader.parse(ab, '', (gltf) => processLoadedModel(gltf.scene, gltf.animations || [])); }
+function loadOBJFromText(txt) { const loader = new OBJLoader(); const obj = loader.parse(txt); processLoadedModel(obj, []); }
+
+document.getElementById('embedded-anim-select').addEventListener('change', (e) => {
+    const index = e.target.value;
+    if (activeAction) { activeAction.stop(); activeAction = null; }
+    if (index !== "" && mixer && animations[index]) {
+        const clip = animations[index];
+        activeAction = mixer.clipAction(clip);
+        activeAction.play();
+        const calcFrames = Math.ceil(clip.duration * targetFPS);
+        if (calcFrames > 0) {
+            totalFrames = calcFrames;
+            document.getElementById('total-frames-input').value = totalFrames;
+            buildFlashTimelineUI();
+        }
+        selectFrame(0);
+    } else {
+        selectFrame(currentFrame);
+    }
+});
+
+document.getElementById('btn-bake-anim').addEventListener('click', () => {
+    if (!activeAction || !mixer) return alert('Selecione primeiro uma animação válida.');
+    pushState();
+    keyframesMap.clear();
+    const clip = activeAction.getClip();
+    const duration = clip.duration;
+    const step = 1 / targetFPS;
+    for (let frameIdx = 0; frameIdx < totalFrames; frameIdx++) {
+        const time = Math.min(frameIdx * step, duration);
+        mixer.setTime(time);
+        characterGroup.updateMatrixWorld(true);
+        const poseSnapshot = allBones.map(bone => ({
+            position: bone.position.clone(),
+            quaternion: bone.quaternion.clone(),
+            scale: bone.scale.clone()
+        }));
+        keyframesMap.set(frameIdx, poseSnapshot);
+    }
+    activeAction.stop();
+    activeAction = null;
+    document.getElementById('embedded-anim-select').value = "";
+    buildFlashTimelineUI();
+    selectFrame(0);
+    alert('Animação convertida com sucesso em Keyframes!');
+});
+
+function clearCurrentModel() {
+    stopAnimation();
+    if (characterGroup) scene.remove(characterGroup);
+    if (skeletonHelper) scene.remove(skeletonHelper);
+    bonePickers.forEach(p => {
+        if (p.parent) p.parent.remove(p);
+    });
+    bonePickers = [];
+    boneMap.clear();
+    allBones = [];
+    keyframesMap.clear();
+    originalMaterials.clear();
+    undoStack.length = 0;
+    redoStack.length = 0;
+    if (!isMovingLight) transformControls.detach();
+    selectedBones = [];
+    hoveredBone = null;
+    mixer = null;
+    activeAction = null;
+    animations = [];
+    Object.keys(loadedTextures).forEach(k => loadedTextures[k] = null);
+    document.getElementById('texture-status').innerText = "Texturas originais preservadas.";
+    document.getElementById('bone-details').style.display = 'none';
+}
+
+// Atualização de Cores: Hover = Amarelo, Selecionado = Verde, Senão = Laranja
+function updatePickersColor() {
+    bonePickers.forEach(picker => {
+        const bone = boneMap.get(picker);
+        if (bone) {
+            if (selectedBones.includes(bone)) {
+                picker.material.color.setHex(0x10b981); // Verde se selecionado
+            } else if (bone === hoveredBone) {
+                picker.material.color.setHex(0xf59e0b); // Amarelo se próximo/hover
+            } else {
+                picker.material.color.setHex(0xff6600); // Laranja por padrão
+            }
+        }
+    });
+}
+
+function selectBone(bone, multiSelect = false) {
+    if (isMovingLight) return;
+    if (!multiSelect) {
+        selectedBones = [bone];
+    } else {
+        const index = selectedBones.indexOf(bone);
+        if (index > -1) selectedBones.splice(index, 1);
+        else selectedBones.push(bone);
+    }
+
+    updatePickersColor();
+
+    if (selectedBones.length === 0) {
+        transformControls.detach();
+        document.getElementById('bone-details').style.display = 'none';
+        return;
+    }
+
+    const avgPosition = new THREE.Vector3();
+    selectedBones.forEach(b => avgPosition.add(b.getWorldPosition(new THREE.Vector3())));
+    avgPosition.divideScalar(selectedBones.length);
+
+    pivotObject.position.copy(avgPosition);
+    pivotObject.rotation.set(0, 0, 0);
+    pivotObject.scale.set(1, 1, 1);
+    transformControls.attach(pivotObject);
+
+    const boneDetails = document.getElementById('bone-details');
+    boneDetails.style.display = 'flex';
+
+    if (selectedBones.length === 1) {
+        const singleBone = selectedBones[0];
+        document.getElementById('selected-bone-name').innerText = (singleBone === characterGroup) ? 'Raiz do Esqueleto' : (singleBone.name || 'Osso Selecionado');
+    } else {
+        document.getElementById('selected-bone-name').innerText = `${selectedBones.length} Bones Selecionados`;
+    }
+    updateUIInputs();
+}
+
+document.getElementById('btn-select-root').addEventListener('click', () => {
+    if (characterGroup && !isMovingLight) selectBone(characterGroup, false);
+});
+
+function updateUIInputs() {
+    if (selectedBones.length === 0) return;
+    const target = selectedBones.length === 1 ? selectedBones[0] : pivotObject;
+    document.getElementById('pos-x').value = target.position.x.toFixed(2);
+    document.getElementById('pos-y').value = target.position.y.toFixed(2);
+    document.getElementById('pos-z').value = target.position.z.toFixed(2);
+    document.getElementById('rot-x').value = THREE.MathUtils.radToDeg(target.rotation.x).toFixed(0);
+    document.getElementById('rot-y').value = THREE.MathUtils.radToDeg(target.rotation.y).toFixed(0);
+    document.getElementById('rot-z').value = THREE.MathUtils.radToDeg(target.rotation.z).toFixed(0);
+}
+
+['pos-x', 'pos-y', 'pos-z'].forEach((id, index) => {
+    const el = document.getElementById(id);
+    el.addEventListener('focus', () => pushState());
+    el.addEventListener('input', (e) => {
+        if (selectedBones.length === 0) return;
+        const val = parseFloat(e.target.value) || 0;
+        const axis = ['x', 'y', 'z'][index];
+        if (selectedBones.length === 1) {
+            selectedBones[0].position[axis] = val;
+        } else {
+            const delta = val - pivotObject.position[axis];
+            pivotObject.position[axis] = val;
+            selectedBones.forEach(b => b.position[axis] += delta);
+        }
+        saveKeyframe(currentFrame, false, false);
+    });
+});
+
+['rot-x', 'rot-y', 'rot-z'].forEach((id, index) => {
+    const el = document.getElementById(id);
+    el.addEventListener('focus', () => pushState());
+    el.addEventListener('input', (e) => {
+        if (selectedBones.length === 0) return;
+        const val = THREE.MathUtils.degToRad(parseFloat(e.target.value) || 0);
+        const axis = ['x', 'y', 'z'][index];
+        if (selectedBones.length === 1) {
+            selectedBones[0].rotation[axis] = val;
+        } else {
+            const delta = val - pivotObject.rotation[axis];
+            pivotObject.rotation[axis] = val;
+            selectedBones.forEach(b => b.rotation[axis] += delta);
+        }
+        saveKeyframe(currentFrame, false, false);
+    });
+});
+
+function buildFlashTimelineUI() {
+    const rulerContainer = document.getElementById('timeline-ruler');
+    const trackContainer = document.getElementById('timeline-track');
+    rulerContainer.innerHTML = '';
+    trackContainer.innerHTML = '';
+
+    for (let i = 0; i < totalFrames; i++) {
+        const mark = document.createElement('div');
+        mark.className = 'ruler-mark';
+        if ((i + 1) % 5 === 0 || i === 0) mark.innerText = i + 1;
+        rulerContainer.appendChild(mark);
+
+        const cell = document.createElement('div');
+        cell.className = 'frame-cell';
+        cell.dataset.frame = i;
+        trackContainer.appendChild(cell);
+    }
+    document.getElementById('total-frames-text').innerText = totalFrames;
+    updateTimelineGrid();
+}
+
+function saveKeyframe(frameIdx, updateUI = true, recordHistory = true) {
+    if (allBones.length === 0) return;
+    if (recordHistory) pushState();
+    const poseSnapshot = allBones.map(bone => ({
+        position: bone.position.clone(),
+        quaternion: bone.quaternion.clone(),
+        scale: bone.scale.clone()
+    }));
+    keyframesMap.set(frameIdx, poseSnapshot);
+    if (updateUI) updateTimelineGrid();
+}
+
+function clearKeyframe(frameIdx) {
+    pushState();
+    keyframesMap.delete(frameIdx);
+    updateTimelineGrid();
+    applyPoseForFrame(currentFrame);
+}
+
+function insertFrameAt(targetFrame) {
+    pushState();
+    totalFrames++;
+    document.getElementById('total-frames-input').value = totalFrames;
+    const newMap = new Map();
+    keyframesMap.forEach((pose, fIdx) => {
+        if (fIdx >= targetFrame) newMap.set(fIdx + 1, pose);
+        else newMap.set(fIdx, pose);
+    });
+    keyframesMap = newMap;
+    applyPoseForFrame(targetFrame);
+    buildFlashTimelineUI();
+    selectFrame(targetFrame);
+}
+
+function removeFrameAt(targetFrame) {
+    if (totalFrames <= 2) return alert('O limite mínimo é de 2 frames.');
+    pushState();
+    totalFrames--;
+    document.getElementById('total-frames-input').value = totalFrames;
+    const newMap = new Map();
+    keyframesMap.forEach((pose, fIdx) => {
+        if (fIdx > targetFrame) newMap.set(fIdx - 1, pose);
+        else if (fIdx < targetFrame) newMap.set(fIdx, pose);
+    });
+    keyframesMap = newMap;
+    buildFlashTimelineUI();
+    selectFrame(Math.min(currentFrame, totalFrames - 1));
+}
+
+document.getElementById('btn-insert-space').addEventListener('click', () => insertFrameAt(currentFrame));
+
+const contextMenu = document.getElementById('context-menu');
+let contextTargetFrame = 0;
+
+document.getElementById('timeline-track').addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const cell = e.target.closest('.frame-cell');
+    if (!cell) return;
+    contextTargetFrame = parseInt(cell.dataset.frame);
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = `${Math.min(e.clientX, window.innerWidth - 190)}px`;
+    contextMenu.style.top = `${e.clientY - 170}px`;
+});
+window.addEventListener('click', () => contextMenu.style.display = 'none');
+
+document.getElementById('ctx-copy').addEventListener('click', () => {
+    if (keyframesMap.has(contextTargetFrame)) {
+        const pose = keyframesMap.get(contextTargetFrame);
+        copiedKeyframeData = pose.map(p => ({
+            position: p.position.clone(),
+            quaternion: p.quaternion.clone(),
+            scale: p.scale.clone()
+        }));
+        alert(`Keyframe do Frame ${contextTargetFrame + 1} copiado!`);
+    } else {
+        alert('Este frame não possui keyframe.');
+    }
+});
+
+document.getElementById('ctx-paste').addEventListener('click', () => {
+    if (!copiedKeyframeData) return alert('Nenhum keyframe copiado.');
+    pushState();
+    const poseCopy = copiedKeyframeData.map(p => ({
+        position: p.position.clone(),
+        quaternion: p.quaternion.clone(),
+        scale: p.scale.clone()
+    }));
+    keyframesMap.set(contextTargetFrame, poseCopy);
+    updateTimelineGrid();
+    selectFrame(contextTargetFrame);
+});
+
+document.getElementById('ctx-remove').addEventListener('click', () => removeFrameAt(contextTargetFrame));
+document.getElementById('ctx-clear').addEventListener('click', () => clearKeyframe(contextTargetFrame));
+
+function downloadCanvasAsPNG(transparent = false) {
+    const prevFrame = currentFrame;
+    selectFrame(contextTargetFrame);
+    const oldSkeleton = skeletonHelper ? skeletonHelper.visible : false;
+    if (skeletonHelper) skeletonHelper.visible = false;
+    const oldPickers = bonePickers.map(p => p.visible);
+    bonePickers.forEach(p => p.visible = false);
+    const oldGizmo = transformControls.visible;
+    transformControls.visible = false;
+    const oldGround = groundGroup.visible;
+    const oldBg = scene.background;
+    if (transparent) {
+        groundGroup.visible = false;
+        scene.background = null;
+        renderer.setClearColor(0x000000, 0);
+    }
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL('image/png');
+    if (skeletonHelper) skeletonHelper.visible = oldSkeleton;
+    bonePickers.forEach((p, idx) => p.visible = oldPickers[idx]);
+    transformControls.visible = oldGizmo;
+    if (transparent) {
+        groundGroup.visible = oldGround;
+        scene.background = oldBg;
+    }
+    selectFrame(prevFrame);
+    const link = document.createElement('a');
+    link.download = `frame_${String(pngExportCounter++).padStart(3, '0')}.png`;
+    link.href = dataURL;
+    link.click();
+}
+
+document.getElementById('ctx-save-transparent').addEventListener('click', () => downloadCanvasAsPNG(true));
+document.getElementById('ctx-save-current').addEventListener('click', () => downloadCanvasAsPNG(false));
+
+function selectFrame(frameIdx) {
+    currentFrame = Math.max(0, Math.min(totalFrames - 1, frameIdx));
+    document.getElementById('current-frame-text').innerText = currentFrame + 1;
+    if (mixer && activeAction) mixer.setTime(currentFrame / targetFPS);
+    applyPoseForFrame(currentFrame);
+    updateTimelineGrid();
+}
+
+function applyPoseForFrame(frameIdx) {
+    if (allBones.length === 0) return;
+    if (keyframesMap.has(frameIdx)) {
+        const pose = keyframesMap.get(frameIdx);
+        allBones.forEach((bone, idx) => {
+            if (pose[idx]) {
+                bone.position.copy(pose[idx].position);
+                bone.quaternion.copy(pose[idx].quaternion);
+                bone.scale.copy(pose[idx].scale);
+            }
+        });
+        updateUIInputs();
+        return;
+    }
+
+    const sortedFrames = Array.from(keyframesMap.keys()).sort((a, b) => a - b);
+    let prevFrame = -1, nextFrame = -1;
+    for (let f of sortedFrames) {
+        if (f < frameIdx) prevFrame = f;
+        if (f > frameIdx && nextFrame === -1) nextFrame = f;
+    }
+
+    if (prevFrame !== -1 && nextFrame !== -1) {
+        const factor = (frameIdx - prevFrame) / (nextFrame - prevFrame);
+        const prevPose = keyframesMap.get(prevFrame);
+        const nextPose = keyframesMap.get(nextFrame);
+        allBones.forEach((bone, idx) => {
+            if (prevPose[idx] && nextPose[idx]) {
+                bone.position.lerpVectors(prevPose[idx].position, nextPose[idx].position, factor);
+                bone.quaternion.slerpQuaternions(prevPose[idx].quaternion, nextPose[idx].quaternion, factor);
+                bone.scale.lerpVectors(prevPose[idx].scale, nextPose[idx].scale, factor);
+            }
+        });
+    } else if (prevFrame !== -1) {
+        const prevPose = keyframesMap.get(prevFrame);
+        allBones.forEach((bone, idx) => {
+            if (prevPose[idx]) {
+                bone.position.copy(prevPose[idx].position);
+                bone.quaternion.copy(prevPose[idx].quaternion);
+                bone.scale.copy(prevPose[idx].scale);
+            }
+        });
+    }
+    updateUIInputs();
+}
+
+function updateTimelineGrid() {
+    const cells = document.querySelectorAll('.frame-cell');
+    const sortedFrames = Array.from(keyframesMap.keys()).sort((a, b) => a - b);
+    cells.forEach((cell, idx) => {
+        cell.classList.toggle('active-frame', idx === currentFrame);
+        cell.classList.toggle('has-keyframe', keyframesMap.has(idx));
+        let isTween = false;
+        if (!keyframesMap.has(idx) && sortedFrames.length >= 2) {
+            if (idx > sortedFrames[0] && idx < sortedFrames[sortedFrames.length - 1]) isTween = true;
+        }
+        cell.classList.toggle('is-interpolated', isTween);
+    });
+}
+
+function centerScene() {
+    camera.position.set(0, 100, 250);
+    orbit.target.set(0, 90, 0);
+    orbit.update();
+    saveEnvironmentSettings();
+}
+document.getElementById('btn-center-scene').addEventListener('click', centerScene);
+
+function serializeProjectData() {
+    const keyframesArr = [];
+    if (keyframesMap.size === 0 && activeAction) {
+        for (let frameIdx = 0; frameIdx < totalFrames; frameIdx++) {
+            mixer.setTime(frameIdx / targetFPS);
+            characterGroup.updateMatrixWorld(true);
+            keyframesArr.push({
+                frame: frameIdx,
+                pose: allBones.map(p => ({
+                    pos: [p.position.x, p.position.y, p.position.z],
+                    rot: [p.quaternion.x, p.quaternion.y, p.quaternion.z, p.quaternion.w],
+                    scl: [p.scale.x, p.scale.y, p.scale.z]
+                }))
+            });
+        }
+    } else {
+        keyframesMap.forEach((pose, frameIdx) => {
+            keyframesArr.push({
+                frame: frameIdx,
+                pose: pose.map(p => ({
+                    pos: [p.position.x, p.position.y, p.position.z],
+                    rot: [p.quaternion.x, p.quaternion.y, p.quaternion.z, p.quaternion.w],
+                    scl: [p.scale.x, p.scale.y, p.scale.z]
+                }))
+            });
+        });
+    }
+    return { loadedFileName: loadedFileName || 'modelo.glb', fps: targetFPS, totalFrames, keyframes: keyframesArr };
+}
+
+document.getElementById('btn-save-session').addEventListener('click', () => {
+    localStorage.setItem(SESSION_PROJECT_KEY, JSON.stringify(serializeProjectData()));
+    saveEnvironmentSettings();
+    alert('Sessão salva com sucesso!');
+});
+
+document.getElementById('btn-load-session').addEventListener('click', () => {
+    const saved = localStorage.getItem(SESSION_PROJECT_KEY);
+    if (!saved) return alert('Nenhuma sessão salva.');
+    try {
+        importAnimationToTimeline(JSON.parse(saved));
+        alert('Sessão carregada!');
+    } catch (e) {
+        alert('Erro: ' + e.message);
+    }
+});
+
+function importAnimationToTimeline(data) {
+    if (!data || !data.keyframes) throw new Error("JSON inválido.");
+    pushState();
+    if (data.fps) { targetFPS = data.fps; document.getElementById('fps-input').value = targetFPS; }
+    if (data.totalFrames) { totalFrames = data.totalFrames; document.getElementById('total-frames-input').value = totalFrames; }
+    keyframesMap.clear();
+    data.keyframes.forEach(kf => {
+        const poseSnapshot = allBones.map((bone, idx) => {
+            if (kf.pose && kf.pose[idx]) {
+                const p = kf.pose[idx];
+                return { position: new THREE.Vector3(...p.pos), quaternion: new THREE.Quaternion(...p.rot), scale: new THREE.Vector3(...p.scl) };
+            }
+            return { position: bone.position.clone(), quaternion: bone.quaternion.clone(), scale: bone.scale.clone() };
+        });
+        keyframesMap.set(kf.frame, poseSnapshot);
+    });
+    buildFlashTimelineUI();
+    selectFrame(0);
+}
+
+const scrollArea = document.getElementById('timeline-scroll');
+let isScrubbing = false;
+function handleTimelineScrub(e) {
+    const rect = scrollArea.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left + scrollArea.scrollLeft;
+    const frameIndex = Math.floor(offsetX / 22);
+    if (frameIndex >= 0 && frameIndex < totalFrames && frameIndex !== currentFrame) selectFrame(frameIndex);
+}
+scrollArea.addEventListener('mousedown', (e) => { if (e.button === 0) { isScrubbing = true; handleTimelineScrub(e); } });
+window.addEventListener('mousemove', (e) => { if (isScrubbing) handleTimelineScrub(e); });
+window.addEventListener('mouseup', () => isScrubbing = false);
+
+document.getElementById('total-frames-input').addEventListener('change', (e) => {
+    totalFrames = Math.max(2, Math.min(1000, parseInt(e.target.value) || 60));
+    e.target.value = totalFrames;
+    buildFlashTimelineUI();
+    if (currentFrame >= totalFrames) selectFrame(totalFrames - 1);
+});
+
+document.getElementById('fps-input').addEventListener('change', (e) => {
+    targetFPS = Math.max(1, Math.min(60, parseInt(e.target.value) || 30));
+    e.target.value = targetFPS;
+    if (isPlaying) { stopAnimation(); startAnimation(); }
+});
+
+function togglePlay() { if (isPlaying) stopAnimation(); else startAnimation(); }
+function startAnimation() {
+    isPlaying = true;
+    document.getElementById('btn-play').innerText = '❚❚ Pause';
+    playInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % totalFrames;
+        selectFrame(currentFrame);
+    }, 1000 / targetFPS);
+}
+function stopAnimation() {
+    isPlaying = false;
+    document.getElementById('btn-play').innerText = '► Play';
+    if (playInterval) clearInterval(playInterval);
+}
+
+document.getElementById('btn-play').addEventListener('click', togglePlay);
+document.getElementById('btn-add-keyframe').addEventListener('click', () => saveKeyframe(currentFrame, true));
+document.getElementById('btn-clear-keyframe').addEventListener('click', () => clearKeyframe(currentFrame));
+document.getElementById('btn-undo').addEventListener('click', undo);
+
+document.getElementById('btn-save-anim').addEventListener('click', () => {
+    const data = serializeProjectData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (loadedFileName ? loadedFileName.replace(/\.[^/.]+\$/, '') : 'animacao') + '_export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-load-anim').addEventListener('click', () => document.getElementById('anim-file-input').click());
+document.getElementById('anim-file-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            importAnimationToTimeline(JSON.parse(event.target.result));
+            alert('Animação importada com sucesso!');
+        } catch (err) {
+            alert('Erro: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+});
+
+window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault(); redo();
+    } else if (e.key === 'F6') { e.preventDefault(); saveKeyframe(currentFrame, true); }
+    else if (e.key === 'F7') { e.preventDefault(); clearKeyframe(currentFrame); }
+    else if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); togglePlay(); }
+});
+
+document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    scene.background.setHex(isLight ? 0xf1f5f9 : 0x121214);
+    planeMat.color.setHex(isLight ? 0xe2e8f0 : 0x18181b);
+    saveEnvironmentSettings();
+});
+
+document.getElementById('picker-radius-slider').addEventListener('input', (e) => {
+    const newGeo = new THREE.SphereGeometry(parseFloat(e.target.value), 16, 16);
+    bonePickers.forEach(p => { p.geometry.dispose(); p.geometry = newGeo; });
+    saveEnvironmentSettings();
+});
+
+const setMode = (mode, btnId) => {
+    transformControls.setMode(mode);
+    ['btn-mode-translate', 'btn-mode-rotate', 'btn-mode-scale'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (id === btnId) btn.className = 'primary';
+        else btn.className = '';
+    });
+};
+document.getElementById('btn-mode-translate').addEventListener('click', () => setMode('translate', 'btn-mode-translate'));
+document.getElementById('btn-mode-rotate').addEventListener('click', () => setMode('rotate', 'btn-mode-rotate'));
+document.getElementById('btn-mode-scale').addEventListener('click', () => setMode('scale', 'btn-mode-scale'));
+
+function updateVisibility() {
+    if (skeletonHelper) skeletonHelper.visible = document.getElementById('chk-skeleton').checked;
+    bonePickers.forEach(p => p.visible = document.getElementById('chk-pickers').checked);
+}
+document.getElementById('chk-skeleton').addEventListener('change', () => { updateVisibility(); saveEnvironmentSettings(); });
+document.getElementById('chk-pickers').addEventListener('change', () => { updateVisibility(); saveEnvironmentSettings(); });
+document.getElementById('opacity-slider').addEventListener('input', () => { applyRenderMode(document.getElementById('render-mode-select').value); saveEnvironmentSettings(); });
+
+// Evento pointermove para detectar hover (amarelo quando próximo)
+window.addEventListener('pointermove', (event) => {
+    if (isMovingLight || bonePickers.length === 0) return;
+    if (event.clientY > window.innerHeight - 130 || ['INPUT', 'BUTTON', 'LABEL', 'SELECT', 'SUMMARY', 'DETAILS'].includes(event.target.tagName)) return;
+    if (event.clientX < 320 && !sidebar.classList.contains('collapsed')) return;
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -((event.clientY - 48) / (window.innerHeight - 130)) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    scene.updateMatrixWorld(true);
+
+    const intersects = raycaster.intersectObjects(bonePickers, true);
+    let newHoveredBone = null;
+
+    if (intersects.length > 0) {
+        newHoveredBone = boneMap.get(intersects[0].object);
+    }
+
+    if (hoveredBone !== newHoveredBone) {
+        hoveredBone = newHoveredBone;
+        updatePickersColor();
+    }
+});
+
+window.addEventListener('pointerdown', (event) => {
+    if (isMovingLight) return;
+    if (event.clientY > window.innerHeight - 130 || ['INPUT', 'BUTTON', 'LABEL', 'SELECT', 'SUMMARY', 'DETAILS'].includes(event.target.tagName)) return;
+    if (event.clientX < 320 && !sidebar.classList.contains('collapsed')) return;
+    
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -((event.clientY - 48) / (window.innerHeight - 130)) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    scene.updateMatrixWorld(true);
+    
+    const intersects = raycaster.intersectObjects(bonePickers, true);
+    
+    if (intersects.length > 0) {
+        const targetBone = boneMap.get(intersects[0].object);
+        if (targetBone) {
+            selectBone(targetBone, event.shiftKey || event.ctrlKey);
+        }
+    }
+});
+
+loadEnvironmentSettings();
+
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / (window.innerHeight - 130);
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight - 130);
+});
+</script>
+</body>
+</html>
