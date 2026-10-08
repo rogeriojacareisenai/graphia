@@ -321,6 +321,24 @@
         .btn-sub-action:hover {
             background: #334155;
         }
+        
+        /* BANNER DE INSTRUÇÃO DO ALT */
+        #alt-nav-banner {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(21, 101, 192, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 250;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -330,6 +348,8 @@
     <button class="nav-btn active" onclick="switchScreen('game-screen')">🎮 Jogo / Estúdio</button>
     <button class="nav-btn" onclick="switchScreen('editor-screen')">🏗 Criador de Cidade</button>
 </div>
+
+<div id="alt-nav-banner">🔄 Modo Navegação de Câmera Ativo (ALT Pressionado)</div>
 
 <!-- TELA 1: JOGO / ESTÚDIO DE ANIMAÇÃO -->
 <div id="game-screen" class="screen active">
@@ -602,7 +622,7 @@
             <!-- INFORMAÇÃO DA PISTA -->
             <div id="road-stripe-controls" class="control-block" style="background: #e3f2fd; border: 1px solid #90caf9; padding: 6px; border-radius: 4px;">
                 <label style="font-weight: bold; color: #1565c0;">🛣️ Atalhos Rápidos:</label>
-                <span class="status-text" style="margin-top: 2px;">• <b>Clique esquerdo:</b> Inserir/Confirmar<br>• <b>Clique direito:</b> Cancelar<br>• <b>R:</b> Girar +90° | <b>X:</b> Flip H | <b>Z:</b> Flip V</span>
+                <span class="status-text" style="margin-top: 2px;">• <b>Pressione e segure ALT:</b> Órbita/Zoom/Pan livre<br>• <b>Clique esquerdo (sem Alt):</b> Inserir/Desenhar<br>• <b>R:</b> Girar +90° | <b>X:</b> Flip H | <b>Z:</b> Flip V</span>
             </div>
 
             <hr style="border:0; border-top:1px solid var(--border-color); margin: 2px 0;">
@@ -717,6 +737,39 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 // ==========================================
+// CONTROLE GLOBAL DA TECLA ALT PARA ÓRBITA DA CÂMERA
+// ==========================================
+let isAltPressed = false;
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Alt') {
+        isAltPressed = true;
+        const banner = document.getElementById('alt-nav-banner');
+        if (banner) banner.style.display = 'block';
+        
+        // Habilitar órbita do editor quando Alt estiver pressionado
+        if (typeof editorOrbit !== 'undefined' && editorOrbit) {
+            editorOrbit.enabled = true;
+        }
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'Alt') {
+        isAltPressed = false;
+        const banner = document.getElementById('alt-nav-banner');
+        if (banner) banner.style.display = 'none';
+        
+        // Se estiver movendo objeto ou desenhando linha, manter controles do editor apropriados
+        if (typeof editorOrbit !== 'undefined' && editorOrbit) {
+            if (isDrawingLine || (typeof movingObject !== 'undefined' && movingObject)) {
+                editorOrbit.enabled = false;
+            }
+        }
+    }
+});
+
+// ==========================================
 // 1. CENA DO JOGO PRINCIPAL
 // ==========================================
 const gameContainer = document.getElementById('game-screen');
@@ -795,7 +848,6 @@ function buildProceduralCity() {
     ground.receiveShadow = true;
     cityGroup.add(ground);
 
-    // Gerar malha de pistas padrão
     for (let x = -200; x <= 200; x += 20) {
         const road = buildStraightRoadMesh();
         road.position.set(x, 0, 0);
@@ -862,7 +914,6 @@ function loadCityFromData(cityElements, sourceName = "Cidade Personalizada") {
     document.getElementById('city-source-label').innerText = `${sourceName} (${cityElements.length} objetos)`;
 }
 
-// Botões para carregar cidade salva via localStorage ou JSON
 document.getElementById('btn-load-saved-city').addEventListener('click', () => {
     const savedData = localStorage.getItem('custom_city_data');
     if (savedData) {
@@ -892,12 +943,11 @@ document.getElementById('file-input-city-json').addEventListener('change', (e) =
 });
 
 // ==========================================
-// 3. GERADORES DE PISTAS (RETA E CURVA C DE 90°)
+// 3. GERADORES DE PISTAS
 // ==========================================
 function buildStraightRoadMesh() {
     const group = new THREE.Group();
 
-    // Asfalto
     const roadGeo = new THREE.PlaneGeometry(20, 20);
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
     const road = new THREE.Mesh(roadGeo, roadMat);
@@ -906,7 +956,6 @@ function buildStraightRoadMesh() {
     road.receiveShadow = true;
     group.add(road);
 
-    // Faixa amarela central
     const yellowMat = new THREE.MeshBasicMaterial({ color: 0xffeb3b });
     const stripeGeo = new THREE.PlaneGeometry(20, 1.8);
     const stripe = new THREE.Mesh(stripeGeo, yellowMat);
@@ -918,12 +967,10 @@ function buildStraightRoadMesh() {
     return group;
 }
 
-// CURVA EM "C" DE 90 GRAUS
 function buildSCurveRoadMesh(isLeftCurve = false) {
     const group = new THREE.Group();
     const width = 20;
 
-    // Asfalto Quadrado do Bloco
     const roadGeo = new THREE.PlaneGeometry(width, width);
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
     const road = new THREE.Mesh(roadGeo, roadMat);
@@ -932,23 +979,21 @@ function buildSCurveRoadMesh(isLeftCurve = false) {
     road.receiveShadow = true;
     group.add(road);
 
-    // Centro do Arco para formar a Curva C (em formato de L/90°)
     const centerOffset = isLeftCurve ? -width / 2 : width / 2;
     const startAngle = isLeftCurve ? 0 : Math.PI;
     const endAngle = isLeftCurve ? Math.PI / 2 : Math.PI / 2;
 
     const arcCurve = new THREE.ArcCurve(
-        centerOffset, -width / 2, // Centro do raio
-        width / 2,                // Raio da faixa central
+        centerOffset, -width / 2,
+        width / 2,
         startAngle, endAngle, 
-        !isLeftCurve              // Sentido horário / anti-horário
+        !isLeftCurve
     );
 
     const points = arcCurve.getPoints(24);
     const points3D = points.map(p => new THREE.Vector3(p.x, 0.1, p.y));
     const path = new THREE.CatmullRomCurve3(points3D);
 
-    // Tubo achatado para formar a faixa amarela curvada
     const tubeGeo = new THREE.TubeGeometry(path, 24, 0.9, 8, false);
     const yellowMat = new THREE.MeshBasicMaterial({ color: 0xffeb3b });
     const stripe = new THREE.Mesh(tubeGeo, yellowMat);
@@ -960,7 +1005,7 @@ function buildSCurveRoadMesh(isLeftCurve = false) {
 }
 
 // ==========================================
-// 4. EDITOR DE CIDADE COM AÇÕES AVANÇADAS (MOVE/ROTATE/SCALE/FLIP)
+// 4. EDITOR DE CIDADE COM SUPORTE EXCLUSIVO AO ALT PARA CÂMERA
 // ==========================================
 const editorContainer = document.getElementById('editor-screen');
 const editorScene = new THREE.Scene();
@@ -976,6 +1021,13 @@ editorContainer.appendChild(editorRenderer.domElement);
 
 const editorOrbit = new OrbitControls(editorCamera, editorRenderer.domElement);
 editorOrbit.target.set(0, 0, 0);
+
+// Configurar OrbitControls do editor para exigir Alt para rotação e pan, ou habilitar livremente apenas com Alt pressionado
+// Para garantir que o usuário use Alt com o mouse para navegar sem conflito:
+// Quando Alt NÃO estiver pressionado, desativamos a rotação/pan do OrbitControls para priorizar a ferramenta de edição.
+editorOrbit.enableRotate = true;
+editorOrbit.enablePan = true;
+editorOrbit.enableZoom = true;
 
 editorScene.add(new THREE.AmbientLight(0xffffff, 1.2));
 const edDirLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -999,8 +1051,6 @@ editorScene.add(editorObjectsGroup);
 
 let currentSelectedTool = 'road-line';
 let customCityData = [];
-
-// PILHA DE UNDO (HISTÓRICO DE ESTADOS)
 let undoHistory = [];
 
 function pushUndoState() {
@@ -1036,7 +1086,6 @@ function undoLastAction() {
 
 document.getElementById('btn-undo-city').addEventListener('click', undoLastAction);
 
-// Guia Visual da Linha Traçada
 let linePreviewGeo = new THREE.BufferGeometry();
 let linePreviewMat = new THREE.LineBasicMaterial({ color: 0xffeb3b, linewidth: 3 });
 let linePreviewMesh = new THREE.Line(linePreviewGeo, linePreviewMat);
@@ -1051,7 +1100,7 @@ document.querySelectorAll('.tool-btn').forEach(btn => {
         if (currentSelectedTool !== 'road-line') {
             linePreviewMesh.visible = false;
         }
-        if (movingObject) cancelMovingObject();
+        if (typeof movingObject !== 'undefined' && movingObject) cancelMovingObject();
     });
 });
 
@@ -1109,7 +1158,6 @@ function createCityMeshObject(type) {
     return group;
 }
 
-// INTERAÇÃO DO MOUSE NO EDITOR
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -1117,7 +1165,6 @@ let isDrawingLine = false;
 let startSnapX = 0;
 let startSnapZ = 0;
 
-// Variáveis para Manipulação de Objetos (Mover, Rotacionar, Escalar, Espelhar)
 let movingObject = null;
 let lastHoveredObject = null;
 let originalPosition = null;
@@ -1194,13 +1241,9 @@ function cancelMovingObject() {
         movingObject.position.copy(originalPosition);
         movingObject = null;
         originalPosition = null;
-        editorOrbit.enabled = true;
     }
 }
 
-// ==========================================
-// FUNÇÕES DE ROTAÇÃO EXPANDIDA & ESPELHAMENTO (FLIP)
-// ==========================================
 function getTargetTransformObject() {
     return movingObject || lastHoveredObject;
 }
@@ -1232,7 +1275,6 @@ function flipTargetObjectZ() {
     }
 }
 
-// OUVINTES DE EVENTOS PARA OS BOTÕES DE INVERSÃO E ROTAÇÃO NA INTERFACE
 document.getElementById('btn-rot-90-cw').addEventListener('click', () => rotateTargetObject(Math.PI / 2));
 document.getElementById('btn-rot-90-ccw').addEventListener('click', () => rotateTargetObject(-Math.PI / 2));
 document.getElementById('btn-rot-45-cw').addEventListener('click', () => rotateTargetObject(Math.PI / 4));
@@ -1240,7 +1282,6 @@ document.getElementById('btn-rot-45-ccw').addEventListener('click', () => rotate
 document.getElementById('btn-flip-x').addEventListener('click', flipTargetObjectX);
 document.getElementById('btn-flip-z').addEventListener('click', flipTargetObjectZ);
 
-// ATALHOS DE TECLADO EXPANDIDOS (R, X, Z, CTRL+Z)
 window.addEventListener('keydown', (e) => {
     if (document.getElementById('editor-screen').classList.contains('active')) {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -1248,17 +1289,17 @@ window.addEventListener('keydown', (e) => {
             return;
         }
 
-        if (e.key.toLowerCase() === 'x') {
+        if (e.key.toLowerCase() === 'x' && !isAltPressed) {
             flipTargetObjectX();
             return;
         }
 
-        if (e.key.toLowerCase() === 'z' && !e.ctrlKey && !e.metaKey) {
+        if (e.key.toLowerCase() === 'z' && !e.ctrlKey && !e.metaKey && !isAltPressed) {
             flipTargetObjectZ();
             return;
         }
 
-        if (e.key.toLowerCase() === 'r' || e.code === 'Space') {
+        if ((e.key.toLowerCase() === 'r' || e.code === 'Space') && !isAltPressed) {
             rotateTargetObject(Math.PI / 2);
         }
     }
@@ -1271,7 +1312,14 @@ editorRenderer.domElement.addEventListener('contextmenu', (e) => {
     }
 });
 
+// GESTÃO DE CLIQUES: SE ALT ESTIVER PRESSIONADO, LIBERAMOS TOTALMENTE O ORBITCONTROLS E BLOQUEAMOS FERRAMENTAS DE EDIÇÃO
 editorRenderer.domElement.addEventListener('pointerdown', (e) => {
+    // Se a tecla Alt estiver pressionada, permitimos que o OrbitControls processe a navegação livre
+    if (isAltPressed) {
+        editorOrbit.enabled = true;
+        return;
+    }
+
     if (e.target !== editorRenderer.domElement) return;
 
     if (e.button === 2) { 
@@ -1282,13 +1330,12 @@ editorRenderer.domElement.addEventListener('pointerdown', (e) => {
     const pt = getGroundIntersectPoint(e);
     if (!pt) return;
 
-    // 1. FERRAMENTA MOVER (TRANSLADAR)
+    // 1. FERRAMENTA MOVER
     if (currentSelectedTool === 'move') {
         if (movingObject) {
             pushUndoState();
             movingObject = null;
             originalPosition = null;
-            editorOrbit.enabled = true;
             saveEditorStateToMemory();
         } else {
             const intersected = getIntersectedObject(e);
@@ -1296,7 +1343,6 @@ editorRenderer.domElement.addEventListener('pointerdown', (e) => {
                 movingObject = intersected;
                 lastHoveredObject = intersected;
                 originalPosition = intersected.position.clone();
-                editorOrbit.enabled = false;
             }
         }
     }
@@ -1318,13 +1364,11 @@ editorRenderer.domElement.addEventListener('pointerdown', (e) => {
             isScaling = true;
             scaleStartPoint.copy(pt);
             scaleStartValue.copy(intersected.scale);
-            editorOrbit.enabled = false;
         }
     }
     // 4. FERRAMENTA LINHA DE PISTA
     else if (currentSelectedTool === 'road-line') {
         isDrawingLine = true;
-        editorOrbit.enabled = false;
         startSnapX = Math.round(pt.x / 20) * 20;
         startSnapZ = Math.round(pt.z / 20) * 20;
 
@@ -1344,7 +1388,7 @@ editorRenderer.domElement.addEventListener('pointerdown', (e) => {
             saveEditorStateToMemory();
         }
     } 
-    // 6. CRIAÇÃO DE NOVOS OBJETOS E CURVAS (Remoção APENAS ao inserir novo bloco)
+    // 6. CRIAÇÃO DE NOVOS OBJETOS
     else {
         pushUndoState();
         const snapX = Math.round(pt.x / 20) * 20;
@@ -1369,6 +1413,9 @@ editorRenderer.domElement.addEventListener('pointerdown', (e) => {
 });
 
 editorRenderer.domElement.addEventListener('pointermove', (e) => {
+    // Se Alt estiver pressionado, não fazemos nenhuma alteração de ferramentas de desenho/edição
+    if (isAltPressed) return;
+
     const pt = getGroundIntersectPoint(e);
     if (!pt) return;
 
@@ -1414,10 +1461,11 @@ editorRenderer.domElement.addEventListener('pointermove', (e) => {
 });
 
 editorRenderer.domElement.addEventListener('pointerup', (e) => {
+    if (isAltPressed) return;
+
     if (isScaling) {
         isScaling = false;
         movingObject = null;
-        editorOrbit.enabled = true;
         saveEditorStateToMemory();
     }
 
@@ -1438,7 +1486,6 @@ editorRenderer.domElement.addEventListener('pointerup', (e) => {
 
         isDrawingLine = false;
         linePreviewMesh.visible = false;
-        editorOrbit.enabled = true;
     }
 });
 
@@ -1521,7 +1568,7 @@ document.getElementById('btn-apply-city-to-game').addEventListener('click', () =
 loadSavedCityIntoEditor();
 
 // ==========================================
-// 5. VARIÁVEIS DE ESTADO DO JOGO PRINCIPAL
+// 5. JOGO PRINCIPAL E ESTÚDIO
 // ==========================================
 let isGameMode = false;
 const pressedKeys = {};
@@ -1543,7 +1590,6 @@ let skeletonHelper = null;
 let bonePickers = [];
 let boneMap = new Map();
 
-// CÂMERA 3D (GIZMO INTERATIVO)
 let cameraGizmoGroup = null;
 
 function createCamera3DGizmo() {
@@ -1600,7 +1646,6 @@ function updateCameraGizmoPosition() {
     cameraGizmoGroup.lookAt(getCharacterTargetFocus());
 }
 
-// PERSONAGEM PADRÃO
 function createDefaultCharacter() {
     const group = new THREE.Group();
     
@@ -1635,11 +1680,8 @@ function createDefaultCharacter() {
 }
 
 createDefaultCharacter();
-
-// INICIAR COM A CIDADE PROCEDURAL
 buildProceduralCity();
 
-// TECLADO DO JOGO
 window.addEventListener('keydown', (e) => {
     if (e.target.tagName !== 'INPUT') {
         pressedKeys[e.code] = true;
@@ -1738,7 +1780,6 @@ document.getElementById('chk-pickers').addEventListener('change', (e) => {
     bonePickers.forEach(p => p.visible = e.target.checked && !isGameMode);
 });
 
-// ESCALA DO MODELO
 const btnOpenScaleModal = document.getElementById('btn-open-scale-modal');
 const scaleModalOverlay = document.getElementById('scale-modal-overlay');
 const btnScaleCancel = document.getElementById('btn-scale-cancel');
@@ -1807,7 +1848,6 @@ function fitModelToTargetHeight(model, targetHeight = 18) {
     }
 }
 
-// IMPORTAÇÃO DE MODELOS E TEXTURAS
 document.getElementById('file-input').addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1999,7 +2039,6 @@ function updateAnimationDropdowns() {
     });
 }
 
-// PREVIEW ISOLADO
 function initPreviewWindow() {
     const container = document.getElementById('preview-canvas-container');
     if (previewRenderer) return;
@@ -2069,12 +2108,10 @@ function transitionToAction(newActionName, weight = 1.0, duration = 0.2) {
     activeCurrentActionName = newActionName;
 }
 
-// LOOP DE ANIMAÇÃO GERAL
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    // Renderizar Cena do Jogo quando visível
     if (document.getElementById('game-screen').classList.contains('active')) {
         if (mixer) mixer.update(delta);
         if (previewMixer) previewMixer.update(delta);
@@ -2136,15 +2173,16 @@ function animate() {
 
         renderer.render(scene, camera);
     } 
-    // Renderizar Cena do Editor quando visível
     else if (document.getElementById('editor-screen').classList.contains('active')) {
+        // Atualizar o OrbitControls do editor caso Alt esteja pressionado
+        editorOrbit.enabled = isAltPressed;
+        editorOrbit.update();
         editorRenderer.render(editorScene, editorCamera);
     }
 }
 
 animate();
 
-// REDIMENSIONAMENTO DE TELAS
 window.onGameScreenResize = () => {
     camera.aspect = window.innerWidth / (window.innerHeight - 120);
     camera.updateProjectionMatrix();
