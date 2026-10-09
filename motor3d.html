@@ -11,13 +11,6 @@
             --text-color: #1f2937;
             --muted-text-color: #5f6b7a;
             --border-color: #c7ced6;
-            --timeline-bg: #e9edf2;
-            --timeline-controls-bg: #dfe5eb;
-            --timeline-ruler-bg: #eef2f6;
-            --timeline-track-bg: #ffffff;
-            --frame-cell-bg: #f8fafc;
-            --keyframe-bg: #b9c4d0;
-            --keyframe-dot: #17202a;
             --input-bg: #ffffff;
             --primary-blue: #1565c0;
             --primary-blue-dark: #0d47a1;
@@ -91,6 +84,39 @@
         
         .slider-row { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
 
+        /* Estilo Lúdico para o Painel de Controles e Teclas tipo Gamepad */
+        .arcade-container {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: 6px;
+            padding: 8px;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 2px solid #3b82f6;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+        }
+        .arcade-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 5px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .key-badge {
+            background: #e2e8f0;
+            color: #0f172a;
+            font-weight: bold;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border-bottom: 2px solid #94a3b8;
+            text-align: center;
+            min-width: 24px;
+        }
+
         /* Estilos dos Modais (Animação e Escala) */
         #anim-modal-overlay, #scale-modal-overlay {
             position: fixed;
@@ -140,7 +166,7 @@
         }
         .anim-modal-footer, .scale-modal-footer {
             padding: 10px 12px;
-            background: var(--timeline-controls-bg);
+            background: #dfe5eb;
             display: flex;
             justify-content: flex-end;
             gap: 8px;
@@ -277,46 +303,74 @@
     </div>
 </div>
 
+<!-- PAINEL DE TECLAS E ANIMAÇÕES REFORMULADO (LÚDICO / ARCADE) -->
 <div class="floating-panel" id="panel-controls-config" style="top: 10px; left: 340px;">
     <div class="panel-header" onmousedown="startDrag(event, 'panel-controls-config')">
-        <span>🎮 Teclas & Animações de Ação</span>
+        <span>🕹️🕹️ Controles & Animações do Jogador</span>
         <button class="minimize-btn" onclick="toggleMinimize('panel-controls-config')">_</button>
     </div>
     <div class="panel-body">
-        <span class="status-text">Associe teclas e vincule animações:</span>
-        <div class="control-block" style="background: var(--timeline-bg); padding: 4px; border-radius: 4px;">
-            <label>Sem Tecla Pressionada (Idle):</label>
-            <select id="anim-idle"><option value="">(Sem Animação)</option></select>
-        </div>
-        <div class="control-block">
-            <label>Tecla Frente (W):</label>
-            <div style="display: flex; gap: 4px;">
-                <input type="text" id="key-forward" value="KeyW" style="width: 50px;">
-                <select id="anim-forward" style="flex:1;"><option value="">(Sem Animação)</option></select>
+        <span class="status-text">Configure os comandos do seu herói 3D:</span>
+        
+        <div class="arcade-container">
+            <!-- IDLE -->
+            <div class="arcade-row">
+                <span style="font-size: 11px; font-weight: bold;">🧘 Parado (Idle)</span>
+                <select id="anim-idle" style="width: 130px;"><option value="">(Nenhuma)</option></select>
             </div>
-        </div>
-        <div class="control-block">
-            <label>Tecla Trás (S):</label>
-            <div style="display: flex; gap: 4px;">
-                <input type="text" id="key-backward" value="KeyS" style="width: 50px;">
-                <select id="anim-backward" style="flex:1;"><option value="">(Sem Animação)</option></select>
+
+            <!-- FRENTE -->
+            <div class="arcade-row">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="key-badge">W</span>
+                    <span style="font-size: 11px;">Frente</span>
+                </div>
+                <select id="anim-forward" style="width: 120px;"><option value="">(Nenhuma)</option></select>
             </div>
-        </div>
-        <div class="control-block">
-            <label>Barra de Espaço (Pular/Ação):</label>
-            <div style="display: flex; gap: 4px;">
-                <input type="text" id="key-space" value="Space" style="width: 50px;" readonly>
-                <select id="anim-space" style="flex:1;"><option value="">(Sem Animação)</option></select>
+
+            <!-- TRÁS COM FLIP AUTOMÁTICO -->
+            <div style="display: flex; flex-direction: column; gap: 4px; background: rgba(255, 255, 255, 0.08); padding: 5px 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="key-badge">S</span>
+                        <span style="font-size: 11px;">Trás</span>
+                    </div>
+                    <select id="anim-backward" style="width: 120px;"><option value="">(Nenhuma)</option></select>
+                </div>
+                <div class="checkbox-row" style="margin-top: 2px; color: #cbd5e1;">
+                    <input type="checkbox" id="chk-auto-flip-back" checked>
+                    <label for="chk-auto-flip-back" style="font-size: 10px;">🔄 Flip Automático (Usar anim. Frente + 180°)</label>
+                </div>
             </div>
+
+            <!-- ESPAÇO -->
+            <div class="arcade-row">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="key-badge" style="min-width: 42px;">Espaço</span>
+                    <span style="font-size: 11px;">Ação/Pulo</span>
+                </div>
+                <select id="anim-space" style="width: 120px;"><option value="">(Nenhuma)</option></select>
+            </div>
+
+            <!-- ESQUERDA / DIREITA -->
+            <div style="display: flex; gap: 6px;">
+                <div class="arcade-row" style="flex: 1; justify-content: space-between;">
+                    <span class="key-badge">A</span>
+                    <span style="font-size: 10px;">Girar Esq.</span>
+                </div>
+                <div class="arcade-row" style="flex: 1; justify-content: space-between;">
+                    <span class="key-badge">D</span>
+                    <span style="font-size: 10px;">Girar Dir.</span>
+                </div>
+            </div>
+            <!-- Inputs ocultos para manter compatibilidade com a lógica existente -->
+            <input type="hidden" id="key-forward" value="KeyW">
+            <input type="hidden" id="key-backward" value="KeyS">
+            <input type="hidden" id="key-space" value="Space">
+            <input type="hidden" id="key-left" value="KeyA">
+            <input type="hidden" id="key-right" value="KeyD">
         </div>
-        <div class="control-block">
-            <label>Girar Esquerda (A):</label>
-            <input type="text" id="key-left" value="KeyA">
-        </div>
-        <div class="control-block">
-            <label>Girar Direita (D):</label>
-            <input type="text" id="key-right" value="KeyD">
-        </div>
+
         <div class="slider-row" style="margin-top: 4px;">
             <label>Velocidade de Passo:</label>
             <input type="range" id="move-speed-slider" min="0.5" max="10.0" step="0.5" value="2.0">
@@ -472,7 +526,8 @@ const mappingInputs = ['anim-idle', 'anim-forward', 'anim-backward', 'anim-space
 function saveKeyMappings() {
     const data = {};
     mappingInputs.forEach(id => {
-        data[id] = document.getElementById(id).value;
+        const el = document.getElementById(id);
+        if (el) data[id] = el.value;
     });
     localStorage.setItem('game_key_mappings', JSON.stringify(data));
 }
@@ -483,16 +538,20 @@ function loadKeyMappings() {
     try {
         const data = JSON.parse(saved);
         mappingInputs.forEach(id => {
-            if (data[id] !== undefined) {
-                document.getElementById(id).value = data[id];
+            const el = document.getElementById(id);
+            if (el && data[id] !== undefined) {
+                el.value = data[id];
             }
         });
     } catch(e) { console.error(e); }
 }
 
 mappingInputs.forEach(id => {
-    document.getElementById(id).addEventListener('change', saveKeyMappings);
-    document.getElementById(id).addEventListener('input', saveKeyMappings);
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('change', saveKeyMappings);
+        el.addEventListener('input', saveKeyMappings);
+    }
 });
 
 window.addEventListener('keydown', (e) => {
@@ -813,6 +872,7 @@ function updateAnimationDropdowns() {
     const selects = ['animation-list', 'anim-idle', 'anim-forward', 'anim-backward', 'anim-space', 'preview-anim-select'];
     selects.forEach(id => {
         const el = document.getElementById(id);
+        if (!el) return;
         const currentVal = el.value;
         el.innerHTML = id === 'animation-list' ? '' : '<option value="">(Nenhuma)</option>';
         animationsList.forEach(item => {
@@ -885,6 +945,8 @@ function updateHelpers() {
 }
 
 let activeCurrentActionName = null;
+let baseModelRotationY = 0; // Armazena a orientação base controlada pelas teclas A e D
+let wasMovingBack = false;   // Memória para saber se o último estado ativo foi andando para trás
 
 function transitionToAction(newActionName, weight = 1.0, duration = 0.2) {
     if (!mixer) return;
@@ -918,11 +980,11 @@ function animate() {
     }
 
     if (characterGroup && isGameMode) {
-        const fKey = document.getElementById('key-forward').value || 'KeyW';
-        const bKey = document.getElementById('key-backward').value || 'KeyS';
-        const lKey = document.getElementById('key-left').value || 'KeyA';
-        const rKey = document.getElementById('key-right').value || 'KeyD';
-        const sKey = document.getElementById('key-space').value || 'Space';
+        const fKey = 'KeyW';
+        const bKey = 'KeyS';
+        const lKey = 'KeyA';
+        const rKey = 'KeyD';
+        const sKey = 'Space';
         
         const moveSpeed = parseFloat(document.getElementById('move-speed-slider').value) || 2.0;
         const rotSpeed = parseFloat(document.getElementById('rot-speed-slider').value) || 0.04;
@@ -931,25 +993,46 @@ function animate() {
         const forwardAnimName = document.getElementById('anim-forward').value;
         const backwardAnimName = document.getElementById('anim-backward').value;
         const spaceAnimName = document.getElementById('anim-space').value;
+        const autoFlipBack = document.getElementById('chk-auto-flip-back').checked;
+
+        if (pressedKeys[lKey]) baseModelRotationY += rotSpeed;
+        if (pressedKeys[rKey]) baseModelRotationY -= rotSpeed;
 
         let desiredAnim = idleAnimName;
-        let isMoving = false;
+        let isMovingBackNow = false;
 
         if (pressedKeys[fKey]) {
             characterGroup.translateZ(moveSpeed);
             if (forwardAnimName) desiredAnim = forwardAnimName;
-            isMoving = true;
+            wasMovingBack = false;
         } else if (pressedKeys[bKey]) {
-            characterGroup.translateZ(-moveSpeed);
-            if (backwardAnimName) desiredAnim = backwardAnimName;
-            isMoving = true;
-        } else if (pressedKeys[sKey]) {
+            if (autoFlipBack && forwardAnimName) {
+                // Com o flip ativo (rotação de 180°), transladamos positivamente para ir para trás corretamente
+                characterGroup.translateZ(moveSpeed);
+                desiredAnim = forwardAnimName;
+                isMovingBackNow = true;
+                wasMovingBack = true;
+            } else {
+                characterGroup.translateZ(-moveSpeed);
+                if (backwardAnimName) {
+                    desiredAnim = backwardAnimName;
+                }
+                wasMovingBack = false;
+            }
+        } else if (pressedKeys[sKey]) { // Espaço / Ação
             if (spaceAnimName) desiredAnim = spaceAnimName;
-            isMoving = true;
+            wasMovingBack = false;
+        } else {
+            // Se parou, mantém o estado de flip se o último movimento foi para trás
+            if (autoFlipBack && wasMovingBack) {
+                isMovingBackNow = true;
+            } else {
+                wasMovingBack = false;
+            }
         }
 
-        if (pressedKeys[lKey]) characterGroup.rotation.y += rotSpeed;
-        if (pressedKeys[rKey]) characterGroup.rotation.y -= rotSpeed;
+        // Aplica a rotação base + o flip de 180 graus se estiver recuando ou parado após recuar
+        characterGroup.rotation.y = baseModelRotationY + (isMovingBackNow ? Math.PI : 0);
 
         transitionToAction(desiredAnim, 1.0, 0.15);
     }
