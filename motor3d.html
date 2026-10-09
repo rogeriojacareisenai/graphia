@@ -132,7 +132,7 @@
             100% { opacity: 1; }
         }
 
-        #anim-modal-overlay, #scale-modal-overlay {
+        #scale-modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.6);
@@ -142,7 +142,7 @@
             z-index: 1000;
             backdrop-filter: blur(3px);
         }
-        .anim-modal, .scale-modal {
+        .scale-modal {
             background: #ffffff;
             width: 400px;
             max-height: 80vh;
@@ -152,14 +152,14 @@
             flex-direction: column;
             overflow: hidden;
         }
-        .anim-modal-header, .scale-modal-header {
+        .scale-modal-header {
             background: var(--primary-blue);
             color: #fff;
             padding: 12px;
             font-weight: bold;
             font-size: 13px;
         }
-        .anim-modal-body, .scale-modal-body {
+        .scale-modal-body {
             padding: 16px;
             overflow-y: auto;
             display: flex;
@@ -178,7 +178,7 @@
             width: 100px;
             padding: 4px;
         }
-        .anim-modal-footer, .scale-modal-footer {
+        .scale-modal-footer {
             padding: 10px 12px;
             background: #dfe5eb;
             display: flex;
@@ -206,18 +206,6 @@
 <body>
 
 <div id="game-mode-indicator">🎮 MODO JOGO ATIVO (Pressione ESC ou clique em Parar Jogo para sair)</div>
-
-<!-- Modal para Importação de Animações -->
-<div id="anim-modal-overlay">
-    <div class="anim-modal">
-        <div class="anim-modal-header">🎬 Importar e Nomear Animações do Arquivo</div>
-        <div class="anim-modal-body" id="anim-modal-list-container"></div>
-        <div class="anim-modal-footer">
-            <button id="btn-modal-cancel" style="background: #c62828; color: white; border: none; padding: 6px 12px; border-radius: 4px;">Cancelar</button>
-            <button id="btn-modal-confirm" style="background: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold;">Salvar na Memória</button>
-        </div>
-    </div>
-</div>
 
 <!-- Janela Suspensa (Modal) para Redefinir Escala do Modelo -->
 <div id="scale-modal-overlay">
@@ -249,24 +237,36 @@
     </div>
 </div>
 
+<!-- PAINEL 1: CARREGAR MODELO 3D -->
 <div class="floating-panel" id="panel-file" style="top: 10px; left: 10px;">
     <div class="panel-header" onmousedown="startDrag(event, 'panel-file')">
-        <span>📁 Arquivos, Modelo e Textura</span>
+        <span>📁 Carregar Modelo 3D</span>
         <button class="minimize-btn" onclick="toggleMinimize('panel-file')">_</button>
     </div>
     <div class="panel-body">
         <div class="control-block">
-            <label>1. Carregar Modelo 3D Base (FBX/GLTF/OBJ):</label>
+            <label>Carregar Modelo 3D Base (FBX/GLTF/OBJ):</label>
             <input type="file" id="file-input" accept=".obj, .fbx, .gltf, .glb">
             <span id="model-status" class="status-text">Nenhum modelo carregado.</span>
         </div>
         <button id="btn-open-scale-modal" style="background: #388e3c; color: white; font-weight: bold; margin-top: 2px; padding: 5px;">📐 Redefinir Escala do Modelo</button>
-        <div class="control-block" style="margin-top: 2px;">
-            <label>2. Carregar Textura / Imagem (PNG/JPG):</label>
+        <button id="btn-toggle-game" style="background: #2e7d32; color: white; font-weight: bold; margin-top: 6px; padding: 6px;">🎮 Play / Testar Jogo</button>
+    </div>
+</div>
+
+<!-- PAINEL 2: TEXTURA E MÚLTIPLAS ANIMAÇÕES -->
+<div class="floating-panel" id="panel-assets" style="top: 10px; left: 340px;">
+    <div class="panel-header" onmousedown="startDrag(event, 'panel-assets')">
+        <span>🎨 Texturas & Múltiplas Animações</span>
+        <button class="minimize-btn" onclick="toggleMinimize('panel-assets')">_</button>
+    </div>
+    <div class="panel-body">
+        <div class="control-block">
+            <label>Carregar Textura / Imagem (PNG/JPG):</label>
             <input type="file" id="texture-input" accept=".png, .jpg, .jpeg">
         </div>
-        <div class="control-block" style="margin-top: 2px;">
-            <label>3. Adicionar Múltiplas Animações (Array de Files):</label>
+        <div class="control-block" style="margin-top: 4px;">
+            <label>Adicionar Múltiplas Animações (Array de Files):</label>
             <input type="file" id="anim-files-input" accept=".fbx, .gltf, .glb" multiple>
             <span class="status-text">Selecione um ou mais arquivos de animação separados.</span>
         </div>
@@ -276,12 +276,11 @@
                 <option value="">Nenhuma animação disponível</option>
             </select>
         </div>
-        <button id="btn-toggle-game" style="background: #2e7d32; color: white; font-weight: bold; margin-top: 6px; padding: 6px;">🎮 Play / Testar Jogo</button>
     </div>
 </div>
 
 <!-- PAINEL DE TECLAS E ANIMAÇÕES REFORMULADO (LÚDICO / ARCADE) -->
-<div class="floating-panel" id="panel-controls-config" style="top: 10px; left: 340px;">
+<div class="floating-panel" id="panel-controls-config" style="top: 10px; left: 670px;">
     <div class="panel-header" onmousedown="startDrag(event, 'panel-controls-config')">
         <span>🕹️🕹️ Controles & Animações do Jogador</span>
         <button class="minimize-btn" onclick="toggleMinimize('panel-controls-config')">_</button>
@@ -363,7 +362,7 @@
     </div>
 </div>
 
-<div class="floating-panel" id="panel-render" style="top: 10px; left: 675px;">
+<div class="floating-panel" id="panel-render" style="top: 420px; left: 10px;">
     <div class="panel-header" onmousedown="startDrag(event, 'panel-render')">
         <span>👁️ Visualização e Chão 3D</span>
         <button class="minimize-btn" onclick="toggleMinimize('panel-render')">_</button>
@@ -495,7 +494,6 @@ const clock = new THREE.Clock();
 const animationsList = []; 
 const animationActions = {}; 
 
-let tempLoadedAnims = [];
 let currentLoadedRootModel = null;
 let currentAppliedTexture = null;
 
@@ -764,9 +762,8 @@ document.getElementById('texture-input').addEventListener('change', (event) => {
 
 document.getElementById('anim-files-input').addEventListener('change', (event) => {
     const files = event.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !mixer) return;
 
-    tempLoadedAnims = [];
     let processedCount = 0;
 
     Array.from(files).forEach((file) => {
@@ -774,35 +771,35 @@ document.getElementById('anim-files-input').addEventListener('change', (event) =
         const ext = fileName.split('.').pop().toLowerCase();
         const fileURL = URL.createObjectURL(file);
 
+        const registerAnimations = (clips) => {
+            if (clips && clips.length > 0) {
+                clips.forEach((clip, idx) => {
+                    const customName = `${fileName.split('.')[0]}_${clip.name || ('anim_' + idx)}`;
+                    if (!animationActions[customName]) {
+                        animationsList.push({ name: customName, clip: clip });
+                        const action = mixer.clipAction(clip);
+                        animationActions[customName] = action;
+                    }
+                });
+            }
+            processedCount++;
+            if (processedCount === files.length) {
+                updateAnimationDropdowns();
+                saveKeyMappings();
+                document.getElementById('model-status').innerText = `Modelo configurado com ${animationsList.length} animações.`;
+            }
+        };
+
         if (ext === 'fbx') {
             new FBXLoader().load(fileURL, (object) => {
-                if (object.animations && object.animations.length > 0) {
-                    object.animations.forEach((clip, idx) => {
-                        tempLoadedAnims.push({
-                            clip: clip,
-                            defaultName: `${fileName.split('.')[0]}_${clip.name || ('anim_' + idx)}`
-                        });
-                    });
-                }
-                processedCount++;
-                if (processedCount === files.length) openAnimationModal();
+                registerAnimations(object.animations || []);
             });
         } else if (ext === 'gltf' || ext === 'glb') {
             new GLTFLoader().load(fileURL, (gltf) => {
-                if (gltf.animations && gltf.animations.length > 0) {
-                    gltf.animations.forEach((clip, idx) => {
-                        tempLoadedAnims.push({
-                            clip: clip,
-                            defaultName: `${fileName.split('.')[0]}_${clip.name || ('anim_' + idx)}`
-                        });
-                    });
-                }
-                processedCount++;
-                if (processedCount === files.length) openAnimationModal();
+                registerAnimations(gltf.animations || []);
             });
         } else {
             processedCount++;
-            if (processedCount === files.length && tempLoadedAnims.length > 0) openAnimationModal();
         }
     });
 });
@@ -867,62 +864,20 @@ function processLoadedModel(model, name, anims) {
     }
 
     if (anims && anims.length > 0) {
-        tempLoadedAnims = anims.map((clip, idx) => ({
-            clip: clip,
-            defaultName: `${name.split('.')[0]}_${clip.name || ('anim_' + idx)}`
-        }));
-        openAnimationModal();
-    } else {
-        tempLoadedAnims = [];
-        updateAnimationDropdowns();
-        document.getElementById('model-status').innerText = `Modelo: ${name}`;
-    }
-}
-
-function openAnimationModal() {
-    const container = document.getElementById('anim-modal-list-container');
-    container.innerHTML = '';
-
-    tempLoadedAnims.forEach((animObj, index) => {
-        const row = document.createElement('div');
-        row.className = 'anim-item-row';
-        row.innerHTML = `
-            <input type="checkbox" id="chk-anim-${index}" checked>
-            <div style="display:flex; flex-direction:column; flex:1; gap:2px;">
-                <span style="font-size:9px; color:var(--muted-text-color);">Clipe original: ${animObj.clip.name || index}</span>
-                <input type="text" id="name-anim-${index}" value="${animObj.defaultName}" placeholder="Nome para associação...">
-            </div>
-        `;
-        container.appendChild(row);
-    });
-
-    document.getElementById('anim-modal-overlay').style.display = 'flex';
-}
-
-document.getElementById('btn-modal-cancel').addEventListener('click', () => {
-    document.getElementById('anim-modal-overlay').style.display = 'none';
-});
-
-document.getElementById('btn-modal-confirm').addEventListener('click', () => {
-    tempLoadedAnims.forEach((animObj, index) => {
-        const chk = document.getElementById(`chk-anim-${index}`);
-        const nameInput = document.getElementById(`name-anim-${index}`);
-        if (chk && chk.checked) {
-            const customName = nameInput.value.trim() || animObj.defaultName;
-            
-            if (!animationActions[customName]) {
-                animationsList.push({ name: customName, clip: animObj.clip });
-                const action = mixer.clipAction(animObj.clip);
-                animationActions[customName] = action;
+        anims.forEach((clip, idx) => {
+            const defaultName = `${name.split('.')[0]}_${clip.name || ('anim_' + idx)}`;
+            if (!animationActions[defaultName]) {
+                animationsList.push({ name: defaultName, clip: clip });
+                const action = mixer.clipAction(clip);
+                animationActions[defaultName] = action;
             }
-        }
-    });
+        });
+    }
 
     updateAnimationDropdowns();
     saveKeyMappings();
-    document.getElementById('anim-modal-overlay').style.display = 'none';
-    document.getElementById('model-status').innerText = `Modelo configurado com ${animationsList.length} animações.`;
-});
+    document.getElementById('model-status').innerText = `Modelo: ${name} (${animationsList.length} animações)`;
+}
 
 function updateAnimationDropdowns() {
     const selects = ['animation-list', 'anim-idle', 'anim-forward', 'anim-backward', 'anim-space'];
