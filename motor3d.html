@@ -84,7 +84,6 @@
         
         .slider-row { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
 
-        /* Estilo Lúdico para o Painel de Controles e Teclas tipo Gamepad */
         .arcade-container {
             background: linear-gradient(135deg, #1e293b, #0f172a);
             border-radius: 6px;
@@ -115,9 +114,24 @@
             border-bottom: 2px solid #94a3b8;
             text-align: center;
             min-width: 24px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .key-badge:hover {
+            background: #cbd5e1;
+        }
+        .key-badge.listening {
+            background: #f59e0b;
+            color: #fff;
+            border-bottom-color: #d97706;
+            animation: pulse-key 1s infinite;
+        }
+        @keyframes pulse-key {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
         }
 
-        /* Estilos dos Modais (Animação e Escala) */
         #anim-modal-overlay, #scale-modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -171,23 +185,6 @@
             justify-content: flex-end;
             gap: 8px;
             border-top: 1px solid var(--border-color);
-        }
-
-        #preview-window-panel {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            width: 280px;
-            z-index: 150;
-            display: none;
-        }
-        #preview-canvas-container {
-            width: 100%;
-            height: 180px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
         }
 
         #game-mode-indicator {
@@ -252,25 +249,6 @@
     </div>
 </div>
 
-<div class="floating-panel" id="preview-window-panel">
-    <div class="panel-header" onmousedown="startDrag(event, 'preview-window-panel')">
-        <span>🎬 Janela de Teste de Animação</span>
-        <button class="minimize-btn" onclick="toggleMinimize('preview-window-panel')">_</button>
-    </div>
-    <div class="panel-body">
-        <div class="control-block">
-            <label>Selecione Animação para Testar:</label>
-            <div style="display: flex; gap: 4px;">
-                <select id="preview-anim-select" style="flex:1;"><option value="">Nenhuma</option></select>
-                <button id="btn-preview-play" style="background: #2e7d32; color: #fff; border:none; border-radius:3px; padding:2px 8px;">Play</button>
-                <button id="btn-preview-stop" style="background: #c62828; color: #fff; border:none; border-radius:3px; padding:2px 8px;">Stop</button>
-            </div>
-        </div>
-        <div id="preview-canvas-container"></div>
-        <span class="status-text">Mini visualização isolada da animação selecionada.</span>
-    </div>
-</div>
-
 <div class="floating-panel" id="panel-file" style="top: 10px; left: 10px;">
     <div class="panel-header" onmousedown="startDrag(event, 'panel-file')">
         <span>📁 Arquivos, Modelo e Textura</span>
@@ -298,8 +276,7 @@
                 <option value="">Nenhuma animação disponível</option>
             </select>
         </div>
-        <button id="btn-open-preview" style="background: var(--primary-blue); color: white; font-weight: bold; margin-top: 4px; padding: 5px;">🔍 Abrir Janela de Teste</button>
-        <button id="btn-toggle-game" style="background: #2e7d32; color: white; font-weight: bold; margin-top: 4px; padding: 6px;">🎮 Play / Testar Jogo</button>
+        <button id="btn-toggle-game" style="background: #2e7d32; color: white; font-weight: bold; margin-top: 6px; padding: 6px;">🎮 Play / Testar Jogo</button>
     </div>
 </div>
 
@@ -310,7 +287,7 @@
         <button class="minimize-btn" onclick="toggleMinimize('panel-controls-config')">_</button>
     </div>
     <div class="panel-body">
-        <span class="status-text">Configure os comandos do seu herói 3D:</span>
+        <span class="status-text">Clique na tecla para alterar por leitura direta do teclado:</span>
         
         <div class="arcade-container">
             <!-- IDLE -->
@@ -322,7 +299,7 @@
             <!-- FRENTE -->
             <div class="arcade-row">
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="key-badge">W</span>
+                    <span class="key-badge" id="badge-key-forward" data-key-target="key-forward">W</span>
                     <span style="font-size: 11px;">Frente</span>
                 </div>
                 <select id="anim-forward" style="width: 120px;"><option value="">(Nenhuma)</option></select>
@@ -332,7 +309,7 @@
             <div style="display: flex; flex-direction: column; gap: 4px; background: rgba(255, 255, 255, 0.08); padding: 5px 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span class="key-badge">S</span>
+                        <span class="key-badge" id="badge-key-backward" data-key-target="key-backward">S</span>
                         <span style="font-size: 11px;">Trás</span>
                     </div>
                     <select id="anim-backward" style="width: 120px;"><option value="">(Nenhuma)</option></select>
@@ -346,8 +323,8 @@
             <!-- ESPAÇO -->
             <div class="arcade-row">
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="key-badge" style="min-width: 42px;">Espaço</span>
-                    <span style="font-size: 11px;">Ação/Pulo</span>
+                    <span class="key-badge" id="badge-key-space" data-key-target="key-space" style="min-width: 42px;">Space</span>
+                    <span style="font-size: 11px;">Pular/Ação</span>
                 </div>
                 <select id="anim-space" style="width: 120px;"><option value="">(Nenhuma)</option></select>
             </div>
@@ -355,12 +332,16 @@
             <!-- ESQUERDA / DIREITA -->
             <div style="display: flex; gap: 6px;">
                 <div class="arcade-row" style="flex: 1; justify-content: space-between;">
-                    <span class="key-badge">A</span>
-                    <span style="font-size: 10px;">Girar Esq.</span>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <span class="key-badge" id="badge-key-left" data-key-target="key-left">A</span>
+                        <span style="font-size: 10px;">Esq.</span>
+                    </div>
                 </div>
                 <div class="arcade-row" style="flex: 1; justify-content: space-between;">
-                    <span class="key-badge">D</span>
-                    <span style="font-size: 10px;">Girar Dir.</span>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <span class="key-badge" id="badge-key-right" data-key-target="key-right">D</span>
+                        <span style="font-size: 10px;">Dir.</span>
+                    </div>
                 </div>
             </div>
             <!-- Inputs ocultos para manter compatibilidade com a lógica existente -->
@@ -515,13 +496,34 @@ const animationsList = [];
 const animationActions = {}; 
 
 let tempLoadedAnims = [];
-let previewScene, previewCamera, previewRenderer, previewMixer = null;
-let previewModelClone = null;
-let activePreviewAction = null;
 let currentLoadedRootModel = null;
 let currentAppliedTexture = null;
 
 const mappingInputs = ['anim-idle', 'anim-forward', 'anim-backward', 'anim-space', 'key-forward', 'key-backward', 'key-space', 'key-left', 'key-right'];
+
+function getReadableKeyName(code) {
+    if (code.startsWith('Key')) return code.replace('Key', '');
+    if (code.startsWith('Digit')) return code.replace('Digit', '');
+    if (code === 'Space') return 'Space';
+    if (code === 'ArrowUp') return '↑';
+    if (code === 'ArrowDown') return '↓';
+    if (code === 'ArrowLeft') return '←';
+    if (code === 'ArrowRight') return '→';
+    return code;
+}
+
+function updateBadgeVisuals() {
+    mappingInputs.forEach(id => {
+        if (id.startsWith('key-')) {
+            const inputVal = document.getElementById(id).value;
+            const badgeId = `badge-${id}`;
+            const badgeEl = document.getElementById(badgeId);
+            if (badgeEl) {
+                badgeEl.innerText = getReadableKeyName(inputVal);
+            }
+        }
+    });
+}
 
 function saveKeyMappings() {
     const data = {};
@@ -530,11 +532,20 @@ function saveKeyMappings() {
         if (el) data[id] = el.value;
     });
     localStorage.setItem('game_key_mappings', JSON.stringify(data));
+    updateBadgeVisuals();
 }
 
 function loadKeyMappings() {
     const saved = localStorage.getItem('game_key_mappings');
-    if (!saved) return;
+    if (!saved) {
+        document.getElementById('key-forward').value = 'KeyW';
+        document.getElementById('key-backward').value = 'KeyS';
+        document.getElementById('key-space').value = 'Space';
+        document.getElementById('key-left').value = 'KeyA';
+        document.getElementById('key-right').value = 'KeyD';
+        updateBadgeVisuals();
+        return;
+    }
     try {
         const data = JSON.parse(saved);
         mappingInputs.forEach(id => {
@@ -543,6 +554,7 @@ function loadKeyMappings() {
                 el.value = data[id];
             }
         });
+        updateBadgeVisuals();
     } catch(e) { console.error(e); }
 }
 
@@ -554,12 +566,42 @@ mappingInputs.forEach(id => {
     }
 });
 
+let listeningBadgeTarget = null;
+document.querySelectorAll('.key-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+        document.querySelectorAll('.key-badge').forEach(b => b.classList.remove('listening'));
+        listeningBadgeTarget = badge.getAttribute('data-key-target');
+        badge.classList.add('listening');
+        badge.innerText = '...';
+        e.stopPropagation();
+    });
+});
+
 window.addEventListener('keydown', (e) => {
+    if (listeningBadgeTarget) {
+        e.preventDefault();
+        e.stopPropagation();
+        const hiddenInput = document.getElementById(listeningBadgeTarget);
+        if (hiddenInput) {
+            hiddenInput.value = e.code;
+            saveKeyMappings();
+        }
+        document.querySelectorAll('.key-badge').forEach(b => b.classList.remove('listening'));
+        listeningBadgeTarget = null;
+        return;
+    }
+
     if (e.target.tagName !== 'INPUT') {
+        const spaceCode = document.getElementById('key-space').value || 'Space';
+        if (e.code === spaceCode || e.code === 'Space') {
+            e.preventDefault();
+        }
+
         pressedKeys[e.code] = true;
         if (e.code === 'Escape' && isGameMode) toggleGameMode();
     }
 });
+
 window.addEventListener('keyup', (e) => {
     if (e.target.tagName !== 'INPUT') {
         pressedKeys[e.code] = false;
@@ -572,7 +614,14 @@ let bonePickers = [];
 let boneMap = new Map();
 let allBones = [];
 
-// CONTROLES DE VISIBILIDADE (CHÃO, ESQUELETO E JUNTAS)
+let velocityY = 0;
+const gravity = 9.8;
+const jumpForce = 5.0;
+let isJumping = false;
+
+let jumpAnimationPlaying = false;
+let jumpAnimationAction = null;
+
 document.getElementById('chk-ground').addEventListener('change', (e) => {
     groundGroup.visible = e.target.checked;
 });
@@ -611,7 +660,6 @@ function toggleGameMode() {
     }
 }
 
-// LÓGICA DA JANELA SUSPENSA DE ESCALA DO MODELO
 const btnOpenScaleModal = document.getElementById('btn-open-scale-modal');
 const scaleModalOverlay = document.getElementById('scale-modal-overlay');
 const btnScaleCancel = document.getElementById('btn-scale-cancel');
@@ -663,7 +711,6 @@ btnScaleApply.addEventListener('click', () => {
     }
 });
 
-// 1. CARREGAMENTO DO MODELO 3D PRINCIPAL
 document.getElementById('file-input').addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -689,7 +736,6 @@ document.getElementById('file-input').addEventListener('change', (event) => {
     }
 });
 
-// 2. CARREGAMENTO DA TEXTURA / IMAGEM
 document.getElementById('texture-input').addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file || !characterGroup) return;
@@ -716,7 +762,6 @@ document.getElementById('texture-input').addEventListener('change', (event) => {
     });
 });
 
-// 3. CARREGAMENTO DE MÚLTIPLAS ANIMAÇÕES SEPARADAS
 document.getElementById('anim-files-input').addEventListener('change', (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -804,6 +849,17 @@ function processLoadedModel(model, name, anims) {
     });
 
     mixer = new THREE.AnimationMixer(characterGroup);
+    mixer.addEventListener('finished', (event) => {
+        if (jumpAnimationAction && event.action === jumpAnimationAction) {
+            jumpAnimationPlaying = false;
+            jumpAnimationAction = null;
+        }
+    });
+
+    jumpAnimationPlaying = false;
+    jumpAnimationAction = null;
+    isJumping = false;
+    velocityY = 0;
 
     animationsList.length = 0;
     for (let key in animationActions) {
@@ -869,7 +925,7 @@ document.getElementById('btn-modal-confirm').addEventListener('click', () => {
 });
 
 function updateAnimationDropdowns() {
-    const selects = ['animation-list', 'anim-idle', 'anim-forward', 'anim-backward', 'anim-space', 'preview-anim-select'];
+    const selects = ['animation-list', 'anim-idle', 'anim-forward', 'anim-backward', 'anim-space'];
     selects.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -882,61 +938,6 @@ function updateAnimationDropdowns() {
     });
 }
 
-function initPreviewWindow() {
-    const container = document.getElementById('preview-canvas-container');
-    if (previewRenderer) return;
-
-    previewScene = new THREE.Scene();
-    previewScene.background = new THREE.Color(0xe2e8f0);
-
-    previewCamera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-    previewCamera.position.set(0, 50, 100);
-
-    previewRenderer = new THREE.WebGLRenderer({ antialias: true });
-    previewRenderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(previewRenderer.domElement);
-
-    previewScene.add(new THREE.AmbientLight(0xffffff, 1.5));
-    const pLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    pLight.position.set(50, 100, 50);
-    previewScene.add(pLight);
-}
-
-document.getElementById('btn-open-preview').addEventListener('click', () => {
-    const panel = document.getElementById('preview-window-panel');
-    panel.style.display = 'flex';
-    initPreviewWindow();
-    setupPreviewModel();
-});
-
-function setupPreviewModel() {
-    if (!currentLoadedRootModel) return;
-    if (previewModelClone) previewScene.remove(previewModelClone);
-
-    previewModelClone = currentLoadedRootModel.clone(true);
-    previewScene.add(previewModelClone);
-    previewMixer = new THREE.AnimationMixer(previewModelClone);
-}
-
-document.getElementById('btn-preview-play').addEventListener('click', () => {
-    const selectedAnim = document.getElementById('preview-anim-select').value;
-    if (!selectedAnim || !previewMixer) return;
-
-    if (activePreviewAction) activePreviewAction.stop();
-    const animData = animationsList.find(a => a.name === selectedAnim);
-    if (animData) {
-        activePreviewAction = previewMixer.clipAction(animData.clip);
-        activePreviewAction.reset().play();
-    }
-});
-
-document.getElementById('btn-preview-stop').addEventListener('click', () => {
-    if (activePreviewAction) {
-        activePreviewAction.stop();
-        activePreviewAction = null;
-    }
-});
-
 function updateHelpers() {
     bonePickers.forEach(picker => {
         const bone = boneMap.get(picker);
@@ -945,8 +946,8 @@ function updateHelpers() {
 }
 
 let activeCurrentActionName = null;
-let baseModelRotationY = 0; // Armazena a orientação base controlada pelas teclas A e D
-let wasMovingBack = false;   // Memória para saber se o último estado ativo foi andando para trás
+let baseModelRotationY = 0; 
+let wasMovingBack = false;   
 
 function transitionToAction(newActionName, weight = 1.0, duration = 0.2) {
     if (!mixer) return;
@@ -974,17 +975,13 @@ function animate() {
     const delta = clock.getDelta();
     
     if (mixer) mixer.update(delta);
-    if (previewMixer) previewMixer.update(delta);
-    if (previewRenderer && previewScene && previewCamera) {
-        previewRenderer.render(previewScene, previewCamera);
-    }
 
     if (characterGroup && isGameMode) {
-        const fKey = 'KeyW';
-        const bKey = 'KeyS';
-        const lKey = 'KeyA';
-        const rKey = 'KeyD';
-        const sKey = 'Space';
+        const fKey = document.getElementById('key-forward').value || 'KeyW';
+        const bKey = document.getElementById('key-backward').value || 'KeyS';
+        const lKey = document.getElementById('key-left').value || 'KeyA';
+        const rKey = document.getElementById('key-right').value || 'KeyD';
+        const spaceKey = document.getElementById('key-space').value || 'Space';
         
         const moveSpeed = parseFloat(document.getElementById('move-speed-slider').value) || 2.0;
         const rotSpeed = parseFloat(document.getElementById('rot-speed-slider').value) || 0.04;
@@ -1001,37 +998,92 @@ function animate() {
         let desiredAnim = idleAnimName;
         let isMovingBackNow = false;
 
-        if (pressedKeys[fKey]) {
-            characterGroup.translateZ(moveSpeed);
-            if (forwardAnimName) desiredAnim = forwardAnimName;
-            wasMovingBack = false;
-        } else if (pressedKeys[bKey]) {
-            if (autoFlipBack && forwardAnimName) {
-                // Com o flip ativo (rotação de 180°), transladamos positivamente para ir para trás corretamente
-                characterGroup.translateZ(moveSpeed);
-                desiredAnim = forwardAnimName;
-                isMovingBackNow = true;
-                wasMovingBack = true;
-            } else {
-                characterGroup.translateZ(-moveSpeed);
-                if (backwardAnimName) {
-                    desiredAnim = backwardAnimName;
-                }
-                wasMovingBack = false;
-            }
-        } else if (pressedKeys[sKey]) { // Espaço / Ação
-            if (spaceAnimName) desiredAnim = spaceAnimName;
-            wasMovingBack = false;
-        } else {
-            // Se parou, mantém o estado de flip se o último movimento foi para trás
-            if (autoFlipBack && wasMovingBack) {
-                isMovingBackNow = true;
-            } else {
-                wasMovingBack = false;
+        // Atualização da física vertical (gravidade e chão)
+        if (characterGroup.position.y > 0 || isJumping) {
+            velocityY -= gravity * delta * 15;
+            characterGroup.position.y += velocityY * delta * 10;
+            
+            if (characterGroup.position.y <= 0) {
+                characterGroup.position.y = 0;
+                velocityY = 0;
+                isJumping = false;
             }
         }
 
-        // Aplica a rotação base + o flip de 180 graus se estiver recuando ou parado após recuar
+        // Acionamento do Pulo
+        if (pressedKeys[spaceKey] && !isJumping && characterGroup.position.y <= 0) {
+            velocityY = jumpForce;
+            isJumping = true;
+
+            if (spaceAnimName && animationActions[spaceAnimName]) {
+                jumpAnimationAction = animationActions[spaceAnimName];
+                jumpAnimationAction.reset();
+                jumpAnimationAction.setLoop(THREE.LoopOnce, 1);
+                jumpAnimationAction.clampWhenFinished = true;
+                jumpAnimationPlaying = true;
+            } else {
+                jumpAnimationAction = null;
+                jumpAnimationPlaying = false;
+            }
+        }
+
+        // Determinação do estado de animação e movimento
+        if (jumpAnimationPlaying && spaceAnimName) {
+            desiredAnim = spaceAnimName;
+            wasMovingBack = false;
+
+            // Permite andar mesmo enquanto o pulo está em execução
+            if (pressedKeys[fKey]) {
+                characterGroup.translateZ(moveSpeed);
+            } else if (pressedKeys[bKey]) {
+                if (autoFlipBack) {
+                    characterGroup.translateZ(moveSpeed);
+                    isMovingBackNow = true;
+                } else {
+                    characterGroup.translateZ(-moveSpeed);
+                }
+            }
+        } else if (isJumping) {
+            if (spaceAnimName) desiredAnim = spaceAnimName;
+            wasMovingBack = false;
+
+            if (pressedKeys[fKey]) {
+                characterGroup.translateZ(moveSpeed);
+            } else if (pressedKeys[bKey]) {
+                if (autoFlipBack) {
+                    characterGroup.translateZ(moveSpeed);
+                    isMovingBackNow = true;
+                } else {
+                    characterGroup.translateZ(-moveSpeed);
+                }
+            }
+        } else {
+            if (pressedKeys[fKey]) {
+                characterGroup.translateZ(moveSpeed);
+                if (forwardAnimName) desiredAnim = forwardAnimName;
+                wasMovingBack = false;
+            } else if (pressedKeys[bKey]) {
+                if (autoFlipBack && forwardAnimName) {
+                    characterGroup.translateZ(moveSpeed);
+                    desiredAnim = forwardAnimName;
+                    isMovingBackNow = true;
+                    wasMovingBack = true;
+                } else {
+                    characterGroup.translateZ(-moveSpeed);
+                    if (backwardAnimName) {
+                        desiredAnim = backwardAnimName;
+                    }
+                    wasMovingBack = false;
+                }
+            } else {
+                if (autoFlipBack && wasMovingBack) {
+                    isMovingBackNow = true;
+                } else {
+                    wasMovingBack = false;
+                }
+            }
+        }
+
         characterGroup.rotation.y = baseModelRotationY + (isMovingBackNow ? Math.PI : 0);
 
         transitionToAction(desiredAnim, 1.0, 0.15);
