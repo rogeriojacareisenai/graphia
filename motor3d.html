@@ -164,81 +164,6 @@
             overflow: hidden;
         }
 
-        #flash-timeline-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100vw;
-            height: 120px;
-            background: var(--timeline-bg);
-            border-top: 2px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-            transition: transform 0.3s ease;
-        }
-        
-        .timeline-controls {
-            height: 32px;
-            background: var(--timeline-controls-bg);
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
-            gap: 8px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .timeline-controls button {
-            background: var(--primary-blue);
-            color: #fff;
-            border: 1px solid var(--border-color);
-            border-radius: 3px;
-            font-size: 11px;
-            padding: 3px 8px;
-        }
-        .timeline-field {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            border-left: 1px solid var(--border-color);
-            padding-left: 8px;
-        }
-        .timeline-field input { width: 38px; text-align: center; }
-        .timeline-scroll-area {
-            flex: 1;
-            overflow-x: auto;
-            overflow-y: hidden;
-            position: relative;
-            background: var(--timeline-track-bg);
-        }
-        .timeline-ruler {
-            height: 20px;
-            background: var(--timeline-ruler-bg);
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            position: relative;
-        }
-        .ruler-mark {
-            width: 20px; min-width: 20px; height: 100%;
-            border-right: 1px solid var(--border-color);
-            font-size: 9px; opacity: 0.7;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .timeline-track { height: 35px; display: flex; position: relative; }
-        .frame-cell {
-            width: 20px; min-width: 20px; height: 100%;
-            border-right: 1px solid var(--border-color);
-            box-sizing: border-box; position: relative;
-            background: var(--frame-cell-bg);
-        }
-        .frame-cell.has-keyframe { background: var(--keyframe-bg); }
-        .frame-cell.has-keyframe::after {
-            content: ''; position: absolute; width: 8px; height: 8px;
-            background: var(--keyframe-dot); border-radius: 50%;
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-        }
-        .frame-cell.active-frame { border-left: 2px solid #ff3333; border-right: 2px solid #ff3333; }
-
         #game-mode-indicator {
             position: absolute;
             top: 15px;
@@ -424,27 +349,6 @@
     </div>
 </div>
 
-<div id="flash-timeline-container">
-    <div class="timeline-controls">
-        <button id="btn-play-anim">► Play Animação</button>
-        <button id="btn-add-keyframe" style="background: #2e7d32;">F6 - Keyframe</button>
-        <button id="btn-clear-keyframe" style="background: #c62828;">F7 - Limpar</button>
-        <div class="timeline-field">
-            <label>FPS:</label><input type="number" id="fps-input" value="30" min="1" max="60">
-        </div>
-        <div class="timeline-field">
-            <label>Fim:</label><input type="number" id="total-frames-input" value="60" min="2" max="1000">
-        </div>
-        <span style="font-size: 11px; margin-left: auto;">
-            Frame: <strong id="current-frame-text" style="color: #4CAF50;">1</strong> / <span id="total-frames-text">60</span>
-        </span>
-    </div>
-    <div class="timeline-scroll-area" id="timeline-scroll">
-        <div class="timeline-ruler" id="timeline-ruler"></div>
-        <div class="timeline-track" id="timeline-track"></div>
-    </div>
-</div>
-
 <script type="importmap">
   {
     "imports": {
@@ -525,18 +429,18 @@ const gridHelper = new THREE.GridHelper(sizeGrid, divisions, 0x1565c0, 0x90caf9)
 gridHelper.position.y = -0.02;
 groundGroup.add(gridHelper);
 
-const planeGeo = new THREE.PlaneGeometry(sizeGrid, sizeGrid, divisions, divisions);
-const planeMat = new THREE.MeshStandardMaterial({ color: 0xe3f2fd, roughness: 0.9, metalness: 0.1, wireframe: true, side: THREE.DoubleSide });
+const planeGeo = new THREE.PlaneGeometry(sizeGrid, sizeGrid);
+const planeMat = new THREE.MeshStandardMaterial({ color: 0xe3f2fd, roughness: 0.9, metalness: 0.1, wireframe: false, side: THREE.DoubleSide });
 const groundMesh = new THREE.Mesh(planeGeo, planeMat);
 groundMesh.rotation.x = -Math.PI / 2;
 groundGroup.add(groundMesh);
 scene.add(groundGroup);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight - 120), 0.1, 5000);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
 camera.position.set(0, 100, 250);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight - 120);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
@@ -609,29 +513,42 @@ let bonePickers = [];
 let boneMap = new Map();
 let allBones = [];
 
+// CONTROLES DE VISIBILIDADE (CHÃO, ESQUELETO E JUNTAS)
+document.getElementById('chk-ground').addEventListener('change', (e) => {
+    groundGroup.visible = e.target.checked;
+});
+
+document.getElementById('chk-skeleton').addEventListener('change', (e) => {
+    if (skeletonHelper) skeletonHelper.visible = e.target.checked;
+});
+
+document.getElementById('chk-pickers').addEventListener('change', (e) => {
+    const show = e.target.checked;
+    bonePickers.forEach(picker => picker.visible = show);
+});
+
 const btnToggleGame = document.getElementById('btn-toggle-game');
 btnToggleGame.addEventListener('click', toggleGameMode);
 
 function toggleGameMode() {
     isGameMode = !isGameMode;
-    const timeline = document.getElementById('flash-timeline-container');
     const panels = document.querySelectorAll('.floating-panel');
     const indicator = document.getElementById('game-mode-indicator');
 
     if (isGameMode) {
-        timeline.style.transform = 'translateY(120px)';
         panels.forEach(p => { if (p.id !== 'panel-file') p.style.display = 'none'; });
         indicator.style.display = 'block';
         btnToggleGame.innerText = '⏹ Parar Jogo';
         btnToggleGame.style.background = '#c62828';
         bonePickers.forEach(p => p.visible = false);
+        if (skeletonHelper) skeletonHelper.visible = false;
     } else {
-        timeline.style.transform = 'translateY(0)';
         panels.forEach(p => p.style.display = 'flex');
         indicator.style.display = 'none';
         btnToggleGame.innerText = '🎮 Play / Testar Jogo';
         btnToggleGame.style.background = '#2e7d32';
         bonePickers.forEach(p => p.visible = document.getElementById('chk-pickers').checked);
+        if (skeletonHelper) skeletonHelper.visible = document.getElementById('chk-skeleton').checked;
     }
 }
 
@@ -660,7 +577,6 @@ btnScaleCancel.addEventListener('click', () => {
     scaleModalOverlay.style.display = 'none';
 });
 
-// Sincronizar escalas caso a opção Uniforme esteja marcada
 inputScaleX.addEventListener('input', () => {
     if (chkUniformScale.checked) {
         inputScaleY.value = inputScaleX.value;
@@ -683,7 +599,6 @@ btnScaleApply.addEventListener('click', () => {
         }
 
         scaleModalOverlay.style.display = 'none';
-        console.log(`Nova escala do modelo aplicada: X=${sx}, Y=${sy}, Z=${sz}`);
     } else {
         alert("Insira valores válidos e maiores que zero para a escala!");
     }
@@ -707,16 +622,10 @@ document.getElementById('file-input').addEventListener('change', (event) => {
     } else if (ext === 'fbx') {
         new FBXLoader().load(fileURL, (object) => {
             processLoadedModel(object, fileName, object.animations || []);
-        }, undefined, (error) => {
-            console.error('Erro ao carregar o FBX:', error);
-            document.getElementById('model-status').innerText = `Erro ao carregar FBX!`;
         });
     } else if (ext === 'gltf' || ext === 'glb') {
         new GLTFLoader().load(fileURL, (gltf) => {
             processLoadedModel(gltf.scene, fileName, gltf.animations || []);
-        }, undefined, (error) => {
-            console.error('Erro ao carregar GLTF:', error);
-            document.getElementById('model-status').innerText = `Erro ao carregar GLTF!`;
         });
     }
 });
@@ -745,11 +654,10 @@ document.getElementById('texture-input').addEventListener('change', (event) => {
                 }
             }
         });
-        console.log("Textura aplicada com sucesso ao modelo!");
     });
 });
 
-// 3. CARREGAMENTO DE MÚLTIPLAS ANIMAÇÕES SEPARADAS (ARRAY DE FILES)
+// 3. CARREGAMENTO DE MÚLTIPLAS ANIMAÇÕES SEPARADAS
 document.getElementById('anim-files-input').addEventListener('change', (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -819,6 +727,7 @@ function processLoadedModel(model, name, anims) {
     }
 
     skeletonHelper = new THREE.SkeletonHelper(characterGroup);
+    skeletonHelper.visible = document.getElementById('chk-skeleton').checked;
     scene.add(skeletonHelper);
 
     characterGroup.traverse((child) => {
@@ -828,6 +737,7 @@ function processLoadedModel(model, name, anims) {
                 new THREE.SphereGeometry(1.8, 16, 16),
                 new THREE.MeshBasicMaterial({ color: 0xffcc00, depthTest: false, transparent: true, opacity: 0.8 })
             );
+            picker.visible = document.getElementById('chk-pickers').checked;
             scene.add(picker);
             bonePickers.push(picker);
             boneMap.set(picker, child);
@@ -1052,9 +962,9 @@ animate();
 loadKeyMappings();
 
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / (window.innerHeight - 120);
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight - 120);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 </body>
