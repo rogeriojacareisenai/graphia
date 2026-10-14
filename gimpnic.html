@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Ajuste Fino & Scrollbars</title>
+  <title>GIMP Web Studio - Balde de Tinta Corrigido</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -34,7 +34,6 @@
   </script>
 
   <style>
-    /* BARRAS DE ROLAGEM SUAVES E ESTILIZADAS */
     #workbench::-webkit-scrollbar { width: 10px; height: 10px; }
     #workbench::-webkit-scrollbar-track { background: #121214; }
     #workbench::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 5px; border: 2px solid #121214; }
@@ -179,7 +178,6 @@
       </nav>
     </div>
 
-    <!-- Informações da Imagem -->
     <div class="text-gray-400 text-xs flex items-center space-x-3">
       <span id="file-name-display" class="font-semibold text-gray-300">Sem_Titulo.gimpweb</span>
       <span id="image-dimensions-display"><i class="fa-regular fa-image me-1"></i> 800 x 600 px</span>
@@ -198,7 +196,6 @@
   <!-- MAIN WORKSPACE -->
   <div class="flex-1 flex overflow-hidden relative">
 
-    <!-- BARRA LATERAL ESQUERDA -->
     <aside class="w-12 bg-gimp-dark border-r border-gimp-border flex flex-col items-center py-2 space-y-1 z-20 shrink-0 overflow-y-auto">
       
       <button onclick="selectTool('pointer')" id="tool-pointer" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center bg-blue-600 text-white" title="Ponteiro / Selecionar (A)">
@@ -259,7 +256,6 @@
 
       <hr class="w-7 border-gimp-border my-1">
 
-      <!-- SELETOR DE CORES -->
       <div class="relative w-8 h-8 mt-1">
         <input type="color" id="secondaryColorInput" value="#ffffff" onchange="updateColors()" 
                class="absolute bottom-0 right-0 w-5 h-5 rounded cursor-pointer border border-gimp-border p-0 bg-transparent">
@@ -272,7 +268,6 @@
       </button>
     </aside>
 
-    <!-- ÁREA DE TRABALHO COM SCROLLBARS NATIVAS SUAVES -->
     <main id="workbench" class="flex-1 bg-[#121214] overflow-auto relative flex p-12 checkerboard cursor-default select-none scroll-smooth">
       <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75 m-auto">
         <canvas id="compositeCanvas" class="block border border-zinc-700 shadow-2xl"></canvas>
@@ -286,7 +281,6 @@
       </div>
     </main>
 
-    <!-- PAINEL LATERAL DIREITO -->
     <aside class="w-72 bg-gimp-dark border-l border-gimp-border flex flex-col z-20 shrink-0">
 
       <div class="flex-1 flex flex-col min-h-0 border-b border-gimp-border">
@@ -378,21 +372,18 @@
     </div>
   </div>
 
-  <!-- TOAST NOTIFICAÇÃO -->
   <div id="toast" class="fixed bottom-5 right-5 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
     <i class="fa-solid fa-circle-info"></i>
     <span id="toast-message">Notificação</span>
   </div>
 
   <script>
-    /* ESTADO GLOBAL */
     let canvasWidth = 800;
     let canvasHeight = 600;
     let projectFileName = "Sem_Titulo.gimpweb";
     let fileHandle = null;
 
     let zoomLevel = 1.0;
-    let panX = 0, panY = 0;
     let isPanning = false;
     let panStartX = 0, panStartY = 0;
     let isSpacePressed = false;
@@ -418,17 +409,13 @@
     let lastX = 0, lastY = 0;
     let tempCanvasState = null;
 
-    // ESTADO DE MOVER
     let moveSessionActive = false;
     let moveInitialLayerCanvas = null;      
     let moveInitialMaskCanvas = null;       
     let moveSelectedContentCanvas = null;   
     let moveTotalDx = 0;                    
     let moveTotalDy = 0;                    
-    let moveCurrentDx = 0;                  
-    let moveCurrentDy = 0;
 
-    // ESTADO DE SELEÇÃO VETORIAL
     let selectionMaskCanvas = null;
     let selectionMaskCtx = null;
     let hasActiveSelection = false;
@@ -438,7 +425,6 @@
     let zoomBox = null;
     let internalClipboardData = null;
 
-    // HISTÓRICO
     let historyStack = [];
     let historyIndex = -1;
     const MAX_HISTORY = 30;
@@ -527,8 +513,6 @@
         moveSelectedContentCanvas = null;
         moveTotalDx = 0;
         moveTotalDy = 0;
-        moveCurrentDx = 0;
-        moveCurrentDy = 0;
 
         renderLayersList();
         saveHistoryState('Mover Conteúdo');
@@ -964,7 +948,7 @@
           break;
         case 'bucket':
           icon = 'fa-fill-drip'; name = 'Balde de Tinta';
-          propsEl.innerHTML = `<span class="text-gray-400">Preenche respeitando a seleção.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Clique na área que deseja preencher com a cor selecionada.</span>`;
           break;
         case 'shape':
           icon = 'fa-shapes'; name = 'Formas';
@@ -1187,7 +1171,6 @@
       });
     }
 
-    /* INICIALIZAR SESSÃO DE MOVER */
     function startMoveSession() {
       if (activeLayerIndex < 0) return;
       const activeLayer = layers[activeLayerIndex];
@@ -1230,7 +1213,6 @@
       }
     }
 
-    /* DESLOCAMENTO PRECISO (NUDGE) - USADO TANTO PELO MOUSE QUANTO PELAS SETAS */
     function applyNudge(deltaX, deltaY) {
       if (activeLayerIndex < 0) return;
       if (!moveSessionActive) {
@@ -1438,32 +1420,55 @@
       ctx.restore();
     }
 
+    /* CORREÇÃO DO BALDE DE TINTA (FLOOD FILL CORRIGIDO) */
     function floodFill(startX, startY, fillColorHex) {
       commitMove();
+      if (activeLayerIndex < 0) return;
+
       const ctx = layers[activeLayerIndex].ctx;
       const imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
       const data = imgData.data;
 
-      const targetR = data[(startY * canvasWidth + startX) * 4];
-      const targetG = data[(startY * canvasWidth + startX) * 4 + 1];
-      const targetB = data[(startY * canvasWidth + startX) * 4 + 2];
-      const targetA = data[(startY * canvasWidth + startX) * 4 + 3];
-
       const fillColor = hexToRgb(fillColorHex);
+      const targetPos = (startY * canvasWidth + startX) * 4;
+
+      const targetR = data[targetPos];
+      const targetG = data[targetPos + 1];
+      const targetB = data[targetPos + 2];
+      const targetA = data[targetPos + 3];
+
       if (targetR === fillColor.r && targetG === fillColor.g && targetB === fillColor.b && targetA === 255) return;
 
-      const pixelsToCheck = [startX, startY];
       const maskData = hasActiveSelection ? selectionMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data : null;
+      const pixelsToCheck = [startX, startY];
+      const visited = new Uint8Array(canvasWidth * canvasHeight);
+
+      const colorMatch = (pos) => {
+        const r = data[pos], g = data[pos + 1], b = data[pos + 2], a = data[pos + 3];
+        return Math.abs(r - targetR) <= 30 &&
+               Math.abs(g - targetG) <= 30 &&
+               Math.abs(b - targetB) <= 30 &&
+               Math.abs(a - targetA) <= 30;
+      };
 
       while (pixelsToCheck.length > 0) {
         const y = pixelsToCheck.pop();
         const x = pixelsToCheck.pop();
-        const pos = (y * canvasWidth + x) * 4;
+        const pixelIndex = y * canvasWidth + x;
+
+        if (visited[pixelIndex]) continue;
+        visited[pixelIndex] = 1;
+
+        const pos = pixelIndex * 4;
 
         if (hasActiveSelection && maskData[pos + 3] === 0) continue;
 
-        if (data[pos] === targetR && data[pos+1] === targetG && data[pos+2] === targetB && data[pos+3] === targetA) {
-          data[pos] = fillColor.r; data[pos+1] = fillColor.g; data[pos+2] = fillColor.b; data[pos+3] = 255;
+        if (colorMatch(pos)) {
+          data[pos] = fillColor.r;
+          data[pos + 1] = fillColor.g;
+          data[pos + 2] = fillColor.b;
+          data[pos + 3] = 255;
+
           if (x > 0) pixelsToCheck.push(x - 1, y);
           if (x < canvasWidth - 1) pixelsToCheck.push(x + 1, y);
           if (y > 0) pixelsToCheck.push(x, y - 1);
@@ -1673,15 +1678,13 @@
       });
     }
 
-    /* ATALHOS DE TECLADO + SUPORTE ÀS SETAS DE DIREÇÃO PARA NUDGE PRECISÃO */
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
         if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
-        // AJUSTE FINO POR TECLADO (SETAS DE DIREÇÃO)
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
           e.preventDefault();
-          const step = e.shiftKey ? 10 : 1; // 1px ou 10px com Shift
+          const step = e.shiftKey ? 10 : 1;
 
           let dx = 0, dy = 0;
           if (e.code === 'ArrowLeft') dx = -step;
@@ -1689,7 +1692,6 @@
           if (e.code === 'ArrowUp') dy = -step;
           if (e.code === 'ArrowDown') dy = step;
 
-          // Se a ferramenta atual for mover, ou se houver seleção/conteúdo colado
           if (currentTool !== 'move') {
             selectTool('move');
           }
