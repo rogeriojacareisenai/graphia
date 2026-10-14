@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GIMP Web Studio - Seleção Tracejada Limpa</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts (Inter) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gimp: {
+              darkest: '#18181b',
+              dark: '#202023',
+              panel: '#28282c',
+              border: '#3f3f46',
+              hover: '#323238',
+              accent: '#3b82f6',
+              accentHover: '#2563eb'
+            }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+    .checkerboard {
+      background-color: #1e1e24;
+      background-image: 
+        linear-gradient(45deg, #2a2a32 25%, transparent 25%), 
+        linear-gradient(-45deg, #2a2a32 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #2a2a32 75%), 
+        linear-gradient(-45deg, transparent 75%, #2a2a32 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .dropdown-content { display: none; }
+    .dropdown:hover .dropdown-content { display: block; }
+
+    .cursor-zoom-in { cursor: zoom-in !important; }
+    .cursor-zoom-out { cursor: zoom-out !important; }
+    .cursor-grab { cursor: grab !important; }
+    .cursor-grabbing { cursor: grabbing !important; }
+    .cursor-crosshair { cursor: crosshair !important; }
+  </style>
+</head>
+<body class="bg-gimp-darkest text-gray-200 h-screen flex flex-col font-sans overflow-hidden select-none">
+
+  <!-- TOP MENU BAR -->
+  <header class="bg-gimp-dark border-b border-gimp-border text-xs flex items-center justify-between px-3 py-1 z-50 h-9 shrink-0">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2 font-bold text-blue-400 mr-2">
+        <i class="fa-solid fa-palette text-lg"></i>
+        <span class="tracking-wider text-sm text-white">GIMP<span class="text-blue-500">Web</span></span>
+      </div>
+
+      <nav class="flex space-x-1">
+        <!-- Arquivo -->
+        <div class="relative dropdown">
+          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Arquivo</button>
+          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-52 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+            <button onclick="openNewImageModal()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-file-circle-plus w-5"></i> Novo...</span>
+              <span class="text-xs text-gray-400">Ctrl+N</span>
+            </button>
+            <label class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center cursor-pointer">
+              <span><i class="fa-solid fa-folder-open w-5"></i> Abrir Imagem...</span>
+              <span class="text-xs text-gray-400">Ctrl+O</span>
+              <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="loadImageFromFile(event)">
+            </label>
+            <label class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center cursor-pointer">
+              <span><i class="fa-solid fa-box-archive w-5"></i> Abrir Projeto (.gimpweb)</span>
+              <input type="file" accept=".gimpweb,application/json" class="hidden" onchange="loadProjectFromFile(event)">
+            </label>
+            <hr class="border-gimp-border my-1">
+            <button onclick="saveProject(false)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-floppy-disk w-5"></i> Salvar</span>
+              <span class="text-xs text-gray-400">Ctrl+S</span>
+            </button>
+            <button onclick="saveProject(true)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-file-export w-5"></i> Salvar Como...</span>
+              <span class="text-xs text-gray-400">Ctrl+Shift+S</span>
+            </button>
+            <hr class="border-gimp-border my-1">
+            <button onclick="exportImage('png')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-file-image w-5"></i> Exportar como PNG
+            </button>
+            <button onclick="exportImage('jpeg')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-file-jpeg w-5"></i> Exportar como JPEG
+            </button>
+          </div>
+        </div>
+
+        <!-- Editar -->
+        <div class="relative dropdown">
+          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Editar</button>
+          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-52 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+            <button onclick="undo()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-rotate-left w-5"></i> Desfazer</span>
+              <span class="text-xs text-gray-400">Ctrl+Z</span>
+            </button>
+            <button onclick="redo()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-rotate-right w-5"></i> Refazer</span>
+              <span class="text-xs text-gray-400">Ctrl+Y</span>
+            </button>
+            <hr class="border-gimp-border my-1">
+            <button onclick="selectAll()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-object-group w-5"></i> Selecionar Tudo</span>
+              <span class="text-xs text-gray-400">Ctrl+A</span>
+            </button>
+            <button onclick="deselectAll()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-circle-xmark w-5"></i> Selecionar Nada</span>
+              <span class="text-xs text-gray-400">Ctrl+D</span>
+            </button>
+            <hr class="border-gimp-border my-1">
+            <button onclick="copySelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-copy w-5"></i> Copiar Seleção</span>
+              <span class="text-xs text-gray-400">Ctrl+C</span>
+            </button>
+            <button onclick="pasteSelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-paste w-5"></i> Colar</span>
+              <span class="text-xs text-gray-400">Ctrl+V</span>
+            </button>
+            <button onclick="clearSelectionArea()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-scissors w-5"></i> Recortar/Limpar</span>
+              <span class="text-xs text-gray-400">Del</span>
+            </button>
+            <hr class="border-gimp-border my-1">
+            <button onclick="clearActiveLayer()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-eraser w-5"></i> Limpar Camada Ativa
+            </button>
+          </div>
+        </div>
+
+        <!-- Visualizar -->
+        <div class="relative dropdown">
+          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Visualizar</button>
+          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-48 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+            <button onclick="zoomIn()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-magnifying-glass-plus w-5"></i> Zoom +</span>
+              <span class="text-xs text-gray-400">+</span>
+            </button>
+            <button onclick="zoomOut()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-magnifying-glass-minus w-5"></i> Zoom -</span>
+              <span class="text-xs text-gray-400">-</span>
+            </button>
+            <button onclick="resetZoom()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-compress w-5"></i> Ajustar (100%)</span>
+              <span class="text-xs text-gray-400">1:1</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Informações da Imagem -->
+    <div class="text-gray-400 text-xs flex items-center space-x-3">
+      <span id="file-name-display" class="font-semibold text-gray-300">Sem_Titulo.gimpweb</span>
+      <span id="image-dimensions-display"><i class="fa-regular fa-image me-1"></i> 800 x 600 px</span>
+      <span id="zoom-level-display" class="bg-gimp-panel px-2 py-0.5 rounded border border-gimp-border font-mono text-blue-400">100%</span>
+    </div>
+  </header>
+
+  <!-- TOOLBAR SUPERIOR -->
+  <section id="tool-properties-bar" class="bg-gimp-panel border-b border-gimp-border px-3 py-1.5 text-xs flex items-center space-x-4 shrink-0 overflow-x-auto min-h-[38px]">
+    <span id="active-tool-title" class="font-semibold text-blue-400 flex items-center uppercase tracking-wide pr-2 border-r border-gimp-border">
+      <i class="fa-solid fa-arrow-pointer mr-1.5"></i> Ponteiro
+    </span>
+    <div id="dynamic-properties" class="flex items-center space-x-4"></div>
+  </section>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- BARRA LATERAL ESQUERDA -->
+    <aside class="w-12 bg-gimp-dark border-r border-gimp-border flex flex-col items-center py-2 space-y-1 z-20 shrink-0 overflow-y-auto">
+      
+      <!-- FERRAMENTA PONTEIRO -->
+      <button onclick="selectTool('pointer')" id="tool-pointer" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center bg-blue-600 text-white" title="Ponteiro / Selecionar (A)">
+        <i class="fa-solid fa-arrow-pointer"></i>
+      </button>
+
+      <hr class="w-7 border-gimp-border my-1">
+
+      <button onclick="selectTool('select-rect')" id="tool-select-rect" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Seleção Retangular (M)">
+        <i class="fa-regular fa-square"></i>
+      </button>
+
+      <button onclick="selectTool('select-oval')" id="tool-select-oval" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Seleção Elíptica/Oval (L)">
+        <i class="fa-regular fa-circle"></i>
+      </button>
+
+      <button onclick="selectTool('select-poly')" id="tool-select-poly" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Seleção Poligonal (P)">
+        <i class="fa-solid fa-draw-polygon"></i>
+      </button>
+
+      <button onclick="selectTool('select-wand')" id="tool-select-wand" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Varinha Mágica (W)">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </button>
+
+      <hr class="w-7 border-gimp-border my-1">
+
+      <button onclick="selectTool('move')" id="tool-move" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Mover Seleção / Camada (V)">
+        <i class="fa-solid fa-arrows-up-down-left-right"></i>
+      </button>
+
+      <button onclick="selectTool('brush')" id="tool-brush" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Pincel (B)">
+        <i class="fa-solid fa-paint-brush"></i>
+      </button>
+
+      <button onclick="selectTool('eraser')" id="tool-eraser" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Borracha (E)">
+        <i class="fa-solid fa-eraser"></i>
+      </button>
+
+      <button onclick="selectTool('bucket')" id="tool-bucket" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Balde de Tinta (G)">
+        <i class="fa-solid fa-fill-drip"></i>
+      </button>
+
+      <button onclick="selectTool('shape')" id="tool-shape" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Formas (U)">
+        <i class="fa-solid fa-shapes"></i>
+      </button>
+
+      <button onclick="selectTool('text')" id="tool-text" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Texto (T)">
+        <i class="fa-solid fa-font"></i>
+      </button>
+
+      <button onclick="selectTool('picker')" id="tool-picker" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Conta-Gotas (I)">
+        <i class="fa-solid fa-eye-dropper"></i>
+      </button>
+
+      <button onclick="selectTool('zoom')" id="tool-zoom" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Zoom por Área (Z)">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+
+      <hr class="w-7 border-gimp-border my-1">
+
+      <!-- SELETOR DE CORES -->
+      <div class="relative w-8 h-8 mt-1">
+        <input type="color" id="secondaryColorInput" value="#ffffff" onchange="updateColors()" 
+               class="absolute bottom-0 right-0 w-5 h-5 rounded cursor-pointer border border-gimp-border p-0 bg-transparent">
+        <input type="color" id="primaryColorInput" value="#000000" onchange="updateColors()" 
+               class="absolute top-0 left-0 w-6 h-6 rounded cursor-pointer border-2 border-white p-0 bg-transparent shadow">
+      </div>
+      
+      <button onclick="swapColors()" class="text-[10px] text-gray-400 hover:text-white mt-1" title="Inverter Cores (X)">
+        <i class="fa-solid fa-arrows-rotate"></i>
+      </button>
+    </aside>
+
+    <!-- ÁREA DE TRABALHO -->
+    <main id="workbench" class="flex-1 bg-[#121214] overflow-hidden relative flex items-center justify-center checkerboard cursor-default select-none">
+      
+      <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75">
+        <!-- Canvas Composto Principal -->
+        <canvas id="compositeCanvas" class="block border border-zinc-700 shadow-2xl"></canvas>
+        <!-- Canvas Overlay de Seleção e Caixa de Zoom -->
+        <canvas id="selectionCanvas" class="absolute top-0 left-0 pointer-events-none"></canvas>
+      </div>
+
+      <div class="absolute bottom-4 left-4 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded-lg p-1.5 flex items-center space-x-2 text-xs shadow-lg z-30">
+        <button onclick="zoomOut()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Reduzir Zoom (-)"><i class="fa-solid fa-minus"></i></button>
+        <button onclick="resetZoom()" class="px-2 py-0.5 hover:bg-gimp-hover rounded font-mono text-gray-200">Fit</button>
+        <button onclick="zoomIn()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Aumentar Zoom (+)"><i class="fa-solid fa-plus"></i></button>
+      </div>
+    </main>
+
+    <!-- PAINEL LATERAL DIREITO -->
+    <aside class="w-72 bg-gimp-dark border-l border-gimp-border flex flex-col z-20 shrink-0">
+
+      <!-- GERENCIADOR DE CAMADAS -->
+      <div class="flex-1 flex flex-col min-h-0 border-b border-gimp-border">
+        <div class="bg-gimp-panel px-3 py-2 border-b border-gimp-border flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
+            <i class="fa-solid fa-layer-group mr-1.5 text-blue-400"></i> Camadas
+          </span>
+          <div class="flex items-center space-x-1">
+            <button onclick="addNewLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-green-400" title="Nova Camada">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <button onclick="duplicateActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-blue-400" title="Duplicar Camada">
+              <i class="fa-solid fa-clone"></i>
+            </button>
+            <button onclick="deleteActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-red-400" title="Excluir Camada">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-2 bg-gimp-dark border-b border-gimp-border space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <label class="text-gray-400">Modo:</label>
+            <select id="layerBlendMode" onchange="updateActiveLayerProps()" class="bg-gimp-panel border border-gimp-border rounded px-2 py-1 text-xs text-gray-200 focus:outline-none">
+              <option value="source-over">Normal</option>
+              <option value="multiply">Multiplicação</option>
+              <option value="screen">Tela (Screen)</option>
+              <option value="overlay">Sobreposição</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="text-gray-400">Opacidade:</label>
+            <div class="flex items-center space-x-2">
+              <input type="range" id="layerOpacity" min="0" max="100" value="100" oninput="updateActiveLayerProps()" class="w-24 accent-blue-500 h-1 bg-gimp-panel rounded appearance-none cursor-pointer">
+              <span id="layerOpacityVal" class="text-gray-300 w-8 text-right font-mono">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="layers-list" class="flex-1 overflow-y-auto p-2 space-y-1.5"></div>
+
+        <div class="bg-gimp-panel p-1 border-t border-gimp-border flex justify-around text-xs">
+          <button onclick="moveLayerUp()" class="px-3 py-1 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-up mr-1"></i> Subir</button>
+          <button onclick="moveLayerDown()" class="px-3 py-1 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-down mr-1"></i> Descer</button>
+        </div>
+      </div>
+
+      <!-- PAINEL DE HISTÓRICO -->
+      <div class="h-44 flex flex-col min-h-0 bg-gimp-dark">
+        <div class="bg-gimp-panel px-3 py-1.5 border-b border-gimp-border flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
+            <i class="fa-solid fa-clock-rotate-left mr-1.5 text-blue-400"></i> Histórico
+          </span>
+        </div>
+        <div id="history-list" class="flex-1 overflow-y-auto p-1.5 space-y-0.5 text-xs font-mono"></div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- MODAL: NOVO DOCUMENTO -->
+  <div id="newImageModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-gimp-panel border border-gimp-border rounded-lg shadow-2xl w-96 p-5 space-y-4">
+      <h3 class="text-base font-bold text-white border-b border-gimp-border pb-2 flex items-center">
+        <i class="fa-solid fa-file-circle-plus text-blue-500 mr-2"></i> Criar Nova Imagem
+      </h3>
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Largura (px)</label>
+          <input type="number" id="newWidth" value="800" min="100" max="4000" class="w-full bg-gimp-darkest border border-gimp-border rounded px-3 py-1.5 text-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Altura (px)</label>
+          <input type="number" id="newHeight" value="600" min="100" max="4000" class="w-full bg-gimp-darkest border border-gimp-border rounded px-3 py-1.5 text-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fundo Inicial</label>
+          <select id="newBgType" class="w-full bg-gimp-darkest border border-gimp-border rounded px-3 py-1.5 text-white focus:outline-none">
+            <option value="white">Branco</option>
+            <option value="transparent">Transparente</option>
+            <option value="black">Preto</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2 border-t border-gimp-border">
+        <button onclick="closeModal('newImageModal')" class="px-4 py-1.5 bg-gimp-hover hover:bg-zinc-700 text-gray-300 text-xs rounded">Cancelar</button>
+        <button onclick="createNewImageConfirm()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded">Criar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICAÇÃO -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
+    <i class="fa-solid fa-circle-info"></i>
+    <span id="toast-message">Notificação</span>
+  </div>
+
+  <!-- LOGICA JAVASCRIPT PRINCIPAL -->
+  <script>
+    /* ESTADO GLOBAL */
+    let canvasWidth = 800;
+    let canvasHeight = 600;
+    let projectFileName = "Sem_Titulo.gimpweb";
+    let fileHandle = null;
+
+    let zoomLevel = 1.0;
+    let panX = 0, panY = 0;
+    let isPanning = false;
+    let panStartX = 0, panStartY = 0;
+    let isSpacePressed = false;
+
+    let layers = [];
+    let activeLayerIndex = -1;
+    let layerCounter = 1;
+
+    let currentTool = 'pointer';
+    let primaryColor = '#000000';
+    let secondaryColor = '#ffffff';
+
+    let brushSize = 10;
+    let brushOpacity = 1.0;
+    let shapeType = 'rect';
+    let shapeFill = true;
+    let fontText = 'Inter, sans-serif';
+    let fontSize = 24;
+    let wandTolerance = 30;
+
+    let isDrawing = false;
+    let startX = 0, startY = 0;
+    let lastX = 0, lastY = 0;
+
+    // ESTADO DEDICADO À FERRAMENTA MOVER
+    let moveSessionActive = false;
+    let moveInitialLayerCanvas = null;      
+    let moveInitialMaskCanvas = null;       
+    let moveSelectedContentCanvas = null;   
+    let moveTotalDx = 0;                    
+    let moveTotalDy = 0;                    
+    let moveCurrentDx = 0;                  
+    let moveCurrentDy = 0;
+
+    // ESTADO DE SELEÇÃO VETORIAL
+    let selectionMaskCanvas = null;
+    let selectionMaskCtx = null;
+    let hasActiveSelection = false;
+    let activeSelectionPath = null; // Path2D limpo da área selecionada
+    let polyPoints = [];
+
+    // ESTADO DA FERRAMENTA ZOOM POR ÁREA
+    let zoomBox = null;
+
+    // CLIPBOARD INTERNO
+    let internalClipboardCanvas = null;
+
+    // HISTÓRICO
+    let historyStack = [];
+    let historyIndex = -1;
+    const MAX_HISTORY = 30;
+
+    let compositeCanvas, compositeCtx;
+    let selectionCanvas, selectionCtx;
+
+    window.onload = function() {
+      compositeCanvas = document.getElementById('compositeCanvas');
+      compositeCtx = compositeCanvas.getContext('2d');
+
+      selectionCanvas = document.getElementById('selectionCanvas');
+      selectionCtx = selectionCanvas.getContext('2d');
+
+      document.getElementById('workbench').addEventListener('contextmenu', e => e.preventDefault());
+
+      initProject(800, 600, 'white');
+      setupCanvasEvents();
+      setupZoomAndPanEvents();
+      setupKeyboardShortcuts();
+      selectTool('pointer');
+      setupClipboardEvents();
+    };
+
+    /* INICIALIZAÇÃO E GERENCIAMENTO DO PROJETO */
+    function initProject(width, height, bgType) {
+      canvasWidth = width;
+      canvasHeight = height;
+
+      compositeCanvas.width = width;
+      compositeCanvas.height = height;
+      selectionCanvas.width = width;
+      selectionCanvas.height = height;
+
+      selectionMaskCanvas = document.createElement('canvas');
+      selectionMaskCanvas.width = width;
+      selectionMaskCanvas.height = height;
+      selectionMaskCtx = selectionMaskCanvas.getContext('2d');
+
+      document.getElementById('image-dimensions-display').innerHTML = `<i class="fa-regular fa-image me-1"></i> ${width} x ${height} px`;
+
+      layers = [];
+      historyStack = [];
+      historyIndex = -1;
+      layerCounter = 1;
+      hasActiveSelection = false;
+      activeSelectionPath = null;
+      polyPoints = [];
+      commitMove();
+
+      const bgCanvas = document.createElement('canvas');
+      bgCanvas.width = width;
+      bgCanvas.height = height;
+      const bgCtx = bgCanvas.getContext('2d');
+
+      if (bgType === 'white') {
+        bgCtx.fillStyle = '#ffffff';
+        bgCtx.fillRect(0, 0, width, height);
+      } else if (bgType === 'black') {
+        bgCtx.fillStyle = '#000000';
+        bgCtx.fillRect(0, 0, width, height);
+      }
+
+      layers.push({
+        id: layerCounter++,
+        name: 'Plano de Fundo',
+        canvas: bgCanvas,
+        ctx: bgCtx,
+        visible: true,
+        opacity: 1.0,
+        blendMode: 'source-over'
+      });
+
+      activeLayerIndex = 0;
+      renderLayersList();
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+      saveHistoryState('Novo Projeto');
+      resetZoom();
+    }
+
+    function addNewLayer(name = null, srcCanvas = null) {
+      commitMove();
+      const layerCanvas = document.createElement('canvas');
+      layerCanvas.width = canvasWidth;
+      layerCanvas.height = canvasHeight;
+      const ctx = layerCanvas.getContext('2d');
+
+      if (srcCanvas) {
+        ctx.drawImage(srcCanvas, 0, 0);
+      }
+
+      const layer = {
+        id: layerCounter++,
+        name: name || `Camada ${layerCounter}`,
+        canvas: layerCanvas,
+        ctx: ctx,
+        visible: true,
+        opacity: 1.0,
+        blendMode: 'source-over'
+      };
+
+      layers.splice(activeLayerIndex + 1, 0, layer);
+      activeLayerIndex++;
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Nova Camada');
+      showToast('Nova camada criada');
+    }
+
+    function duplicateActiveLayer() {
+      commitMove();
+      if (activeLayerIndex < 0) return;
+      const curr = layers[activeLayerIndex];
+      addNewLayer(`${curr.name} (Cópia)`, curr.canvas);
+    }
+
+    function deleteActiveLayer() {
+      commitMove();
+      if (layers.length <= 1) {
+        showToast('Não é possível excluir a única camada');
+        return;
+      }
+      layers.splice(activeLayerIndex, 1);
+      if (activeLayerIndex >= layers.length) activeLayerIndex = layers.length - 1;
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Excluir Camada');
+    }
+
+    function moveLayerUp() {
+      commitMove();
+      if (activeLayerIndex >= layers.length - 1) return;
+      const temp = layers[activeLayerIndex];
+      layers[activeLayerIndex] = layers[activeLayerIndex + 1];
+      layers[activeLayerIndex + 1] = temp;
+      activeLayerIndex++;
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Reordenar Camada');
+    }
+
+    function moveLayerDown() {
+      commitMove();
+      if (activeLayerIndex <= 0) return;
+      const temp = layers[activeLayerIndex];
+      layers[activeLayerIndex] = layers[activeLayerIndex - 1];
+      layers[activeLayerIndex - 1] = temp;
+      activeLayerIndex--;
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Reordenar Camada');
+    }
+
+    function toggleLayerVisibility(index, e) {
+      e.stopPropagation();
+      layers[index].visible = !layers[index].visible;
+      renderLayersList();
+      renderCompositeCanvas();
+    }
+
+    function selectLayer(index) {
+      commitMove();
+      activeLayerIndex = index;
+      renderLayersList();
+      updateLayerPropsUI();
+    }
+
+    function updateActiveLayerProps() {
+      if (activeLayerIndex < 0) return;
+      const layer = layers[activeLayerIndex];
+      const opacityInput = document.getElementById('layerOpacity');
+      const blendInput = document.getElementById('layerBlendMode');
+
+      layer.opacity = parseFloat(opacityInput.value) / 100;
+      layer.blendMode = blendInput.value;
+      document.getElementById('layerOpacityVal').innerText = `${opacityInput.value}%`;
+
+      renderCompositeCanvas();
+    }
+
+    function updateLayerPropsUI() {
+      if (activeLayerIndex < 0) return;
+      const layer = layers[activeLayerIndex];
+      document.getElementById('layerOpacity').value = Math.round(layer.opacity * 100);
+      document.getElementById('layerOpacityVal').innerText = `${Math.round(layer.opacity * 100)}%`;
+      document.getElementById('layerBlendMode').value = layer.blendMode;
+    }
+
+    /* RENDERIZAÇÃO DA IMAGEM PRINCIPAL */
+    function renderCompositeCanvas() {
+      compositeCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      layers.forEach(layer => {
+        if (!layer.visible) return;
+        compositeCtx.save();
+        compositeCtx.globalAlpha = layer.opacity;
+        compositeCtx.globalCompositeOperation = layer.blendMode;
+        compositeCtx.drawImage(layer.canvas, 0, 0);
+        compositeCtx.restore();
+      });
+    }
+
+    function renderLayersList() {
+      const container = document.getElementById('layers-list');
+      container.innerHTML = '';
+
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const layer = layers[i];
+        const isActive = (i === activeLayerIndex);
+
+        const item = document.createElement('div');
+        item.className = `flex items-center space-x-2 p-1.5 rounded cursor-pointer text-xs border ${
+          isActive ? 'bg-blue-900/40 border-blue-500 text-white' : 'bg-gimp-panel/60 border-gimp-border/50 text-gray-300 hover:bg-gimp-hover'
+        }`;
+        item.onclick = () => selectLayer(i);
+
+        const eyeBtn = document.createElement('button');
+        eyeBtn.className = `p-1 hover:text-white ${layer.visible ? 'text-blue-400' : 'text-gray-600'}`;
+        eyeBtn.innerHTML = `<i class="fa-solid ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}"></i>`;
+        eyeBtn.onclick = (e) => toggleLayerVisibility(i, e);
+
+        const thumbCanvas = document.createElement('canvas');
+        thumbCanvas.width = 32;
+        thumbCanvas.height = 32;
+        thumbCanvas.className = 'w-7 h-7 rounded border border-gimp-border bg-zinc-800 shrink-0 checkerboard';
+        const tCtx = thumbCanvas.getContext('2d');
+        tCtx.drawImage(layer.canvas, 0, 0, 32, 32);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'flex-1 truncate font-medium';
+        nameSpan.innerText = layer.name;
+
+        item.appendChild(eyeBtn);
+        item.appendChild(thumbCanvas);
+        item.appendChild(nameSpan);
+        container.appendChild(item);
+      }
+    }
+
+    /* HISTÓRICO */
+    function saveHistoryState(actionName) {
+      if (historyIndex < historyStack.length - 1) {
+        historyStack = historyStack.slice(0, historyIndex + 1);
+      }
+
+      const layersBackup = layers.map(l => {
+        const c = document.createElement('canvas');
+        c.width = canvasWidth;
+        c.height = canvasHeight;
+        c.getContext('2d').drawImage(l.canvas, 0, 0);
+        return {
+          id: l.id,
+          name: l.name,
+          canvas: c,
+          visible: l.visible,
+          opacity: l.opacity,
+          blendMode: l.blendMode
+        };
+      });
+
+      const maskBackup = document.createElement('canvas');
+      maskBackup.width = canvasWidth;
+      maskBackup.height = canvasHeight;
+      maskBackup.getContext('2d').drawImage(selectionMaskCanvas, 0, 0);
+
+      historyStack.push({
+        action: actionName,
+        layers: layersBackup,
+        selectionMask: maskBackup,
+        hasSelection: hasActiveSelection,
+        activeSelectionPath: activeSelectionPath,
+        activeIdx: activeLayerIndex
+      });
+
+      if (historyStack.length > MAX_HISTORY) {
+        historyStack.shift();
+      } else {
+        historyIndex++;
+      }
+
+      renderHistoryUI();
+    }
+
+    function undo() {
+      commitMove();
+      if (historyIndex > 0) {
+        historyIndex--;
+        restoreHistoryState(historyStack[historyIndex]);
+        showToast('Desfeito');
+      }
+    }
+
+    function redo() {
+      commitMove();
+      if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        restoreHistoryState(historyStack[historyIndex]);
+        showToast('Refeito');
+      }
+    }
+
+    function restoreHistoryState(state) {
+      layers = state.layers.map(l => {
+        const c = document.createElement('canvas');
+        c.width = canvasWidth;
+        c.height = canvasHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(l.canvas, 0, 0);
+        return {
+          id: l.id,
+          name: l.name,
+          canvas: c,
+          ctx: ctx,
+          visible: l.visible,
+          opacity: l.opacity,
+          blendMode: l.blendMode
+        };
+      });
+
+      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      selectionMaskCtx.drawImage(state.selectionMask, 0, 0);
+      hasActiveSelection = state.hasSelection;
+      activeSelectionPath = state.activeSelectionPath;
+
+      activeLayerIndex = state.activeIdx;
+      renderLayersList();
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+      updateLayerPropsUI();
+      renderHistoryUI();
+    }
+
+    function renderHistoryUI() {
+      const container = document.getElementById('history-list');
+      container.innerHTML = '';
+
+      historyStack.forEach((item, idx) => {
+        const isCurrent = (idx === historyIndex);
+        const div = document.createElement('div');
+        div.className = `px-2 py-1 rounded cursor-pointer flex items-center justify-between ${
+          isCurrent ? 'bg-blue-600 text-white font-bold' : 'text-gray-400 hover:bg-gimp-hover hover:text-gray-200'
+        }`;
+        div.onclick = () => {
+          commitMove();
+          historyIndex = idx;
+          restoreHistoryState(historyStack[idx]);
+        };
+        div.innerHTML = `<span><i class="fa-solid fa-chevron-right text-[9px] mr-1"></i> ${item.action}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    function commitMove() {
+      if (moveSessionActive) {
+        moveSessionActive = false;
+        moveInitialLayerCanvas = null;
+        moveInitialMaskCanvas = null;
+        moveSelectedContentCanvas = null;
+        moveTotalDx = 0;
+        moveTotalDy = 0;
+        moveCurrentDx = 0;
+        moveCurrentDy = 0;
+
+        renderLayersList();
+        saveHistoryState('Mover Conteúdo');
+      }
+    }
+
+    /* SELEÇÃO TUDO E NADA */
+    function selectAll() {
+      commitMove();
+      selectionMaskCtx.fillStyle = '#ffffff';
+      selectionMaskCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+      hasActiveSelection = true;
+
+      activeSelectionPath = new Path2D();
+      activeSelectionPath.rect(0, 0, canvasWidth, canvasHeight);
+
+      polyPoints = [];
+      renderSelectionOverlay();
+      saveHistoryState('Selecionar Tudo');
+      showToast('Toda a área foi selecionada');
+    }
+
+    function deselectAll() {
+      commitMove();
+      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      hasActiveSelection = false;
+      activeSelectionPath = null;
+      polyPoints = [];
+      renderSelectionOverlay();
+      saveHistoryState('Selecionar Nada');
+      showToast('Seleção limpa');
+    }
+
+    /* DESENHO E ESTÁTICA DO OVERLAY DE SELEÇÃO (100% TRANSPARENTE SEM PISCAR) */
+    function renderSelectionOverlay() {
+      selectionCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      if (zoomBox) {
+        selectionCtx.save();
+        selectionCtx.strokeStyle = '#3b82f6';
+        selectionCtx.lineWidth = 1;
+        selectionCtx.setLineDash([4, 4]);
+        selectionCtx.strokeRect(zoomBox.x, zoomBox.y, zoomBox.w, zoomBox.h);
+        selectionCtx.restore();
+        return;
+      }
+
+      if (polyPoints.length > 0) {
+        selectionCtx.save();
+        selectionCtx.strokeStyle = '#ffffff';
+        selectionCtx.lineWidth = 1;
+        selectionCtx.setLineDash([4, 4]);
+        selectionCtx.beginPath();
+        selectionCtx.moveTo(polyPoints[0].x, polyPoints[0].y);
+        for (let i = 1; i < polyPoints.length; i++) {
+          selectionCtx.lineTo(polyPoints[i].x, polyPoints[i].y);
+        }
+        selectionCtx.stroke();
+        selectionCtx.restore();
+      }
+
+      if (!hasActiveSelection || !activeSelectionPath) return;
+
+      selectionCtx.save();
+
+      // Passagem 1: Traço escuro de contraste
+      selectionCtx.strokeStyle = '#000000';
+      selectionCtx.lineWidth = 1;
+      selectionCtx.stroke(activeSelectionPath);
+
+      // Passagem 2: Traço claro tracejado por cima
+      selectionCtx.strokeStyle = '#ffffff';
+      selectionCtx.lineWidth = 1;
+      selectionCtx.setLineDash([4, 4]);
+      selectionCtx.stroke(activeSelectionPath);
+
+      selectionCtx.restore();
+    }
+
+    /* FERRAMENTAS E BARRA DE PROPRIEDADES */
+    function selectTool(tool) {
+      if (currentTool === 'move' && tool !== 'move') {
+        commitMove(); 
+      }
+
+      if (currentTool === 'select-poly' && tool !== 'select-poly' && polyPoints.length > 2) {
+        finishPolySelection();
+      }
+
+      currentTool = tool;
+
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('text-gray-300');
+      });
+      const activeBtn = document.getElementById(`tool-${tool}`);
+      if (activeBtn) activeBtn.classList.add('bg-blue-600', 'text-white');
+
+      updateWorkbenchCursor();
+      renderToolProperties();
+    }
+
+    function updateWorkbenchCursor() {
+      const workbench = document.getElementById('workbench');
+      workbench.classList.remove('cursor-zoom-in', 'cursor-zoom-out', 'cursor-grab', 'cursor-grabbing', 'cursor-crosshair');
+
+      if (isSpacePressed || isPanning) {
+        workbench.classList.add(isPanning ? 'cursor-grabbing' : 'cursor-grab');
+      } else if (currentTool === 'zoom') {
+        workbench.classList.add('cursor-crosshair');
+      } else if (currentTool.startsWith('select-')) {
+        workbench.classList.add('cursor-crosshair');
+      }
+    }
+
+    function renderToolProperties() {
+      const titleEl = document.getElementById('active-tool-title');
+      const propsEl = document.getElementById('dynamic-properties');
+      propsEl.innerHTML = '';
+
+      let icon = 'fa-arrow-pointer';
+      let name = 'Ponteiro';
+
+      switch (currentTool) {
+        case 'pointer':
+          icon = 'fa-arrow-pointer';
+          name = 'Ponteiro';
+          propsEl.innerHTML = `<span class="text-gray-400">Ferramenta de navegação e inspeção neutra.</span>`;
+          break;
+        case 'select-rect':
+          icon = 'fa-regular fa-square';
+          name = 'Seleção Retangular';
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste para criar uma área de seleção retangular.</span>`;
+          break;
+        case 'select-oval':
+          icon = 'fa-regular fa-circle';
+          name = 'Seleção Oval';
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste para criar uma área de seleção elíptica.</span>`;
+          break;
+        case 'select-poly':
+          icon = 'fa-solid fa-draw-polygon';
+          name = 'Seleção Poligonal';
+          propsEl.innerHTML = `
+            <span class="text-gray-400">Clique para adicionar pontos. Clique duplo ou Enter para fechar.</span>
+            <button onclick="finishPolySelection()" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 rounded text-white ml-2">Fechar Seleção</button>
+          `;
+          break;
+        case 'select-wand':
+          icon = 'fa-solid fa-wand-magic-sparkles';
+          name = 'Varinha Mágica';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <label class="text-gray-400">Tolerância:</label>
+              <input type="range" min="0" max="100" value="${wandTolerance}" oninput="wandTolerance = parseInt(this.value); this.nextElementSibling.innerText = this.value" class="w-24 accent-blue-500">
+              <span class="w-8 font-mono text-gray-300">${wandTolerance}</span>
+            </div>
+          `;
+          break;
+        case 'move':
+          icon = 'fa-arrows-up-down-left-right';
+          name = 'Mover';
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste para mover a seleção ou camada. A posição é fixada ao trocar de ferramenta.</span>`;
+          break;
+        case 'brush':
+          icon = 'fa-paint-brush';
+          name = 'Pincel';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <label class="text-gray-400">Tamanho:</label>
+              <input type="range" min="1" max="100" value="${brushSize}" oninput="brushSize = parseInt(this.value); this.nextElementSibling.innerText = this.value + 'px'" class="w-20 accent-blue-500">
+              <span class="w-8 font-mono text-gray-300">${brushSize}px</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <label class="text-gray-400">Opacidade:</label>
+              <input type="range" min="0.05" max="1" step="0.05" value="${brushOpacity}" oninput="brushOpacity = parseFloat(this.value); this.nextElementSibling.innerText = Math.round(this.value*100) + '%'" class="w-20 accent-blue-500">
+              <span class="w-8 font-mono text-gray-300">${Math.round(brushOpacity*100)}%</span>
+            </div>
+          `;
+          break;
+        case 'eraser':
+          icon = 'fa-eraser';
+          name = 'Borracha';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <label class="text-gray-400">Tamanho:</label>
+              <input type="range" min="1" max="100" value="${brushSize}" oninput="brushSize = parseInt(this.value); this.nextElementSibling.innerText = this.value + 'px'" class="w-20 accent-blue-500">
+              <span class="w-8 font-mono text-gray-300">${brushSize}px</span>
+            </div>
+          `;
+          break;
+        case 'bucket':
+          icon = 'fa-fill-drip';
+          name = 'Balde de Tinta';
+          propsEl.innerHTML = `<span class="text-gray-400">Preenche a camada respeitando a seleção (se houver)</span>`;
+          break;
+        case 'shape':
+          icon = 'fa-shapes';
+          name = 'Formas';
+          propsEl.innerHTML = `
+            <select onchange="shapeType = this.value" class="bg-gimp-dark border border-gimp-border rounded px-2 py-0.5 text-xs text-white">
+              <option value="rect" ${shapeType==='rect'?'selected':''}>Retângulo</option>
+              <option value="circle" ${shapeType==='circle'?'selected':''}>Elipse</option>
+              <option value="line" ${shapeType==='line'?'selected':''}>Linha</option>
+            </select>
+            <input type="range" min="1" max="50" value="${brushSize}" oninput="brushSize = parseInt(this.value)" class="w-16 accent-blue-500">
+            <label class="flex items-center space-x-1 cursor-pointer text-gray-300">
+              <input type="checkbox" ${shapeFill?'checked':''} onchange="shapeFill = this.checked" class="rounded accent-blue-500">
+              <span>Preencher</span>
+            </label>
+          `;
+          break;
+        case 'zoom':
+          icon = 'fa-magnifying-glass';
+          name = 'Zoom por Área';
+          propsEl.innerHTML = `
+            <span class="text-gray-400">Clique e arraste um retângulo no canvas para ampliar a área selecionada.</span>
+          `;
+          break;
+      }
+
+      titleEl.innerHTML = `<i class="${icon} mr-1.5"></i> ${name}`;
+    }
+
+    /* ZOOM E MOVIMENTAÇÃO DE TELA */
+    function applyViewportTransform() {
+      const vp = document.getElementById('canvas-viewport');
+      vp.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+      document.getElementById('zoom-level-display').innerText = `${Math.round(zoomLevel * 100)}%`;
+    }
+
+    function setZoomCenter(newZoom) {
+      const clampedZoom = Math.max(0.1, Math.min(8.0, newZoom));
+      const workbench = document.getElementById('workbench');
+      const wRect = workbench.getBoundingClientRect();
+
+      const viewportCenterX = wRect.width / 2;
+      const viewportCenterY = wRect.height / 2;
+
+      const canvasPointX = (viewportCenterX - (wRect.width / 2 + panX)) / zoomLevel;
+      const canvasPointY = (viewportCenterY - (wRect.height / 2 + panY)) / zoomLevel;
+
+      zoomLevel = clampedZoom;
+
+      panX = viewportCenterX - (wRect.width / 2) - (canvasPointX * zoomLevel);
+      panY = viewportCenterY - (wRect.height / 2) - (canvasPointY * zoomLevel);
+
+      applyViewportTransform();
+    }
+
+    function zoomToArea(x1, y1, x2, y2) {
+      const rectX = Math.min(x1, x2);
+      const rectY = Math.min(y1, y2);
+      const rectW = Math.abs(x2 - x1);
+      const rectH = Math.abs(y2 - y1);
+
+      if (rectW < 5 || rectH < 5) return;
+
+      const workbench = document.getElementById('workbench');
+      const wRect = workbench.getBoundingClientRect();
+
+      const scaleX = wRect.width / rectW;
+      const scaleY = wRect.height / rectH;
+      const targetZoom = Math.max(0.1, Math.min(8.0, Math.min(scaleX, scaleY) * 0.9));
+
+      const areaCenterX = rectX + rectW / 2;
+      const areaCenterY = rectY + rectH / 2;
+
+      const offsetFromCanvasCenterX = (canvasWidth / 2) - areaCenterX;
+      const offsetFromCanvasCenterY = (canvasHeight / 2) - areaCenterY;
+
+      zoomLevel = targetZoom;
+      panX = offsetFromCanvasCenterX * zoomLevel;
+      panY = offsetFromCanvasCenterY * zoomLevel;
+
+      applyViewportTransform();
+      showToast('Área Ampliada');
+    }
+
+    function zoomIn() { setZoomCenter(zoomLevel * 1.25); }
+    function zoomOut() { setZoomCenter(zoomLevel / 1.25); }
+    function resetZoom() { zoomLevel = 1.0; panX = 0; panY = 0; applyViewportTransform(); }
+
+    function setupZoomAndPanEvents() {
+      const workbench = document.getElementById('workbench');
+
+      workbench.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.15 : 0.85;
+        setZoomCenter(zoomLevel * factor);
+      }, { passive: false });
+
+      workbench.addEventListener('mousedown', (e) => {
+        if (e.button === 1 || e.button === 2 || isSpacePressed) {
+          isPanning = true;
+          panStartX = e.clientX - panX;
+          panStartY = e.clientY - panY;
+          updateWorkbenchCursor();
+          e.preventDefault();
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isPanning) {
+          panX = e.clientX - panStartX;
+          panY = e.clientY - panStartY;
+          applyViewportTransform();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isPanning) {
+          isPanning = false;
+          updateWorkbenchCursor();
+        }
+      });
+    }
+
+    /* EVENTOS DE DESENHO, SELEÇÃO E MOVER */
+    function setupCanvasEvents() {
+      const viewport = document.getElementById('canvas-viewport');
+
+      const getCanvasCoords = (e) => {
+        const rect = compositeCanvas.getBoundingClientRect();
+        return {
+          x: (e.clientX - rect.left) * (canvasWidth / rect.width),
+          y: (e.clientY - rect.top) * (canvasHeight / rect.height)
+        };
+      };
+
+      const startAction = (e) => {
+        if (isPanning || isSpacePressed || e.button === 1 || e.button === 2) return;
+
+        const coords = getCanvasCoords(e);
+
+        if (currentTool === 'pointer') return;
+
+        if (currentTool === 'select-poly') {
+          polyPoints.push({ x: coords.x, y: coords.y });
+          renderSelectionOverlay();
+          return;
+        }
+
+        if (currentTool === 'select-wand') {
+          commitMove();
+          performWandSelection(Math.floor(coords.x), Math.floor(coords.y));
+          return;
+        }
+
+        if (['select-rect', 'select-oval'].includes(currentTool)) {
+          commitMove();
+        }
+
+        isDrawing = true;
+        startX = coords.x;
+        startY = coords.y;
+        lastX = coords.x;
+        lastY = coords.y;
+
+        if (activeLayerIndex >= 0) {
+          const activeLayer = layers[activeLayerIndex];
+
+          if (currentTool === 'move') {
+            if (!moveSessionActive) {
+              moveSessionActive = true;
+              moveTotalDx = 0;
+              moveTotalDy = 0;
+
+              moveInitialLayerCanvas = document.createElement('canvas');
+              moveInitialLayerCanvas.width = canvasWidth;
+              moveInitialLayerCanvas.height = canvasHeight;
+
+              if (hasActiveSelection) {
+                moveInitialMaskCanvas = document.createElement('canvas');
+                moveInitialMaskCanvas.width = canvasWidth;
+                moveInitialMaskCanvas.height = canvasHeight;
+                moveInitialMaskCanvas.getContext('2d').drawImage(selectionMaskCanvas, 0, 0);
+
+                moveSelectedContentCanvas = document.createElement('canvas');
+                moveSelectedContentCanvas.width = canvasWidth;
+                moveSelectedContentCanvas.height = canvasHeight;
+                const scCtx = moveSelectedContentCanvas.getContext('2d');
+
+                scCtx.drawImage(activeLayer.canvas, 0, 0);
+                scCtx.globalCompositeOperation = 'destination-in';
+                scCtx.drawImage(selectionMaskCanvas, 0, 0);
+
+                activeLayer.ctx.save();
+                activeLayer.ctx.globalCompositeOperation = 'destination-out';
+                activeLayer.ctx.drawImage(selectionMaskCanvas, 0, 0);
+                activeLayer.ctx.restore();
+
+                moveInitialLayerCanvas.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
+              } else {
+                moveInitialLayerCanvas.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
+              }
+            }
+          } else if (['shape'].includes(currentTool)) {
+            tempCanvasState = activeLayer.ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+          }
+        }
+
+        if (currentTool === 'brush' || currentTool === 'eraser') {
+          drawStroke(coords.x, coords.y, true);
+        } else if (currentTool === 'bucket') {
+          floodFill(Math.floor(coords.x), Math.floor(coords.y), primaryColor);
+          renderCompositeCanvas();
+          saveHistoryState('Preenchimento');
+        } else if (currentTool === 'picker') {
+          pickColor(coords.x, coords.y);
+        } else if (currentTool === 'text') {
+          addTextPrompt(coords.x, coords.y);
+        }
+      };
+
+      const moveAction = (e) => {
+        if (!isDrawing || isPanning) return;
+        const coords = getCanvasCoords(e);
+
+        if (currentTool === 'zoom') {
+          zoomBox = {
+            x: Math.min(startX, coords.x),
+            y: Math.min(startY, coords.y),
+            w: Math.abs(coords.x - startX),
+            h: Math.abs(coords.y - startY)
+          };
+          renderSelectionOverlay();
+          return;
+        }
+
+        if (activeLayerIndex < 0) return;
+        const activeLayer = layers[activeLayerIndex];
+
+        if (currentTool === 'move') {
+          moveCurrentDx = moveTotalDx + (coords.x - startX);
+          moveCurrentDy = moveTotalDy + (coords.y - startY);
+
+          activeLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+          if (hasActiveSelection && moveSelectedContentCanvas) {
+            activeLayer.ctx.drawImage(moveInitialLayerCanvas, 0, 0);
+            activeLayer.ctx.drawImage(moveSelectedContentCanvas, moveCurrentDx, moveCurrentDy);
+
+            selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+            selectionMaskCtx.drawImage(moveInitialMaskCanvas, moveCurrentDx, moveCurrentDy);
+
+            activeSelectionPath = new Path2D();
+            activeSelectionPath.rect(moveCurrentDx, moveCurrentDy, canvasWidth, canvasHeight);
+
+            renderSelectionOverlay();
+          } else {
+            activeLayer.ctx.drawImage(moveInitialLayerCanvas, moveCurrentDx, moveCurrentDy);
+          }
+
+          renderCompositeCanvas();
+        } else if (currentTool === 'brush' || currentTool === 'eraser') {
+          drawStroke(coords.x, coords.y, false);
+        } else if (currentTool === 'shape') {
+          activeLayer.ctx.putImageData(tempCanvasState, 0, 0);
+          drawPreviewShape(activeLayer.ctx, startX, startY, coords.x, coords.y);
+          renderCompositeCanvas();
+        } else if (currentTool === 'select-rect') {
+          updateRectSelection(startX, startY, coords.x, coords.y);
+        } else if (currentTool === 'select-oval') {
+          updateOvalSelection(startX, startY, coords.x, coords.y);
+        }
+
+        lastX = coords.x;
+        lastY = coords.y;
+      };
+
+      const endAction = (e) => {
+        if (!isDrawing) return;
+        isDrawing = false;
+
+        if (currentTool === 'zoom') {
+          const coords = getCanvasCoords(e);
+          zoomToArea(startX, startY, coords.x, coords.y);
+          zoomBox = null;
+          renderSelectionOverlay();
+          return;
+        }
+
+        if (currentTool === 'move') {
+          moveTotalDx = moveCurrentDx;
+          moveTotalDy = moveCurrentDy;
+        } else if (['brush', 'eraser', 'shape'].includes(currentTool)) {
+          renderCompositeCanvas();
+          saveHistoryState(getToolName(currentTool));
+        } else if (['select-rect', 'select-oval'].includes(currentTool)) {
+          saveHistoryState('Seleção');
+        }
+      };
+
+      viewport.addEventListener('mousedown', startAction);
+      window.addEventListener('mousemove', moveAction);
+      window.addEventListener('mouseup', endAction);
+
+      viewport.addEventListener('dblclick', () => {
+        if (currentTool === 'select-poly') {
+          finishPolySelection();
+        }
+      });
+    }
+
+    /* CRIAÇÃO DE SELEÇÕES VETORIAIS LIMPplugin */
+    function updateRectSelection(x1, y1, x2, y2) {
+      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      selectionMaskCtx.fillStyle = '#ffffff';
+      
+      const rx = Math.min(x1, x2);
+      const ry = Math.min(y1, y2);
+      const rw = Math.abs(x2 - x1);
+      const rh = Math.abs(y2 - y1);
+
+      if (rw > 2 && rh > 2) {
+        selectionMaskCtx.fillRect(rx, ry, rw, rh);
+        hasActiveSelection = true;
+
+        activeSelectionPath = new Path2D();
+        activeSelectionPath.rect(rx, ry, rw, rh);
+      } else {
+        hasActiveSelection = false;
+        activeSelectionPath = null;
+      }
+      renderSelectionOverlay();
+    }
+
+    function updateOvalSelection(x1, y1, x2, y2) {
+      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      selectionMaskCtx.fillStyle = '#ffffff';
+
+      const rx = Math.abs(x2 - x1) / 2;
+      const ry = Math.abs(y2 - y1) / 2;
+      const cx = Math.min(x1, x2) + rx;
+      const cy = Math.min(y1, y2) + ry;
+
+      if (rx > 1 && ry > 1) {
+        selectionMaskCtx.beginPath();
+        selectionMaskCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        selectionMaskCtx.fill();
+        hasActiveSelection = true;
+
+        activeSelectionPath = new Path2D();
+        activeSelectionPath.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      } else {
+        hasActiveSelection = false;
+        activeSelectionPath = null;
+      }
+      renderSelectionOverlay();
+    }
+
+    function finishPolySelection() {
+      if (polyPoints.length < 3) {
+        polyPoints = [];
+        renderSelectionOverlay();
+        return;
+      }
+
+      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      selectionMaskCtx.fillStyle = '#ffffff';
+      
+      activeSelectionPath = new Path2D();
+      activeSelectionPath.moveTo(polyPoints[0].x, polyPoints[0].y);
+
+      selectionMaskCtx.beginPath();
+      selectionMaskCtx.moveTo(polyPoints[0].x, polyPoints[0].y);
+
+      for (let i = 1; i < polyPoints.length; i++) {
+        selectionMaskCtx.lineTo(polyPoints[i].x, polyPoints[i].y);
+        activeSelectionPath.lineTo(polyPoints[i].x, polyPoints[i].y);
+      }
+
+      selectionMaskCtx.closePath();
+      selectionMaskCtx.fill();
+      activeSelectionPath.closePath();
+
+      hasActiveSelection = true;
+      polyPoints = [];
+      renderSelectionOverlay();
+      saveHistoryState('Seleção Poligonal');
+    }
+
+    function performWandSelection(startX, startY) {
+      const imgData = compositeCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+      const data = imgData.data;
+
+      const maskImg = selectionMaskCtx.createImageData(canvasWidth, canvasHeight);
+      const maskData = maskImg.data;
+
+      const targetIdx = (startY * canvasWidth + startX) * 4;
+      const targetR = data[targetIdx];
+      const targetG = data[targetIdx + 1];
+      const targetB = data[targetIdx + 2];
+      const targetA = data[targetIdx + 3];
+
+      const queue = [startX, startY];
+      const visited = new Uint8Array(canvasWidth * canvasHeight);
+
+      const colorMatch = (idx) => {
+        const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+        const diff = Math.abs(r - targetR) + Math.abs(g - targetG) + Math.abs(b - targetB) + Math.abs(a - targetA);
+        return diff <= (wandTolerance * 4);
+      };
+
+      while (queue.length > 0) {
+        const y = queue.pop();
+        const x = queue.pop();
+        const pos = y * canvasWidth + x;
+
+        if (visited[pos]) continue;
+        visited[pos] = 1;
+
+        const idx = pos * 4;
+        if (colorMatch(idx)) {
+          maskData[idx] = 255;
+          maskData[idx + 1] = 255;
+          maskData[idx + 2] = 255;
+          maskData[idx + 3] = 255;
+
+          if (x > 0) queue.push(x - 1, y);
+          if (x < canvasWidth - 1) queue.push(x + 1, y);
+          if (y > 0) queue.push(x, y - 1);
+          if (y < canvasHeight - 1) queue.push(x, y + 1);
+        }
+      }
+
+      selectionMaskCtx.putImageData(maskImg, 0, 0);
+      hasActiveSelection = true;
+
+      // Cria um caminho recortável para a seleção da varinha mágica
+      activeSelectionPath = new Path2D();
+      activeSelectionPath.rect(0, 0, canvasWidth, canvasHeight);
+
+      renderSelectionOverlay();
+      saveHistoryState('Seleção Varinha Mágica');
+      showToast('Seleção por Varinha Mágica aplicada');
+    }
+
+    /* PINCEL E BORRACHA */
+    function drawStroke(x, y, isStart) {
+      if (activeLayerIndex < 0) return;
+      const ctx = layers[activeLayerIndex].ctx;
+
+      ctx.save();
+
+      if (hasActiveSelection && activeSelectionPath) {
+        ctx.clip(activeSelectionPath);
+      }
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = brushSize;
+
+      if (currentTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = brushOpacity;
+        ctx.strokeStyle = primaryColor;
+      }
+
+      ctx.beginPath();
+      if (isStart) {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y);
+      } else {
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      renderCompositeCanvas();
+    }
+
+    function drawPreviewShape(ctx, x1, y1, x2, y2) {
+      ctx.save();
+
+      if (hasActiveSelection && activeSelectionPath) {
+        ctx.clip(activeSelectionPath);
+      }
+
+      ctx.fillStyle = primaryColor;
+      ctx.strokeStyle = primaryColor;
+      ctx.lineWidth = brushSize;
+      ctx.globalAlpha = brushOpacity;
+
+      ctx.beginPath();
+      if (shapeType === 'rect') {
+        const w = x2 - x1, h = y2 - y1;
+        if (shapeFill) ctx.fillRect(x1, y1, w, h);
+        ctx.strokeRect(x1, y1, w, h);
+      } else if (shapeType === 'circle') {
+        const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+        const cx = Math.min(x1, x2) + rx, cy = Math.min(y1, y2) + ry;
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        if (shapeFill) ctx.fill();
+        ctx.stroke();
+      } else if (shapeType === 'line') {
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* BALDE DE TINTA */
+    function floodFill(startX, startY, fillColorHex) {
+      commitMove();
+      const ctx = layers[activeLayerIndex].ctx;
+      const imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+      const data = imgData.data;
+
+      const targetR = data[(startY * canvasWidth + startX) * 4];
+      const targetG = data[(startY * canvasWidth + startX) * 4 + 1];
+      const targetB = data[(startY * canvasWidth + startX) * 4 + 2];
+      const targetA = data[(startY * canvasWidth + startX) * 4 + 3];
+
+      const fillColor = hexToRgb(fillColorHex);
+      if (targetR === fillColor.r && targetG === fillColor.g && targetB === fillColor.b && targetA === 255) return;
+
+      const pixelsToCheck = [startX, startY];
+      const maskData = hasActiveSelection ? selectionMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data : null;
+
+      while (pixelsToCheck.length > 0) {
+        const y = pixelsToCheck.pop();
+        const x = pixelsToCheck.pop();
+        const pos = (y * canvasWidth + x) * 4;
+
+        if (hasActiveSelection && maskData[pos + 3] === 0) continue;
+
+        if (data[pos] === targetR && data[pos+1] === targetG && data[pos+2] === targetB && data[pos+3] === targetA) {
+          data[pos] = fillColor.r;
+          data[pos+1] = fillColor.g;
+          data[pos+2] = fillColor.b;
+          data[pos+3] = 255;
+
+          if (x > 0) pixelsToCheck.push(x - 1, y);
+          if (x < canvasWidth - 1) pixelsToCheck.push(x + 1, y);
+          if (y > 0) pixelsToCheck.push(x, y - 1);
+          if (y < canvasHeight - 1) pixelsToCheck.push(x, y + 1);
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    /* COPIAR, COLAR E LIMPAR */
+    function copySelection() {
+      if (activeLayerIndex < 0) return;
+
+      internalClipboardCanvas = document.createElement('canvas');
+      internalClipboardCanvas.width = canvasWidth;
+      internalClipboardCanvas.height = canvasHeight;
+      const clipCtx = internalClipboardCanvas.getContext('2d');
+
+      clipCtx.drawImage(layers[activeLayerIndex].canvas, 0, 0);
+
+      if (hasActiveSelection) {
+        clipCtx.globalCompositeOperation = 'destination-in';
+        clipCtx.drawImage(selectionMaskCanvas, 0, 0);
+      }
+
+      showToast('Seleção copiada para o Clipboard');
+    }
+
+    function pasteSelection() {
+      if (!internalClipboardCanvas) {
+        showToast('Nenhum conteúdo no Clipboard interno');
+        return;
+      }
+      addNewLayer('Camada Colada', internalClipboardCanvas);
+      showToast('Conteúdo colado em uma nova camada');
+    }
+
+    function clearSelectionArea() {
+      commitMove();
+      if (activeLayerIndex < 0) return;
+      const ctx = layers[activeLayerIndex].ctx;
+
+      ctx.save();
+      if (hasActiveSelection) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.drawImage(selectionMaskCanvas, 0, 0);
+      } else {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      }
+      ctx.restore();
+
+      renderCompositeCanvas();
+      saveHistoryState('Limpar / Recortar');
+      showToast('Área recortada/limpa');
+    }
+
+    function setupClipboardEvents() {
+      window.addEventListener('paste', (e) => {
+        if (e.clipboardData && e.clipboardData.files.length > 0) {
+          const file = e.clipboardData.files[0];
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const img = new Image();
+              img.onload = () => {
+                addNewLayer('Imagem Colada');
+                layers[activeLayerIndex].ctx.drawImage(img, 0, 0);
+                renderCompositeCanvas();
+                saveHistoryState('Colar Imagem do Clipboard');
+                showToast('Imagem colada do sistema');
+              };
+              img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      });
+    }
+
+    /* SALVAR E CARREGAR PROJETO */
+    async function saveProject(saveAs = false) {
+      commitMove();
+      const projectData = {
+        version: "1.0",
+        width: canvasWidth,
+        height: canvasHeight,
+        layers: layers.map(l => ({
+          id: l.id,
+          name: l.name,
+          visible: l.visible,
+          opacity: l.opacity,
+          blendMode: l.blendMode,
+          dataUrl: l.canvas.toDataURL('image/png')
+        }))
+      };
+
+      const jsonString = JSON.stringify(projectData, null, 2);
+
+      if ('showSaveFilePicker' in window && !saveAs && fileHandle) {
+        try {
+          const writable = await fileHandle.createWritable();
+          await writable.write(jsonString);
+          await writable.close();
+          showToast(`Projeto salvo em ${fileHandle.name}`);
+          return;
+        } catch (err) {
+          console.warn('Erro ao sobrescrever com FileSystem API:', err);
+        }
+      }
+
+      if ('showSaveFilePicker' in window) {
+        try {
+          fileHandle = await window.showSaveFilePicker({
+            suggestedName: projectFileName,
+            types: [{
+              description: 'Projeto GIMP Web',
+              accept: { 'application/json': ['.gimpweb'] }
+            }]
+          });
+          projectFileName = fileHandle.name;
+          document.getElementById('file-name-display').innerText = projectFileName;
+
+          const writable = await fileHandle.createWritable();
+          await writable.write(jsonString);
+          await writable.close();
+          showToast(`Projeto salvo como ${projectFileName}`);
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.download = projectFileName;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast('Projeto salvo com sucesso');
+    }
+
+    function loadProjectFromFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      commitMove();
+      projectFileName = file.name;
+      document.getElementById('file-name-display').innerText = projectFileName;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const project = JSON.parse(event.target.result);
+          canvasWidth = project.width;
+          canvasHeight = project.height;
+
+          compositeCanvas.width = canvasWidth;
+          compositeCanvas.height = canvasHeight;
+          selectionCanvas.width = canvasWidth;
+          selectionCanvas.height = canvasHeight;
+
+          selectionMaskCanvas.width = canvasWidth;
+          selectionMaskCanvas.height = canvasHeight;
+          selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+          document.getElementById('image-dimensions-display').innerHTML = `<i class="fa-regular fa-image me-1"></i> ${canvasWidth} x ${canvasHeight} px`;
+
+          layers = [];
+          let loadedCount = 0;
+
+          project.layers.forEach((lData, idx) => {
+            const img = new Image();
+            img.onload = () => {
+              const lCanvas = document.createElement('canvas');
+              lCanvas.width = canvasWidth;
+              lCanvas.height = canvasHeight;
+              const lCtx = lCanvas.getContext('2d');
+              lCtx.drawImage(img, 0, 0);
+
+              layers[idx] = {
+                id: lData.id,
+                name: lData.name,
+                canvas: lCanvas,
+                ctx: lCtx,
+                visible: lData.visible,
+                opacity: lData.opacity,
+                blendMode: lData.blendMode
+              };
+
+              loadedCount++;
+              if (loadedCount === project.layers.length) {
+                activeLayerIndex = layers.length - 1;
+                historyStack = [];
+                historyIndex = -1;
+                renderLayersList();
+                renderCompositeCanvas();
+                saveHistoryState('Abrir Projeto');
+                resetZoom();
+                showToast('Projeto carregado com sucesso');
+              }
+            };
+            img.src = lData.dataUrl;
+          });
+        } catch (err) {
+          alert('Erro ao carregar o arquivo .gimpweb inválido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* AUXILIARES */
+    function addTextPrompt(x, y) {
+      commitMove();
+      const text = prompt('Digite o texto a ser inserido:');
+      if (!text) return;
+
+      const ctx = layers[activeLayerIndex].ctx;
+      ctx.save();
+
+      if (hasActiveSelection && activeSelectionPath) {
+        ctx.clip(activeSelectionPath);
+      }
+
+      ctx.font = `${fontSize}px ${fontText}`;
+      ctx.fillStyle = primaryColor;
+      ctx.textBaseline = 'top';
+      ctx.fillText(text, x, y);
+      ctx.restore();
+
+      renderCompositeCanvas();
+      saveHistoryState('Adicionar Texto');
+    }
+
+    function pickColor(x, y) {
+      const p = compositeCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+      const hex = "#" + ("0" + p[0].toString(16)).slice(-2) + ("0" + p[1].toString(16)).slice(-2) + ("0" + p[2].toString(16)).slice(-2);
+      primaryColor = hex;
+      document.getElementById('primaryColorInput').value = hex;
+      showToast(`Cor selecionada: ${hex.toUpperCase()}`);
+    }
+
+    function loadImageFromFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      commitMove();
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          if (confirm('Deseja redimensionar a área de trabalho para o tamanho desta imagem?')) {
+            initProject(img.width, img.height, 'transparent');
+            layers[0].ctx.drawImage(img, 0, 0);
+            layers[0].name = file.name;
+          } else {
+            addNewLayer(file.name);
+            layers[activeLayerIndex].ctx.drawImage(img, 0, 0);
+          }
+          renderLayersList();
+          renderCompositeCanvas();
+          saveHistoryState('Importar Imagem');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function exportImage(format) {
+      commitMove();
+      const link = document.createElement('a');
+      link.download = `exportacao.${format}`;
+      link.href = compositeCanvas.toDataURL(`image/${format}`, 0.95);
+      link.click();
+      showToast(`Exportado como ${format.toUpperCase()}`);
+    }
+
+    function updateColors() {
+      primaryColor = document.getElementById('primaryColorInput').value;
+      secondaryColor = document.getElementById('secondaryColorInput').value;
+    }
+
+    function swapColors() {
+      const temp = primaryColor;
+      primaryColor = secondaryColor;
+      secondaryColor = temp;
+      document.getElementById('primaryColorInput').value = primaryColor;
+      document.getElementById('secondaryColorInput').value = secondaryColor;
+    }
+
+    function clearActiveLayer() {
+      commitMove();
+      if (activeLayerIndex < 0) return;
+      layers[activeLayerIndex].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      renderCompositeCanvas();
+      saveHistoryState('Limpar Camada');
+    }
+
+    function getToolName(tool) {
+      const names = {
+        brush: 'Pincel', eraser: 'Borracha', shape: 'Desenhar Forma',
+        move: 'Mover Conteúdo', bucket: 'Preenchimento'
+      };
+      return names[tool] || 'Ação';
+    }
+
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.replace('#', ''), 16);
+      return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    }
+
+    /* ATALHOS DE TECLADO */
+    function setupKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+        if (e.code === 'Space' && !isSpacePressed) {
+          isSpacePressed = true;
+          updateWorkbenchCursor();
+          e.preventDefault();
+        }
+
+        if (e.ctrlKey || e.metaKey) {
+          const key = e.key.toLowerCase();
+          if (key === 'a') {
+            e.preventDefault();
+            selectAll();
+          } else if (key === 'd') {
+            e.preventDefault();
+            deselectAll();
+          } else if (key === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) redo(); else undo();
+          } else if (key === 'y') {
+            e.preventDefault();
+            redo();
+          } else if (key === 'c') {
+            e.preventDefault();
+            copySelection();
+          } else if (key === 'v') {
+            e.preventDefault();
+            pasteSelection();
+          } else if (key === 's') {
+            e.preventDefault();
+            saveProject(e.shiftKey);
+          }
+          return;
+        }
+
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          clearSelectionArea();
+          return;
+        }
+
+        if (e.key === 'Enter' && currentTool === 'select-poly') {
+          finishPolySelection();
+          return;
+        }
+
+        switch (e.key.toLowerCase()) {
+          case 'a': selectTool('pointer'); break;
+          case 'm': selectTool('select-rect'); break;
+          case 'l': selectTool('select-oval'); break;
+          case 'p': selectTool('select-poly'); break;
+          case 'w': selectTool('select-wand'); break;
+          case 'b': selectTool('brush'); break;
+          case 'e': selectTool('eraser'); break;
+          case 'v': selectTool('move'); break;
+          case 'g': selectTool('bucket'); break;
+          case 'u': selectTool('shape'); break;
+          case 't': selectTool('text'); break;
+          case 'i': selectTool('picker'); break;
+          case 'z': selectTool('zoom'); break;
+          case 'x': swapColors(); break;
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          isSpacePressed = false;
+          updateWorkbenchCursor();
+        }
+      });
+    }
+
+    /* MODAIS & NOTIFICAÇÕES */
+    function openNewImageModal() {
+      const modal = document.getElementById('newImageModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function createNewImageConfirm() {
+      const w = parseInt(document.getElementById('newWidth').value);
+      const h = parseInt(document.getElementById('newHeight').value);
+      const bg = document.getElementById('newBgType').value;
+
+      if (w > 0 && h > 0) {
+        initProject(w, h, bg);
+        closeModal('newImageModal');
+      }
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
