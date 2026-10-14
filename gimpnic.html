@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Transformações com Âncoras Interativas</title>
+  <title>GIMP Web Studio - Layout Autêntico</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -18,13 +18,13 @@
         extend: {
           colors: {
             gimp: {
-              darkest: '#18181b',
-              dark: '#202023',
-              panel: '#28282c',
-              border: '#3f3f46',
-              hover: '#323238',
-              accent: '#3b82f6',
-              accentHover: '#2563eb'
+              darkest: '#1e1e1e',
+              dark: '#2d2d2d',
+              panel: '#333333',
+              border: '#1a1a1a',
+              hover: '#3f3f3f',
+              accent: '#3399ff',
+              accentHover: '#2680eb'
             }
           },
           fontFamily: { sans: ['Inter', 'sans-serif'] }
@@ -35,24 +35,23 @@
 
   <style>
     #workbench::-webkit-scrollbar { width: 10px; height: 10px; }
-    #workbench::-webkit-scrollbar-track { background: #121214; }
-    #workbench::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 5px; border: 2px solid #121214; }
-    #workbench::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    #workbench::-webkit-scrollbar-track { background: #181818; }
+    #workbench::-webkit-scrollbar-thumb { background: #444444; border-radius: 2px; border: 2px solid #181818; }
+    #workbench::-webkit-scrollbar-thumb:hover { background: #555555; }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #18181b; }
-    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    ::-webkit-scrollbar-track { background: #2d2d2d; }
+    ::-webkit-scrollbar-thumb { background: #444444; border-radius: 2px; }
 
     .checkerboard {
-      background-color: #1e1e24;
+      background-color: #262626;
       background-image: 
-        linear-gradient(45deg, #2a2a32 25%, transparent 25%), 
-        linear-gradient(-45deg, #2a2a32 25%, transparent 25%), 
-        linear-gradient(45deg, transparent 75%, #2a2a32 75%), 
-        linear-gradient(-45deg, transparent 75%, #2a2a32 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        linear-gradient(45deg, #2c2c2c 25%, transparent 25%), 
+        linear-gradient(-45deg, #2c2c2c 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #2c2c2c 75%), 
+        linear-gradient(-45deg, transparent 75%, #2c2c2c 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
     }
 
     .dropdown-content { display: none; }
@@ -64,46 +63,45 @@
     .cursor-grabbing { cursor: grabbing !important; }
     .cursor-crosshair { cursor: crosshair !important; }
 
-    /* Estilo para o menu de grupo de ferramentas estilo GIMP */
     .tool-group-flyout {
       display: none;
       position: fixed;
       left: 56px;
       top: 0;
-      background-color: #28282c;
-      border: 1px solid #3f3f46;
-      border-radius: 4px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      background-color: #333333;
+      border: 1px solid #1a1a1a;
+      border-radius: 2px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
       padding: 4px;
       z-index: 50;
       flex-direction: row;
       gap: 4px;
-      margin-left: 6px;
+      margin-left: 4px;
     }
   </style>
 </head>
 <body class="bg-gimp-darkest text-gray-200 h-screen flex flex-col font-sans overflow-hidden select-none">
 
   <!-- TOP MENU BAR -->
-  <header class="bg-gimp-dark border-b border-gimp-border text-xs flex items-center justify-between px-3 py-1 z-50 h-9 shrink-0">
-    <div class="flex items-center space-x-4">
-      <div class="flex items-center space-x-2 font-bold text-blue-400 mr-2">
-        <i class="fa-solid fa-palette text-lg"></i>
-        <span class="tracking-wider text-sm text-white">GIMP<span class="text-blue-500">Web</span></span>
+  <header class="bg-gimp-dark border-b border-gimp-border text-xs flex items-center justify-between px-2 py-1 z-50 h-8 shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-1.5 font-bold text-gray-100 mr-2">
+        <i class="fa-solid fa-palette text-blue-400 text-sm"></i>
+        <span class="tracking-wide">GIMP<span class="text-blue-400">Web</span></span>
       </div>
 
-      <nav class="flex space-x-1">
+      <nav class="flex space-x-0.5">
         <!-- Arquivo -->
         <div class="relative dropdown">
-          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Arquivo</button>
+          <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Ficheiro</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-52 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
             <button onclick="openNewImageModal()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-file-circle-plus w-5"></i> Novo...</span>
-              <span class="text-xs text-gray-400">Ctrl+N</span>
+              <span class="text-[10px] text-gray-400">Ctrl+N</span>
             </button>
             <label class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center cursor-pointer">
-              <span><i class="fa-solid fa-folder-open w-5"></i> Abrir Imagem...</span>
-              <span class="text-xs text-gray-400">Ctrl+O</span>
+              <span><i class="fa-solid fa-folder-open w-5"></i> Abrir...</span>
+              <span class="text-[10px] text-gray-400">Ctrl+O</span>
               <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="loadImageFromFile(event)">
             </label>
             <label class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center cursor-pointer">
@@ -112,12 +110,12 @@
             </label>
             <hr class="border-gimp-border my-1">
             <button onclick="saveProject(false)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-floppy-disk w-5"></i> Salvar</span>
-              <span class="text-xs text-gray-400">Ctrl+S</span>
+              <span><i class="fa-solid fa-floppy-disk w-5"></i> Guardar</span>
+              <span class="text-[10px] text-gray-400">Ctrl+S</span>
             </button>
             <button onclick="saveProject(true)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-file-export w-5"></i> Salvar Como...</span>
-              <span class="text-xs text-gray-400">Ctrl+Shift+S</span>
+              <span><i class="fa-solid fa-file-export w-5"></i> Guardar Como...</span>
+              <span class="text-[10px] text-gray-400">Ctrl+Shift+S</span>
             </button>
             <hr class="border-gimp-border my-1">
             <button onclick="exportImage('png')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
@@ -131,52 +129,48 @@
 
         <!-- Editar -->
         <div class="relative dropdown">
-          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Editar</button>
+          <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Editar</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
             <button onclick="undo()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-rotate-left w-5"></i> Desfazer</span>
-              <span class="text-xs text-gray-400">Ctrl+Z</span>
+              <span class="text-[10px] text-gray-400">Ctrl+Z</span>
             </button>
             <button onclick="redo()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-rotate-right w-5"></i> Refazer</span>
-              <span class="text-xs text-gray-400">Ctrl+Y</span>
+              <span class="text-[10px] text-gray-400">Ctrl+Y</span>
             </button>
             <hr class="border-gimp-border my-1">
             <button onclick="cutSelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-scissors w-5"></i> Recortar</span>
-              <span class="text-xs text-gray-400">Ctrl+X</span>
+              <span><i class="fa-solid fa-scissors w-5"></i> Cortar</span>
+              <span class="text-[10px] text-gray-400">Ctrl+X</span>
             </button>
             <button onclick="copySelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-copy w-5"></i> Copiar</span>
-              <span class="text-xs text-gray-400">Ctrl+C</span>
+              <span class="text-[10px] text-gray-400">Ctrl+C</span>
             </button>
             <button onclick="pasteSelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-paste w-5"></i> Colar</span>
-              <span class="text-xs text-gray-400">Ctrl+V</span>
+              <span class="text-[10px] text-gray-400">Ctrl+V</span>
             </button>
             <button onclick="clearSelectionArea()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-trash-can w-5"></i> Limpar Seleção</span>
-              <span class="text-xs text-gray-400">Del</span>
+              <span class="text-[10px] text-gray-400">Del</span>
             </button>
             <hr class="border-gimp-border my-1">
             <button onclick="selectAll()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-object-group w-5"></i> Selecionar Tudo</span>
-              <span class="text-xs text-gray-400">Ctrl+A</span>
+              <span class="text-[10px] text-gray-400">Ctrl+A</span>
             </button>
             <button onclick="deselectAll()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-circle-xmark w-5"></i> Selecionar Nada</span>
-              <span class="text-xs text-gray-400">Ctrl+D</span>
-            </button>
-            <hr class="border-gimp-border my-1">
-            <button onclick="clearActiveLayer()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
-              <i class="fa-solid fa-eraser w-5"></i> Limpar Camada Ativa
+              <span class="text-[10px] text-gray-400">Ctrl+D</span>
             </button>
           </div>
         </div>
 
         <!-- Transformar -->
         <div class="relative dropdown">
-          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Transformar</button>
+          <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Transformar</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
             <button onclick="quickFlip('h')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
               <i class="fa-solid fa-arrows-left-right w-5"></i> Inverter Horizontalmente
@@ -186,45 +180,45 @@
             </button>
             <hr class="border-gimp-border my-1">
             <button onclick="quickRotate(90)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
-              <i class="fa-solid fa-rotate-right w-5"></i> Rotacionar 90° Horário
+              <i class="fa-solid fa-rotate-right w-5"></i> Rodar 90° Horário
             </button>
             <button onclick="quickRotate(-90)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
-              <i class="fa-solid fa-rotate-left w-5"></i> Rotacionar 90° Anti-horário
+              <i class="fa-solid fa-rotate-left w-5"></i> Rodar 90° Anti-horário
             </button>
           </div>
         </div>
 
         <!-- Visualizar -->
         <div class="relative dropdown">
-          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Visualizar</button>
+          <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Ver</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-48 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
             <button onclick="zoomIn()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-magnifying-glass-plus w-5"></i> Zoom +</span>
-              <span class="text-xs text-gray-400">+</span>
+              <span><i class="fa-solid fa-magnifying-glass-plus w-5"></i> Ampliar</span>
+              <span class="text-[10px] text-gray-400">+</span>
             </button>
             <button onclick="zoomOut()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-magnifying-glass-minus w-5"></i> Zoom -</span>
-              <span class="text-xs text-gray-400">-</span>
+              <span><i class="fa-solid fa-magnifying-glass-minus w-5"></i> Reduzir</span>
+              <span class="text-[10px] text-gray-400">-</span>
             </button>
             <button onclick="resetZoom()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-compress w-5"></i> Ajustar (100%)</span>
-              <span class="text-xs text-gray-400">1:1</span>
+              <span class="text-[10px] text-gray-400">1:1</span>
             </button>
           </div>
         </div>
       </nav>
     </div>
 
-    <div class="text-gray-400 text-xs flex items-center space-x-3">
-      <span id="file-name-display" class="font-semibold text-gray-300">Sem_Titulo.gimpweb</span>
+    <div class="text-gray-400 text-[11px] flex items-center space-x-3">
+      <span id="file-name-display" class="font-medium text-gray-300">Sem_Titulo.gimpweb</span>
       <span id="image-dimensions-display"><i class="fa-regular fa-image me-1"></i> 800 x 600 px</span>
-      <span id="zoom-level-display" class="bg-gimp-panel px-2 py-0.5 rounded border border-gimp-border font-mono text-blue-400">100%</span>
+      <span id="zoom-level-display" class="bg-gimp-panel px-1.5 py-0.5 rounded border border-gimp-border font-mono text-blue-400">100%</span>
     </div>
   </header>
 
-  <!-- TOOLBAR SUPERIOR -->
-  <section id="tool-properties-bar" class="bg-gimp-panel border-b border-gimp-border px-3 py-1.5 text-xs flex items-center space-x-4 shrink-0 overflow-x-auto min-h-[38px]">
-    <span id="active-tool-title" class="font-semibold text-blue-400 flex items-center uppercase tracking-wide pr-2 border-r border-gimp-border">
+  <!-- TOOLBAR SUPERIOR (OPÇÕES DE FERRAMENTA) -->
+  <section id="tool-properties-bar" class="bg-gimp-panel border-b border-gimp-border px-3 py-1 text-xs flex items-center space-x-4 shrink-0 overflow-x-auto min-h-[34px]">
+    <span id="active-tool-title" class="font-semibold text-blue-400 flex items-center uppercase tracking-wider pr-3 border-r border-gimp-border">
       <i class="fa-solid fa-arrow-pointer mr-1.5"></i> Ponteiro
     </span>
     <div id="dynamic-properties" class="flex items-center space-x-4"></div>
@@ -233,161 +227,164 @@
   <!-- MAIN WORKSPACE -->
   <div class="flex-1 flex overflow-hidden relative">
 
+    <!-- TOOLBOX LATERAL ESQUERDA -->
     <aside class="w-12 bg-gimp-dark border-r border-gimp-border flex flex-col items-center py-2 space-y-1 z-20 shrink-0 overflow-y-auto">
       
-      <button onclick="selectTool('pointer')" id="tool-pointer" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center bg-blue-600 text-white" title="Ponteiro / Selecionar (A)">
-        <i class="fa-solid fa-arrow-pointer"></i>
+      <button onclick="selectTool('pointer')" id="tool-pointer" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center bg-blue-600 text-white" title="Ponteiro / Selecionar (A)">
+        <i class="fa-solid fa-arrow-pointer text-xs"></i>
       </button>
 
-      <hr class="w-7 border-gimp-border my-1">
+      <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <button onclick="selectTool('select-rect')" id="tool-select-rect" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Seleção Retangular (M)">
-        <i class="fa-regular fa-square"></i>
+      <button onclick="selectTool('select-rect')" id="tool-select-rect" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Seleção Retangular (M)">
+        <i class="fa-regular fa-square text-xs"></i>
       </button>
 
-      <button onclick="selectTool('select-oval')" id="tool-select-oval" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Seleção Elíptica/Oval (L)">
-        <i class="fa-regular fa-circle"></i>
+      <button onclick="selectTool('select-oval')" id="tool-select-oval" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Seleção Elíptica (L)">
+        <i class="fa-regular fa-circle text-xs"></i>
       </button>
 
-      <button onclick="selectTool('select-poly')" id="tool-select-poly" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Seleção Poligonal (P)">
-        <i class="fa-solid fa-draw-polygon"></i>
+      <button onclick="selectTool('select-poly')" id="tool-select-poly" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Seleção Poligonal (P)">
+        <i class="fa-solid fa-draw-polygon text-xs"></i>
       </button>
 
-      <button onclick="selectTool('select-wand')" id="tool-select-wand" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Varinha Mágica (W)">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <button onclick="selectTool('select-wand')" id="tool-select-wand" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Varinha Mágica (W)">
+        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
       </button>
 
-      <hr class="w-7 border-gimp-border my-1">
+      <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <button onclick="selectTool('move')" id="tool-move" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Mover Seleção / Camada (V)">
-        <i class="fa-solid fa-arrows-up-down-left-right"></i>
+      <button onclick="selectTool('move')" id="tool-move" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Mover (V)">
+        <i class="fa-solid fa-arrows-up-down-left-right text-xs"></i>
       </button>
 
-      <!-- GRUPO DE FERRAMENTAS DE TRANSFORMAÇÃO (ESTILO GIMP: CLIQUE NA SETINHA ABRE O MENU LATERAL) -->
+      <!-- GRUPO DE TRANSFORMAÇÃO -->
       <div class="relative group-container" id="transformGroupContainer">
-        <div class="flex items-center w-9 h-9 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="transformGroupWrapper">
-          <button id="tool-transform-group" onclick="toggleTransformFlyout(event)" class="w-7 h-full flex items-center justify-center" title="Abrir opções de transformações geométricas">
-            <i id="transformGroupIcon" class="fa-solid fa-rotate"></i>
+        <div class="flex items-center w-8 h-8 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="transformGroupWrapper">
+          <button id="tool-transform-group" onclick="toggleTransformFlyout(event)" class="w-6 h-full flex items-center justify-center" title="Ferramentas de Transformação">
+            <i id="transformGroupIcon" class="fa-solid fa-rotate text-xs"></i>
           </button>
-          <button id="transformFlyoutTrigger" class="w-2.5 h-full flex items-center justify-center pr-0.5 text-[8px] text-blue-400 hover:text-white" title="Mais ferramentas de transformação">
+          <button id="transformFlyoutTrigger" class="w-2 h-full flex items-center justify-center text-[7px] text-blue-400 hover:text-white" title="Mais opções">
             <i class="fa-solid fa-caret-right"></i>
           </button>
         </div>
 
-        <!-- Menu Lateral Flutuante (Flyout) -->
         <div id="transformFlyoutMenu" class="tool-group-flyout">
-          <button onclick="selectToolFromGroup('rotate')" id="tool-rotate" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Rotacionar (R)">
-            <i class="fa-solid fa-rotate"></i>
+          <button onclick="selectToolFromGroup('rotate')" id="tool-rotate" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Rodar (R)">
+            <i class="fa-solid fa-rotate text-xs"></i>
           </button>
-          <button onclick="selectToolFromGroup('scale')" id="tool-scale" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Redimensionar (Shift+S)">
-            <i class="fa-solid fa-expand"></i>
+          <button onclick="selectToolFromGroup('scale')" id="tool-scale" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Redimensionar (Shift+S)">
+            <i class="fa-solid fa-expand text-xs"></i>
           </button>
-          <button onclick="selectToolFromGroup('shear')" id="tool-shear" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Cisalhar (S)">
-            <i class="fa-solid fa-italic"></i>
+          <button onclick="selectToolFromGroup('shear')" id="tool-shear" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Cisalhar (S)">
+            <i class="fa-solid fa-italic text-xs"></i>
           </button>
-          <button onclick="selectToolFromGroup('flip')" id="tool-flip" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Inverter (F)">
-            <i class="fa-solid fa-right-left"></i>
+          <button onclick="selectToolFromGroup('flip')" id="tool-flip" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Inverter (F)">
+            <i class="fa-solid fa-right-left text-xs"></i>
           </button>
         </div>
       </div>
 
-      <hr class="w-7 border-gimp-border my-1">
+      <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <button onclick="selectTool('brush')" id="tool-brush" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Pincel (B)">
-        <i class="fa-solid fa-paint-brush"></i>
+      <button onclick="selectTool('brush')" id="tool-brush" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Pincel (B)">
+        <i class="fa-solid fa-paint-brush text-xs"></i>
       </button>
 
-      <button onclick="selectTool('eraser')" id="tool-eraser" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Borracha (E)">
-        <i class="fa-solid fa-eraser"></i>
+      <button onclick="selectTool('eraser')" id="tool-eraser" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Borracha (E)">
+        <i class="fa-solid fa-eraser text-xs"></i>
       </button>
 
-      <button onclick="selectTool('bucket')" id="tool-bucket" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Balde de Tinta (G)">
-        <i class="fa-solid fa-fill-drip"></i>
+      <button onclick="selectTool('bucket')" id="tool-bucket" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Balde de Tinta (G)">
+        <i class="fa-solid fa-fill-drip text-xs"></i>
       </button>
 
-      <button onclick="selectTool('shape')" id="tool-shape" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Formas (U)">
-        <i class="fa-solid fa-shapes"></i>
+      <button onclick="selectTool('shape')" id="tool-shape" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Formas (U)">
+        <i class="fa-solid fa-shapes text-xs"></i>
       </button>
 
-      <button onclick="selectTool('text')" id="tool-text" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Texto (T)">
-        <i class="fa-solid fa-font"></i>
+      <button onclick="selectTool('text')" id="tool-text" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Texto (T)">
+        <i class="fa-solid fa-font text-xs"></i>
       </button>
 
-      <button onclick="selectTool('picker')" id="tool-picker" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Conta-Gotas (I)">
-        <i class="fa-solid fa-eye-dropper"></i>
+      <button onclick="selectTool('picker')" id="tool-picker" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Conta-gotas (I)">
+        <i class="fa-solid fa-eye-dropper text-xs"></i>
       </button>
 
-      <button onclick="selectTool('zoom')" id="tool-zoom" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Zoom por Área (Z)">
-        <i class="fa-solid fa-magnifying-glass"></i>
+      <button onclick="selectTool('zoom')" id="tool-zoom" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Ampliação (Z)">
+        <i class="fa-solid fa-magnifying-glass text-xs"></i>
       </button>
 
-      <hr class="w-7 border-gimp-border my-1">
+      <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <div class="relative w-8 h-8 mt-1">
+      <!-- SELETOR DE CORES CLÁSSICO GIMP -->
+      <div class="relative w-7 h-7 mt-1">
         <input type="color" id="secondaryColorInput" value="#ffffff" onchange="updateColors()" 
-               class="absolute bottom-0 right-0 w-5 h-5 rounded cursor-pointer border border-gimp-border p-0 bg-transparent">
+               class="absolute bottom-0 right-0 w-4 h-4 rounded-none cursor-pointer border border-gimp-border p-0 bg-transparent">
         <input type="color" id="primaryColorInput" value="#000000" onchange="updateColors()" 
-               class="absolute top-0 left-0 w-6 h-6 rounded cursor-pointer border-2 border-white p-0 bg-transparent shadow">
+               class="absolute top-0 left-0 w-5 h-5 rounded-none cursor-pointer border border-white p-0 bg-transparent shadow">
       </div>
       
-      <button onclick="swapColors()" class="text-[10px] text-gray-400 hover:text-white mt-1" title="Inverter Cores (X)">
+      <button onclick="swapColors()" class="text-[9px] text-gray-400 hover:text-white mt-1" title="Inverter Cores (X)">
         <i class="fa-solid fa-arrows-rotate"></i>
       </button>
     </aside>
 
-    <main id="workbench" class="flex-1 bg-[#121214] overflow-auto relative flex p-12 checkerboard cursor-default select-none scroll-smooth">
+    <!-- ÁREA DE TRABALHO (CANVAS) -->
+    <main id="workbench" class="flex-1 bg-[#1a1a1a] overflow-auto relative flex p-12 checkerboard cursor-default select-none scroll-smooth">
       <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75 m-auto">
         <canvas id="compositeCanvas" class="block border border-zinc-700 shadow-2xl"></canvas>
         <canvas id="selectionCanvas" class="absolute top-0 left-0 pointer-events-none"></canvas>
       </div>
 
       <!-- PAINEL FLUTUANTE DE CONFIRMAÇÃO DE TRANSFORMAÇÃO -->
-      <div id="transformActionFloatingBar" class="fixed top-14 left-1/2 -translate-x-1/2 bg-gimp-panel/95 backdrop-blur border border-blue-500 rounded-lg p-2 flex items-center space-x-3 text-xs shadow-2xl z-40 hidden">
+      <div id="transformActionFloatingBar" class="fixed top-12 left-1/2 -translate-x-1/2 bg-gimp-panel/95 backdrop-blur border border-blue-500 rounded px-2 py-1 flex items-center space-x-3 text-xs shadow-2xl z-40 hidden">
         <span class="text-blue-400 font-semibold flex items-center">
-          <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> <span id="transformModeText">Transformando...</span>
+          <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> <span id="transformModeText">A transformar...</span>
         </span>
-        <button onclick="confirmTransformSession()" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium shadow flex items-center">
+        <button onclick="confirmTransformSession()" class="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium shadow flex items-center">
           <i class="fa-solid fa-check mr-1"></i> Confirmar (Enter)
         </button>
-        <button onclick="cancelTransformSession()" class="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-gray-200 rounded font-medium flex items-center">
+        <button onclick="cancelTransformSession()" class="px-2.5 py-0.5 bg-zinc-700 hover:bg-zinc-600 text-gray-200 rounded font-medium flex items-center">
           <i class="fa-solid fa-xmark mr-1"></i> Cancelar (Esc)
         </button>
       </div>
 
-      <div class="fixed bottom-4 left-16 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded-lg p-1.5 flex items-center space-x-2 text-xs shadow-lg z-30">
-        <button onclick="zoomOut()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Reduzir Zoom (-)"><i class="fa-solid fa-minus"></i></button>
-        <button onclick="resetZoom()" class="px-2 py-0.5 hover:bg-gimp-hover rounded font-mono text-gray-200">Fit</button>
-        <button onclick="zoomIn()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Aumentar Zoom (+)"><i class="fa-solid fa-plus"></i></button>
+      <div class="fixed bottom-3 left-16 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded px-1.5 py-1 flex items-center space-x-1.5 text-xs shadow-lg z-30">
+        <button onclick="zoomOut()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Reduzir (-)"><i class="fa-solid fa-minus text-[10px]"></i></button>
+        <button onclick="resetZoom()" class="px-1.5 py-0.5 hover:bg-gimp-hover rounded font-mono text-gray-200 text-[10px]">100%</button>
+        <button onclick="zoomIn()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Ampliar (+)"><i class="fa-solid fa-plus text-[10px]"></i></button>
       </div>
     </main>
 
-    <aside class="w-72 bg-gimp-dark border-l border-gimp-border flex flex-col z-20 shrink-0">
+    <!-- PAINÉIS LATERAIS DIREITOS (CAMADAS E HISTÓRICO) -->
+    <aside class="w-68 bg-gimp-dark border-l border-gimp-border flex flex-col z-20 shrink-0 w-72">
 
       <div class="flex-1 flex flex-col min-h-0 border-b border-gimp-border">
-        <div class="bg-gimp-panel px-3 py-2 border-b border-gimp-border flex items-center justify-between">
+        <div class="bg-gimp-panel px-2.5 py-1.5 border-b border-gimp-border flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
             <i class="fa-solid fa-layer-group mr-1.5 text-blue-400"></i> Camadas
           </span>
           <div class="flex items-center space-x-1">
             <button onclick="addNewLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-green-400" title="Nova Camada">
-              <i class="fa-solid fa-plus"></i>
+              <i class="fa-solid fa-plus text-xs"></i>
             </button>
             <button onclick="duplicateActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-blue-400" title="Duplicar Camada">
-              <i class="fa-solid fa-clone"></i>
+              <i class="fa-solid fa-clone text-xs"></i>
             </button>
-            <button onclick="deleteActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-red-400" title="Excluir Camada">
-              <i class="fa-solid fa-trash"></i>
+            <button onclick="deleteActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-red-400" title="Eliminar Camada">
+              <i class="fa-solid fa-trash text-xs"></i>
             </button>
           </div>
         </div>
 
-        <div class="p-2 bg-gimp-dark border-b border-gimp-border space-y-2 text-xs">
+        <div class="p-2 bg-gimp-dark border-b border-gimp-border space-y-1.5 text-xs">
           <div class="flex items-center justify-between">
             <label class="text-gray-400">Modo:</label>
-            <select id="layerBlendMode" onchange="updateActiveLayerProps()" class="bg-gimp-panel border border-gimp-border rounded px-2 py-1 text-xs text-gray-200 focus:outline-none">
+            <select id="layerBlendMode" onchange="updateActiveLayerProps()" class="bg-gimp-panel border border-gimp-border rounded px-2 py-0.5 text-xs text-gray-200 focus:outline-none">
               <option value="source-over">Normal</option>
               <option value="multiply">Multiplicação</option>
-              <option value="screen">Tela (Screen)</option>
+              <option value="screen">Ecrã (Screen)</option>
               <option value="overlay">Sobreposição</option>
             </select>
           </div>
@@ -395,27 +392,27 @@
           <div class="flex items-center justify-between">
             <label class="text-gray-400">Opacidade:</label>
             <div class="flex items-center space-x-2">
-              <input type="range" id="layerOpacity" min="0" max="100" value="100" oninput="updateActiveLayerProps()" class="w-24 accent-blue-500 h-1 bg-gimp-panel rounded appearance-none cursor-pointer">
-              <span id="layerOpacityVal" class="text-gray-300 w-8 text-right font-mono">100%</span>
+              <input type="range" id="layerOpacity" min="0" max="100" value="100" oninput="updateActiveLayerProps()" class="w-20 accent-blue-500 h-1 bg-gimp-panel rounded appearance-none cursor-pointer">
+              <span id="layerOpacityVal" class="text-gray-300 w-7 text-right font-mono">100%</span>
             </div>
           </div>
         </div>
 
-        <div id="layers-list" class="flex-1 overflow-y-auto p-2 space-y-1.5"></div>
+        <div id="layers-list" class="flex-1 overflow-y-auto p-1.5 space-y-1"></div>
 
         <div class="bg-gimp-panel p-1 border-t border-gimp-border flex justify-around text-xs">
-          <button onclick="moveLayerUp()" class="px-3 py-1 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-up mr-1"></i> Subir</button>
-          <button onclick="moveLayerDown()" class="px-3 py-1 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-down mr-1"></i> Descer</button>
+          <button onclick="moveLayerUp()" class="px-2 py-0.5 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-up mr-1 text-[10px]"></i> Subir</button>
+          <button onclick="moveLayerDown()" class="px-2 py-0.5 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-down mr-1 text-[10px]"></i> Descer</button>
         </div>
       </div>
 
-      <div class="h-44 flex flex-col min-h-0 bg-gimp-dark">
-        <div class="bg-gimp-panel px-3 py-1.5 border-b border-gimp-border flex items-center justify-between">
+      <div class="h-40 flex flex-col min-h-0 bg-gimp-dark">
+        <div class="bg-gimp-panel px-2.5 py-1 border-b border-gimp-border flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
             <i class="fa-solid fa-clock-rotate-left mr-1.5 text-blue-400"></i> Histórico
           </span>
         </div>
-        <div id="history-list" class="flex-1 overflow-y-auto p-1.5 space-y-0.5 text-xs font-mono"></div>
+        <div id="history-list" class="flex-1 overflow-y-auto p-1 space-y-0.5 text-xs font-mono"></div>
       </div>
 
     </aside>
@@ -423,22 +420,22 @@
 
   <!-- MODAL: NOVO DOCUMENTO -->
   <div id="newImageModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
-    <div class="bg-gimp-panel border border-gimp-border rounded-lg shadow-2xl w-96 p-5 space-y-4">
-      <h3 class="text-base font-bold text-white border-b border-gimp-border pb-2 flex items-center">
+    <div class="bg-gimp-panel border border-gimp-border rounded shadow-2xl w-80 p-4 space-y-3">
+      <h3 class="text-sm font-bold text-white border-b border-gimp-border pb-1.5 flex items-center">
         <i class="fa-solid fa-file-circle-plus text-blue-500 mr-2"></i> Criar Nova Imagem
       </h3>
-      <div class="space-y-3 text-sm">
+      <div class="space-y-2 text-xs">
         <div>
-          <label class="block text-xs text-gray-400 mb-1">Largura (px)</label>
-          <input type="number" id="newWidth" value="800" min="100" max="4000" class="w-full bg-gimp-darkest border border-gimp-border rounded px-3 py-1.5 text-white focus:outline-none">
+          <label class="block text-gray-400 mb-1">Largura (px)</label>
+          <input type="number" id="newWidth" value="800" min="100" max="4000" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
         </div>
         <div>
-          <label class="block text-xs text-gray-400 mb-1">Altura (px)</label>
-          <input type="number" id="newHeight" value="600" min="100" max="4000" class="w-full bg-gimp-darkest border border-gimp-border rounded px-3 py-1.5 text-white focus:outline-none">
+          <label class="block text-gray-400 mb-1">Altura (px)</label>
+          <input type="number" id="newHeight" value="600" min="100" max="4000" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
         </div>
         <div>
-          <label class="block text-xs text-gray-400 mb-1">Fundo Inicial</label>
-          <select id="newBgType" class="w-full bg-gimp-darkest border border-gimp-border rounded px-3 py-1.5 text-white focus:outline-none">
+          <label class="block text-gray-400 mb-1">Fundo Inicial</label>
+          <select id="newBgType" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
             <option value="white">Branco</option>
             <option value="transparent">Transparente</option>
             <option value="black">Preto</option>
@@ -446,13 +443,13 @@
         </div>
       </div>
       <div class="flex justify-end space-x-2 pt-2 border-t border-gimp-border">
-        <button onclick="closeModal('newImageModal')" class="px-4 py-1.5 bg-gimp-hover hover:bg-zinc-700 text-gray-300 text-xs rounded">Cancelar</button>
-        <button onclick="createNewImageConfirm()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded">Criar</button>
+        <button onclick="closeModal('newImageModal')" class="px-3 py-1 bg-gimp-hover hover:bg-zinc-700 text-gray-300 text-xs rounded">Cancelar</button>
+        <button onclick="createNewImageConfirm()" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded">Criar</button>
       </div>
     </div>
   </div>
 
-  <div id="toast" class="fixed bottom-5 right-5 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
+  <div id="toast" class="fixed bottom-4 right-4 bg-blue-600 text-white px-3 py-1.5 rounded shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
     <i class="fa-solid fa-circle-info"></i>
     <span id="toast-message">Notificação</span>
   </div>
@@ -544,7 +541,6 @@
       const triggerBtn = document.getElementById('transformFlyoutTrigger');
       const flyout = document.getElementById('transformFlyoutMenu');
 
-      // O menu usa position:fixed para não ser cortado pelo overflow da barra lateral.
       triggerBtn.addEventListener('click', toggleTransformFlyout);
       document.addEventListener('click', (e) => {
         if (!container.contains(e.target) && !flyout.contains(e.target)) {
@@ -566,7 +562,7 @@
         return;
       }
       const rect = wrapper.getBoundingClientRect();
-      flyout.style.left = `${Math.round(rect.right + 6)}px`;
+      flyout.style.left = `${Math.round(rect.right + 4)}px`;
       flyout.style.top = `${Math.max(8, Math.min(Math.round(rect.top), window.innerHeight - flyout.offsetHeight - 8))}px`;
       flyout.style.display = 'flex';
     }
@@ -579,7 +575,7 @@
         'shear': 'fa-italic',
         'flip': 'fa-right-left'
       };
-      document.getElementById('transformGroupIcon').className = `fa-solid ${iconMap[toolName]}`;
+      document.getElementById('transformGroupIcon').className = `fa-solid ${iconMap[toolName]} text-xs`;
       document.getElementById('transformFlyoutMenu').style.display = 'none';
       selectTool(toolName);
     }
@@ -698,14 +694,14 @@
       commitMove();
       cancelTransformSession();
       if (layers.length <= 1) {
-        showToast('Não é possível excluir a única camada');
+        showToast('Não é possível eliminar a única camada');
         return;
       }
       layers.splice(activeLayerIndex, 1);
       if (activeLayerIndex >= layers.length) activeLayerIndex = layers.length - 1;
       renderLayersList();
       renderCompositeCanvas();
-      saveHistoryState('Excluir Camada');
+      saveHistoryState('Eliminar Camada');
     }
 
     function moveLayerUp() {
@@ -808,7 +804,7 @@
 
         const item = document.createElement('div');
         item.className = `flex items-center space-x-2 p-1.5 rounded cursor-pointer text-xs border ${
-          isActive ? 'bg-blue-900/40 border-blue-500 text-white' : 'bg-gimp-panel/60 border-gimp-border/50 text-gray-300 hover:bg-gimp-hover'
+          isActive ? 'bg-blue-900/50 border-blue-500 text-white' : 'bg-gimp-dark border-gimp-border text-gray-300 hover:bg-gimp-hover'
         }`;
         item.onclick = () => selectLayer(i);
 
@@ -818,11 +814,11 @@
         eyeBtn.onclick = (e) => toggleLayerVisibility(i, e);
 
         const thumbCanvas = document.createElement('canvas');
-        thumbCanvas.width = 32;
-        thumbCanvas.height = 32;
-        thumbCanvas.className = 'w-7 h-7 rounded border border-gimp-border bg-zinc-800 shrink-0 checkerboard';
+        thumbCanvas.width = 28;
+        thumbCanvas.height = 28;
+        thumbCanvas.className = 'w-6 h-6 rounded border border-gimp-border bg-zinc-800 shrink-0 checkerboard';
         const tCtx = thumbCanvas.getContext('2d');
-        tCtx.drawImage(layer.canvas, 0, 0, 32, 32);
+        tCtx.drawImage(layer.canvas, 0, 0, 28, 28);
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'flex-1 truncate font-medium';
@@ -945,7 +941,7 @@
           historyIndex = idx;
           restoreHistoryState(historyStack[idx]);
         };
-        div.innerHTML = `<span><i class="fa-solid fa-chevron-right text-[9px] mr-1"></i> ${item.action}</span>`;
+        div.innerHTML = `<span><i class="fa-solid fa-chevron-right text-[8px] mr-1"></i> ${item.action}</span>`;
         container.appendChild(div);
       });
     }
@@ -963,7 +959,11 @@
       polyPoints = [];
       renderSelectionOverlay();
       saveHistoryState('Selecionar Tudo');
-      showToast('Toda a área foi selecionada');
+      showToast('Toda a área selecionada');
+    }
+
+    function desdeselectAll() {
+      deselectAll();
     }
 
     function deselectAll() {
@@ -988,9 +988,9 @@
 
       if (zoomBox) {
         selectionCtx.save();
-        selectionCtx.strokeStyle = '#3b82f6';
+        selectionCtx.strokeStyle = '#3399ff';
         selectionCtx.lineWidth = 1;
-        selectionCtx.setLineDash([4, 4]);
+        selectionCtx.setLineDash([3, 3]);
         selectionCtx.strokeRect(zoomBox.x, zoomBox.y, zoomBox.w, zoomBox.h);
         selectionCtx.restore();
         return;
@@ -1000,7 +1000,7 @@
         selectionCtx.save();
         selectionCtx.strokeStyle = '#ffffff';
         selectionCtx.lineWidth = 1;
-        selectionCtx.setLineDash([4, 4]);
+        selectionCtx.setLineDash([3, 3]);
         selectionCtx.beginPath();
         selectionCtx.moveTo(polyPoints[0].x, polyPoints[0].y);
         for (let i = 1; i < polyPoints.length; i++) {
@@ -1019,7 +1019,7 @@
 
       selectionCtx.strokeStyle = '#ffffff';
       selectionCtx.lineWidth = 1;
-      selectionCtx.setLineDash([4, 4]);
+      selectionCtx.setLineDash([3, 3]);
       selectionCtx.stroke(activeSelectionPath);
       selectionCtx.restore();
     }
@@ -1086,74 +1086,68 @@
       switch (currentTool) {
         case 'pointer':
           icon = 'fa-arrow-pointer'; name = 'Ponteiro';
-          propsEl.innerHTML = `<span class="text-gray-400">Navegação neutra. Teclas de seta ajustam a camada/seleção.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Navegação padrão. Use as setas para mover.</span>`;
           break;
         case 'select-rect':
           icon = 'fa-regular fa-square'; name = 'Seleção Retangular';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste para criar uma seleção retangular.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste para criar uma seleção em retângulo.</span>`;
           break;
         case 'select-oval':
-          icon = 'fa-regular fa-circle'; name = 'Seleção Oval';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste para criar uma seleção elíptica.</span>`;
+          icon = 'fa-regular fa-circle'; name = 'Seleção Elíptica';
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste para criar uma seleção oval/elipse.</span>`;
           break;
         case 'select-poly':
           icon = 'fa-solid fa-draw-polygon'; name = 'Seleção Poligonal';
-          propsEl.innerHTML = `<span class="text-gray-400">Clique para pontos. Enter para fechar.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Clique para adicionar pontos. Prima Enter para fechar.</span>`;
           break;
         case 'select-wand':
           icon = 'fa-solid fa-wand-magic-sparkles'; name = 'Varinha Mágica';
           propsEl.innerHTML = `
             <div class="flex items-center space-x-2">
               <label class="text-gray-400">Tolerância:</label>
-              <input type="range" min="0" max="100" value="${wandTolerance}" oninput="wandTolerance = parseInt(this.value); this.nextElementSibling.innerText = this.value" class="w-24 accent-blue-500">
-              <span class="w-8 font-mono text-gray-300">${wandTolerance}</span>
+              <input type="range" min="0" max="100" value="${wandTolerance}" oninput="wandTolerance = parseInt(this.value); this.nextElementSibling.innerText = this.value" class="w-20 accent-blue-500">
+              <span class="w-6 font-mono text-gray-300">${wandTolerance}</span>
             </div>`;
           break;
         case 'move':
           icon = 'fa-arrows-up-down-left-right'; name = 'Mover';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o mouse para mover.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o rato para mover conteúdo ou seleções.</span>`;
           break;
         case 'rotate':
-          icon = 'fa-rotate'; name = 'Rotacionar Interativo';
+          icon = 'fa-rotate'; name = 'Rodar';
           propsEl.innerHTML = `
             <div class="flex items-center space-x-3">
-              <span class="text-gray-300">Arraste a âncora redonda superior no canvas para girar.</span>
+              <span class="text-gray-300">Arraste o círculo superior para rodar.</span>
               <label class="text-gray-400">Ângulo:</label>
-              <input type="number" id="rotateValInput" value="${Math.round(transformBox ? transformBox.angle : 0)}" oninput="updateTransformFromInputs()" class="w-16 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> °
+              <input type="number" id="rotateValInput" value="${Math.round(transformBox ? transformBox.angle : 0)}" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> °
             </div>`;
           break;
         case 'scale':
-          icon = 'fa-expand'; name = 'Redimensionar Interativo';
+          icon = 'fa-expand'; name = 'Redimensionar';
           propsEl.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <span class="text-gray-300">Arraste as âncoras dos cantos/lados para escalar.</span>
-              <label class="text-gray-400">Dimensões:</label>
-              <input type="number" id="scaleWInput" value="${Math.round(transformBox ? transformBox.width * transformBox.scaleX : 0)}" oninput="updateTransformFromInputs()" class="w-16 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> px
+            <div class="flex items-center space-x-2">
+              <label class="text-gray-400">Tamanho:</label>
+              <input type="number" id="scaleWInput" value="${Math.round(transformBox ? transformBox.width * transformBox.scaleX : 0)}" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> px
               <span>x</span>
-              <input type="number" id="scaleHInput" value="${Math.round(transformBox ? transformBox.height * transformBox.scaleY : 0)}" oninput="updateTransformFromInputs()" class="w-16 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> px
+              <input type="number" id="scaleHInput" value="${Math.round(transformBox ? transformBox.height * transformBox.scaleY : 0)}" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> px
             </div>`;
           break;
         case 'shear':
-          icon = 'fa-italic'; name = 'Cisalhar Interativo';
+          icon = 'fa-italic'; name = 'Cisalhar';
           propsEl.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <span class="text-gray-300">Ajuste os valores de inclinação nos eixos:</span>
+            <div class="flex items-center space-x-2">
               <label class="text-gray-400">X:</label>
-              <input type="number" id="shearXInput" value="${transformBox ? transformBox.shearX : 0}" step="2" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> °
+              <input type="number" id="shearXInput" value="${transformBox ? transformBox.shearX : 0}" step="2" oninput="updateTransformFromInputs()" class="w-12 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> °
               <label class="text-gray-400">Y:</label>
-              <input type="number" id="shearYInput" value="${transformBox ? transformBox.shearY : 0}" step="2" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> °
+              <input type="number" id="shearYInput" value="${transformBox ? transformBox.shearY : 0}" step="2" oninput="updateTransformFromInputs()" class="w-12 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> °
             </div>`;
           break;
         case 'flip':
-          icon = 'fa-right-left'; name = 'Inverter / Espelhar';
+          icon = 'fa-right-left'; name = 'Inverter';
           propsEl.innerHTML = `
             <div class="flex items-center space-x-2">
-              <button onclick="toggleFlipSession('h')" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center">
-                <i class="fa-solid fa-arrows-left-right mr-1.5"></i> Espelhar Horizontal
-              </button>
-              <button onclick="toggleFlipSession('v')" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center">
-                <i class="fa-solid fa-arrows-up-down mr-1.5"></i> Espelhar Vertical
-              </button>
+              <button onclick="toggleFlipSession('h')" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded">Horizontal</button>
+              <button onclick="toggleFlipSession('v')" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded">Vertical</button>
             </div>`;
           break;
         case 'brush':
@@ -1161,8 +1155,8 @@
           propsEl.innerHTML = `
             <div class="flex items-center space-x-2">
               <label class="text-gray-400">Tamanho:</label>
-              <input type="range" min="1" max="100" value="${brushSize}" oninput="brushSize = parseInt(this.value); this.nextElementSibling.innerText = this.value + 'px'" class="w-20 accent-blue-500">
-              <span class="w-8 font-mono text-gray-300">${brushSize}px</span>
+              <input type="range" min="1" max="100" value="${brushSize}" oninput="brushSize = parseInt(this.value); this.nextElementSibling.innerText = this.value + 'px'" class="w-16 accent-blue-500">
+              <span class="w-7 font-mono text-gray-300">${brushSize}px</span>
             </div>`;
           break;
         case 'eraser':
@@ -1170,8 +1164,8 @@
           propsEl.innerHTML = `
             <div class="flex items-center space-x-2">
               <label class="text-gray-400">Tamanho:</label>
-              <input type="range" min="1" max="100" value="${brushSize}" oninput="brushSize = parseInt(this.value); this.nextElementSibling.innerText = this.value + 'px'" class="w-20 accent-blue-500">
-              <span class="w-8 font-mono text-gray-300">${brushSize}px</span>
+              <input type="range" min="1" max="100" value="${brushSize}" oninput="brushSize = parseInt(this.value); this.nextElementSibling.innerText = this.value + 'px'" class="w-16 accent-blue-500">
+              <span class="w-7 font-mono text-gray-300">${brushSize}px</span>
             </div>`;
           break;
         case 'bucket':
@@ -1179,7 +1173,7 @@
           propsEl.innerHTML = `
             <label class="flex items-center space-x-2 cursor-pointer text-gray-200">
               <input type="checkbox" ${bucketSampleAllLayers ? 'checked' : ''} onchange="bucketSampleAllLayers = this.checked" class="rounded accent-blue-600">
-              <span>Amostrar Todas as Camadas (Detectar visível)</span>
+              <span>Amostra de todas as camadas</span>
             </label>`;
           break;
         case 'shape':
@@ -1192,8 +1186,8 @@
             </select>`;
           break;
         case 'zoom':
-          icon = 'fa-magnifying-glass'; name = 'Zoom por Área';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste um retângulo para ampliar.</span>`;
+          icon = 'fa-magnifying-glass'; name = 'Ampliação';
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste uma área para ampliar.</span>`;
           break;
       }
 
@@ -1241,7 +1235,7 @@
 
       activeTransformSession = true;
       document.getElementById('transformActionFloatingBar').classList.remove('hidden');
-      document.getElementById('transformModeText').innerText = `Transformando: ${layer.name}`;
+      document.getElementById('transformModeText').innerText = `A transformar: ${layer.name}`;
 
       renderCompositeCanvas();
       renderSelectionOverlay();
@@ -1276,47 +1270,38 @@
       ctx.translate(cx, cy);
       ctx.rotate((transformBox.angle * Math.PI) / 180);
 
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = '#3399ff';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
       ctx.strokeRect(-w / 2, -h / 2, w, h);
 
       ctx.beginPath();
       ctx.setLineDash([]);
       ctx.moveTo(0, -h / 2);
-      ctx.lineTo(0, -h / 2 - 25);
+      ctx.lineTo(0, -h / 2 - 20);
       ctx.stroke();
 
-      ctx.fillStyle = '#2563eb';
+      ctx.fillStyle = '#2680eb';
       ctx.beginPath();
-      ctx.arc(0, -h / 2 - 25, 6, 0, Math.PI * 2);
+      ctx.arc(0, -h / 2 - 20, 5, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
       const handles = [
         { id: 'tl', x: -w / 2, y: -h / 2 },
-        { id: 'tm', x: 0, y: -h / 2 },
         { id: 'tr', x: w / 2, y: -h / 2 },
-        { id: 'mr', x: w / 2, y: 0 },
         { id: 'br', x: w / 2, y: h / 2 },
-        { id: 'bm', x: 0, y: h / 2 },
-        { id: 'bl', x: -w / 2, y: h / 2 },
-        { id: 'ml', x: -w / 2, y: 0 }
+        { id: 'bl', x: -w / 2, y: h / 2 }
       ];
 
       ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#1d4ed8';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#2680eb';
+      ctx.lineWidth = 1;
 
       handles.forEach(hnd => {
-        ctx.fillRect(hnd.x - 4, hnd.y - 4, 8, 8);
-        ctx.strokeRect(hnd.x - 4, hnd.y - 4, 8, 8);
+        ctx.fillRect(hnd.x - 3, hnd.y - 3, 6, 6);
+        ctx.strokeRect(hnd.x - 3, hnd.y - 3, 6, 6);
       });
-
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(0, 0, 4, 0, Math.PI * 2);
-      ctx.fill();
 
       ctx.restore();
     }
@@ -1335,21 +1320,17 @@
       const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
       const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
 
-      if (Math.hypot(localX, localY - (-h / 2 - 25)) <= 8) return 'rotate';
+      if (Math.hypot(localX, localY - (-h / 2 - 20)) <= 8) return 'rotate';
 
       const handles = [
         { id: 'tl', x: -w / 2, y: -h / 2 },
-        { id: 'tm', x: 0, y: -h / 2 },
         { id: 'tr', x: w / 2, y: -h / 2 },
-        { id: 'mr', x: w / 2, y: 0 },
         { id: 'br', x: w / 2, y: h / 2 },
-        { id: 'bm', x: 0, y: h / 2 },
-        { id: 'bl', x: -w / 2, y: h / 2 },
-        { id: 'ml', x: -w / 2, y: 0 }
+        { id: 'bl', x: -w / 2, y: h / 2 }
       ];
 
       for (const hnd of handles) {
-        if (Math.abs(localX - hnd.x) <= 8 && Math.abs(localY - hnd.y) <= 8) {
+        if (Math.abs(localX - hnd.x) <= 6 && Math.abs(localY - hnd.y) <= 6) {
           return hnd.id;
         }
       }
@@ -1458,12 +1439,10 @@
     function zoomToArea(x1, y1, x2, y2) {
       const rectW = Math.abs(x2 - x1);
       const rectH = Math.abs(y2 - y1);
-
       if (rectW < 5 || rectH < 5) return;
 
       const workbench = document.getElementById('workbench');
       const wRect = workbench.getBoundingClientRect();
-
       const scaleX = wRect.width / rectW;
       const scaleY = wRect.height / rectH;
       const targetZoom = Math.max(0.1, Math.min(8.0, Math.min(scaleX, scaleY) * 0.9));
@@ -1526,9 +1505,7 @@
 
       const startAction = (e) => {
         if (isPanning || isSpacePressed || e.button === 1 || e.button === 2) return;
-
         const coords = getCanvasCoords(e);
-
         if (currentTool === 'pointer') return;
 
         if (activeTransformSession) {
@@ -1840,8 +1817,6 @@
     }
 
     function performWandSelection(startX, startY) {
-      // A varinha trabalha sobre a imagem composta (camadas visíveis), mas grava
-      // a máscara real da seleção. Coordenadas inválidas são ignoradas.
       startX = Math.floor(startX);
       startY = Math.floor(startY);
       if (startX < 0 || startY < 0 || startX >= canvasWidth || startY >= canvasHeight) return;
@@ -1854,8 +1829,6 @@
       const targetR = data[seedIdx], targetG = data[seedIdx + 1];
       const targetB = data[seedIdx + 2], targetA = data[seedIdx + 3];
       const tolerance = Math.max(0, Math.min(100, Number(wandTolerance) || 0));
-      // A tolerância é calculada por distância RGB média; pixels transparentes
-      // são comparados também pelo canal alfa.
       const threshold = tolerance * 4;
       const colorMatch = (idx) => {
         const alphaDiff = Math.abs(data[idx + 3] - targetA);
@@ -1869,8 +1842,6 @@
       const maskImg = selectionMaskCtx.createImageData(canvasWidth, canvasHeight);
       const maskData = maskImg.data;
       const visited = new Uint8Array(pixelCount);
-      // Fila linear de índices de pixel (evita misturar x/y e evita crescer
-      // uma fila de pares de coordenadas).
       const queue = new Int32Array(pixelCount);
       let head = 0, tail = 0;
       queue[tail++] = seedPos;
@@ -1897,8 +1868,6 @@
           const n = neighbors[i];
           if (!visited[n]) {
             visited[n] = 1;
-            // Só pixels que combinam são enfileirados; marca-se visited na
-            // inserção para que cada pixel seja processado uma única vez.
             if (colorMatch(n * 4)) queue[tail++] = n;
           }
         }
@@ -1906,9 +1875,6 @@
 
       selectionMaskCtx.putImageData(maskImg, 0, 0);
 
-      // Constrói um contorno verdadeiro a partir das bordas da máscara.
-      // Isso permite que pincel, borracha, mover e outras operações respeitem
-      // a região selecionada, em vez de tratar o canvas inteiro como seleção.
       const path = new Path2D();
       const selected = (x, y) => x >= 0 && y >= 0 && x < canvasWidth && y < canvasHeight &&
         maskData[(y * canvasWidth + x) * 4 + 3] > 0;
@@ -1926,8 +1892,8 @@
       activeSelectionPath = hasActiveSelection ? path : null;
       polyPoints = [];
       renderSelectionOverlay();
-      saveHistoryState('Seleção Varinha Mágica');
-      showToast(hasActiveSelection ? 'Seleção por Varinha Mágica aplicada' : 'Nenhuma área selecionada');
+      saveHistoryState('Seleção por Varinha Mágica');
+      showToast(hasActiveSelection ? 'Seleção aplicada' : 'Nenhuma área seleccionada');
     }
 
     function drawStroke(x, y, isStart) {
@@ -1993,10 +1959,8 @@
 
       const targetLayer = layers[activeLayerIndex];
       const targetCtx = targetLayer.ctx;
-
       const sourceCtx = bucketSampleAllLayers ? compositeCtx : targetCtx;
       const sampleData = sourceCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
-
       const targetLayerDataObj = targetCtx.getImageData(0, 0, canvasWidth, canvasHeight);
       const targetLayerData = targetLayerDataObj.data;
 
@@ -2029,7 +1993,6 @@
         visited[pixelIndex] = 1;
 
         const pos = pixelIndex * 4;
-
         if (hasActiveSelection && maskData[pos + 3] === 0) continue;
 
         if (colorMatch(pos)) {
@@ -2115,7 +2078,7 @@
           }
         });
       } catch (e) {
-        console.warn('Clipboard nativo bloqueado. Mantido em memória.');
+        console.warn('Clipboard nativo bloqueado.');
       }
 
       showToast('Seleção copiada');
@@ -2123,7 +2086,6 @@
 
     async function cutSelection() {
       if (activeLayerIndex < 0) return;
-
       await copySelection();
 
       const ctx = layers[activeLayerIndex].ctx;
@@ -2137,8 +2099,8 @@
       ctx.restore();
 
       renderCompositeCanvas();
-      saveHistoryState('Recortar Seleção');
-      showToast('Seleção recortada');
+      saveHistoryState('Cortar Seleção');
+      showToast('Seleção cortada');
     }
 
     async function pasteSelection() {
@@ -2170,7 +2132,7 @@
             }
           }
         } catch (err) {
-          console.warn('Falha no clipboard nativo, usando memória interna.');
+          console.warn('Falha no clipboard nativo.');
         }
       }
 
@@ -2188,7 +2150,6 @@
       const posY = Math.round((canvasHeight - srcCanvas.height) / 2);
 
       deselectAll();
-
       const newLayer = addNewLayer('Camada Colada', srcCanvas, posX, posY);
 
       selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -2199,7 +2160,6 @@
       activeSelectionPath.rect(posX, posY, srcCanvas.width, srcCanvas.height);
 
       selectTool('move');
-
       renderCompositeCanvas();
       renderSelectionOverlay();
       showToast('Elemento colado.');
@@ -2264,16 +2224,13 @@
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
           e.preventDefault();
           const step = e.shiftKey ? 10 : 1;
-
           let dx = 0, dy = 0;
           if (e.code === 'ArrowLeft') dx = -step;
           if (e.code === 'ArrowRight') dx = step;
           if (e.code === 'ArrowUp') dy = -step;
           if (e.code === 'ArrowDown') dy = step;
 
-          if (currentTool !== 'move') {
-            selectTool('move');
-          }
+          if (currentTool !== 'move') selectTool('move');
           applyNudge(dx, dy);
           return;
         }
@@ -2354,7 +2311,7 @@
           const writable = await fileHandle.createWritable();
           await writable.write(jsonString);
           await writable.close();
-          showToast(`Projeto salvo em ${fileHandle.name}`);
+          showToast(`Projeto guardado em ${fileHandle.name}`);
           return;
         } catch (err) { console.warn(err); }
       }
@@ -2371,7 +2328,7 @@
           const writable = await fileHandle.createWritable();
           await writable.write(jsonString);
           await writable.close();
-          showToast(`Projeto salvo como ${projectFileName}`);
+          showToast(`Projeto guardado como ${projectFileName}`);
           return;
         } catch (err) { if (err.name === 'AbortError') return; }
       }
@@ -2382,7 +2339,7 @@
       link.href = URL.createObjectURL(blob);
       link.click();
       URL.revokeObjectURL(link.href);
-      showToast('Projeto salvo com sucesso');
+      showToast('Projeto guardado com sucesso');
     }
 
     function loadProjectFromFile(e) {
@@ -2442,7 +2399,7 @@
             };
             img.src = lData.dataUrl;
           });
-        } catch (err) { alert('Arquivo .gimpweb inválido.'); }
+        } catch (err) { alert('Ficheiro .gimpweb inválido.'); }
       };
       reader.readAsText(file);
     }
@@ -2450,7 +2407,7 @@
     function addTextPrompt(x, y) {
       commitMove();
       cancelTransformSession();
-      const text = prompt('Digite o texto a ser inserido:');
+      const text = prompt('Introduza o texto:');
       if (!text) return;
 
       const ctx = layers[activeLayerIndex].ctx;
@@ -2537,8 +2494,8 @@
     function getToolName(tool) {
       const names = {
         brush: 'Pincel', eraser: 'Borracha', shape: 'Desenhar Forma',
-        move: 'Mover Conteúdo', bucket: 'Preenchimento', rotate: 'Rotacionar Interativo',
-        scale: 'Redimensionar Interativo', shear: 'Cisalhar Interativo', flip: 'Inverter'
+        move: 'Mover Conteúdo', bucket: 'Preenchimento', rotate: 'Rodar',
+        scale: 'Redimensionar', shear: 'Cisalhar', flip: 'Inverter'
       };
       return names[tool] || 'Ação';
     }
