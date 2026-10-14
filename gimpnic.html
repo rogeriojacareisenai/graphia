@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Translação Sincronizada</title>
+  <title>GIMP Web Studio - Ajuste Fino & Scrollbars</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -34,6 +34,12 @@
   </script>
 
   <style>
+    /* BARRAS DE ROLAGEM SUAVES E ESTILIZADAS */
+    #workbench::-webkit-scrollbar { width: 10px; height: 10px; }
+    #workbench::-webkit-scrollbar-track { background: #121214; }
+    #workbench::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 5px; border: 2px solid #121214; }
+    #workbench::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #18181b; }
     ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
@@ -266,14 +272,14 @@
       </button>
     </aside>
 
-    <!-- ÁREA DE TRABALHO -->
-    <main id="workbench" class="flex-1 bg-[#121214] overflow-hidden relative flex items-center justify-center checkerboard cursor-default select-none">
-      <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75">
+    <!-- ÁREA DE TRABALHO COM SCROLLBARS NATIVAS SUAVES -->
+    <main id="workbench" class="flex-1 bg-[#121214] overflow-auto relative flex p-12 checkerboard cursor-default select-none scroll-smooth">
+      <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75 m-auto">
         <canvas id="compositeCanvas" class="block border border-zinc-700 shadow-2xl"></canvas>
         <canvas id="selectionCanvas" class="absolute top-0 left-0 pointer-events-none"></canvas>
       </div>
 
-      <div class="absolute bottom-4 left-4 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded-lg p-1.5 flex items-center space-x-2 text-xs shadow-lg z-30">
+      <div class="fixed bottom-4 left-16 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded-lg p-1.5 flex items-center space-x-2 text-xs shadow-lg z-30">
         <button onclick="zoomOut()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Reduzir Zoom (-)"><i class="fa-solid fa-minus"></i></button>
         <button onclick="resetZoom()" class="px-2 py-0.5 hover:bg-gimp-hover rounded font-mono text-gray-200">Fit</button>
         <button onclick="zoomIn()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Aumentar Zoom (+)"><i class="fa-solid fa-plus"></i></button>
@@ -412,7 +418,7 @@
     let lastX = 0, lastY = 0;
     let tempCanvasState = null;
 
-    // ESTADO DE MOVER DINÂMICO SINCRO
+    // ESTADO DE MOVER
     let moveSessionActive = false;
     let moveInitialLayerCanvas = null;      
     let moveInitialMaskCanvas = null;       
@@ -513,7 +519,6 @@
       resetZoom();
     }
 
-    /* CORREÇÃO CRÍTICA: FINALIZAR E CONSOLIDAR TRANSLADO */
     function commitMove() {
       if (moveSessionActive) {
         moveSessionActive = false;
@@ -912,7 +917,7 @@
       switch (currentTool) {
         case 'pointer':
           icon = 'fa-arrow-pointer'; name = 'Ponteiro';
-          propsEl.innerHTML = `<span class="text-gray-400">Ferramenta de navegação neutra.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Navegação neutra. Teclas de seta ajustam a camada/seleção.</span>`;
           break;
         case 'select-rect':
           icon = 'fa-regular fa-square'; name = 'Seleção Retangular';
@@ -924,7 +929,7 @@
           break;
         case 'select-poly':
           icon = 'fa-solid fa-draw-polygon'; name = 'Seleção Poligonal';
-          propsEl.innerHTML = `<span class="text-gray-400">Clique para adicionar pontos. Enter para fechar.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Clique para pontos. Enter para fechar.</span>`;
           break;
         case 'select-wand':
           icon = 'fa-solid fa-wand-magic-sparkles'; name = 'Varinha Mágica';
@@ -937,7 +942,7 @@
           break;
         case 'move':
           icon = 'fa-arrows-up-down-left-right'; name = 'Mover';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste para transladar sem duplicar a imagem original.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o mouse ou use Setas (ou Shift+Setas para 10px) para ajuste fino.</span>`;
           break;
         case 'brush':
           icon = 'fa-paint-brush'; name = 'Pincel';
@@ -981,31 +986,17 @@
 
     function applyViewportTransform() {
       const vp = document.getElementById('canvas-viewport');
-      vp.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+      vp.style.transform = `scale(${zoomLevel})`;
       document.getElementById('zoom-level-display').innerText = `${Math.round(zoomLevel * 100)}%`;
     }
 
     function setZoomCenter(newZoom) {
       const clampedZoom = Math.max(0.1, Math.min(8.0, newZoom));
-      const workbench = document.getElementById('workbench');
-      const wRect = workbench.getBoundingClientRect();
-
-      const viewportCenterX = wRect.width / 2;
-      const viewportCenterY = wRect.height / 2;
-
-      const canvasPointX = (viewportCenterX - (wRect.width / 2 + panX)) / zoomLevel;
-      const canvasPointY = (viewportCenterY - (wRect.height / 2 + panY)) / zoomLevel;
-
       zoomLevel = clampedZoom;
-      panX = viewportCenterX - (wRect.width / 2) - (canvasPointX * zoomLevel);
-      panY = viewportCenterY - (wRect.height / 2) - (canvasPointY * zoomLevel);
-
       applyViewportTransform();
     }
 
     function zoomToArea(x1, y1, x2, y2) {
-      const rectX = Math.min(x1, x2);
-      const rectY = Math.min(y1, y2);
       const rectW = Math.abs(x2 - x1);
       const rectH = Math.abs(y2 - y1);
 
@@ -1018,35 +1009,31 @@
       const scaleY = wRect.height / rectH;
       const targetZoom = Math.max(0.1, Math.min(8.0, Math.min(scaleX, scaleY) * 0.9));
 
-      const areaCenterX = rectX + rectW / 2;
-      const areaCenterY = rectY + rectH / 2;
-
       zoomLevel = targetZoom;
-      panX = ((canvasWidth / 2) - areaCenterX) * zoomLevel;
-      panY = ((canvasHeight / 2) - areaCenterY) * zoomLevel;
-
       applyViewportTransform();
       showToast('Área Ampliada');
     }
 
     function zoomIn() { setZoomCenter(zoomLevel * 1.25); }
     function zoomOut() { setZoomCenter(zoomLevel / 1.25); }
-    function resetZoom() { zoomLevel = 1.0; panX = 0; panY = 0; applyViewportTransform(); }
+    function resetZoom() { zoomLevel = 1.0; applyViewportTransform(); }
 
     function setupZoomAndPanEvents() {
       const workbench = document.getElementById('workbench');
 
       workbench.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const factor = e.deltaY < 0 ? 1.15 : 0.85;
-        setZoomCenter(zoomLevel * factor);
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.15 : 0.85;
+          setZoomCenter(zoomLevel * factor);
+        }
       }, { passive: false });
 
       workbench.addEventListener('mousedown', (e) => {
-        if (e.button === 1 || e.button === 2 || isSpacePressed) {
+        if (e.button === 1 || isSpacePressed) {
           isPanning = true;
-          panStartX = e.clientX - panX;
-          panStartY = e.clientY - panY;
+          panStartX = e.clientX + workbench.scrollLeft;
+          panStartY = e.clientY + workbench.scrollTop;
           updateWorkbenchCursor();
           e.preventDefault();
         }
@@ -1054,9 +1041,8 @@
 
       window.addEventListener('mousemove', (e) => {
         if (isPanning) {
-          panX = e.clientX - panStartX;
-          panY = e.clientY - panStartY;
-          applyViewportTransform();
+          workbench.scrollLeft = panStartX - e.clientX;
+          workbench.scrollTop = panStartY - e.clientY;
         }
       });
 
@@ -1068,7 +1054,6 @@
       });
     }
 
-    /* SISTEMA DE TRANSLADO E RECORTE UNIFICADO */
     function setupCanvasEvents() {
       const viewport = document.getElementById('canvas-viewport');
 
@@ -1113,44 +1098,7 @@
           const activeLayer = layers[activeLayerIndex];
 
           if (currentTool === 'move') {
-            if (!moveSessionActive) {
-              moveSessionActive = true;
-              moveTotalDx = 0;
-              moveTotalDy = 0;
-
-              if (hasActiveSelection) {
-                // CORREÇÃO CRÍTICA: Isolar e apagar imediatamente da matriz da camada original para evitar duplicar/duplicar a imagem original!
-                moveSelectedContentCanvas = document.createElement('canvas');
-                moveSelectedContentCanvas.width = canvasWidth;
-                moveSelectedContentCanvas.height = canvasHeight;
-                const scCtx = moveSelectedContentCanvas.getContext('2d');
-
-                scCtx.drawImage(activeLayer.canvas, 0, 0);
-                scCtx.globalCompositeOperation = 'destination-in';
-                scCtx.drawImage(selectionMaskCanvas, 0, 0);
-
-                // Apagar a área recortada da camada base
-                activeLayer.ctx.save();
-                activeLayer.ctx.globalCompositeOperation = 'destination-out';
-                activeLayer.ctx.drawImage(selectionMaskCanvas, 0, 0);
-                activeLayer.ctx.restore();
-
-                moveInitialLayerCanvas = document.createElement('canvas');
-                moveInitialLayerCanvas.width = canvasWidth;
-                moveInitialLayerCanvas.height = canvasHeight;
-                moveInitialLayerCanvas.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
-
-                moveInitialMaskCanvas = document.createElement('canvas');
-                moveInitialMaskCanvas.width = canvasWidth;
-                moveInitialMaskCanvas.height = canvasHeight;
-                moveInitialMaskCanvas.getContext('2d').drawImage(selectionMaskCanvas, 0, 0);
-              } else {
-                moveInitialLayerCanvas = document.createElement('canvas');
-                moveInitialLayerCanvas.width = canvasWidth;
-                moveInitialLayerCanvas.height = canvasHeight;
-                moveInitialLayerCanvas.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
-              }
-            }
+            startMoveSession();
           } else if (currentTool === 'shape') {
             tempCanvasState = activeLayer.ctx.getImageData(0, 0, canvasWidth, canvasHeight);
           }
@@ -1185,35 +1133,18 @@
         }
 
         if (activeLayerIndex < 0) return;
-        const activeLayer = layers[activeLayerIndex];
 
         if (currentTool === 'move') {
-          moveCurrentDx = moveTotalDx + (coords.x - startX);
-          moveCurrentDy = moveTotalDy + (coords.y - startY);
-
-          activeLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-          if (hasActiveSelection && moveSelectedContentCanvas) {
-            activeLayer.ctx.drawImage(moveInitialLayerCanvas, 0, 0);
-            activeLayer.ctx.drawImage(moveSelectedContentCanvas, moveCurrentDx, moveCurrentDy);
-
-            selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-            selectionMaskCtx.drawImage(moveInitialMaskCanvas, moveCurrentDx, moveCurrentDy);
-
-            activeSelectionPath = new Path2D();
-            activeSelectionPath.rect(moveCurrentDx, moveCurrentDy, canvasWidth, canvasHeight);
-
-            renderSelectionOverlay();
-          } else {
-            activeLayer.ctx.drawImage(moveInitialLayerCanvas, moveCurrentDx, moveCurrentDy);
-          }
-
-          renderCompositeCanvas();
+          const dx = coords.x - startX;
+          const dy = coords.y - startY;
+          applyNudge(dx, dy);
+          startX = coords.x;
+          startY = coords.y;
         } else if (currentTool === 'brush' || currentTool === 'eraser') {
           drawStroke(coords.x, coords.y, false);
         } else if (currentTool === 'shape') {
-          activeLayer.ctx.putImageData(tempCanvasState, 0, 0);
-          drawPreviewShape(activeLayer.ctx, startX, startY, coords.x, coords.y);
+          layers[activeLayerIndex].ctx.putImageData(tempCanvasState, 0, 0);
+          drawPreviewShape(layers[activeLayerIndex].ctx, startX, startY, coords.x, coords.y);
           renderCompositeCanvas();
         } else if (currentTool === 'select-rect') {
           updateRectSelection(startX, startY, coords.x, coords.y);
@@ -1237,10 +1168,7 @@
           return;
         }
 
-        if (currentTool === 'move') {
-          moveTotalDx = moveCurrentDx;
-          moveTotalDy = moveCurrentDy;
-        } else if (['brush', 'eraser', 'shape'].includes(currentTool)) {
+        if (['brush', 'eraser', 'shape'].includes(currentTool)) {
           renderCompositeCanvas();
           saveHistoryState(getToolName(currentTool));
         } else if (['select-rect', 'select-oval'].includes(currentTool)) {
@@ -1257,6 +1185,80 @@
           finishPolySelection();
         }
       });
+    }
+
+    /* INICIALIZAR SESSÃO DE MOVER */
+    function startMoveSession() {
+      if (activeLayerIndex < 0) return;
+      const activeLayer = layers[activeLayerIndex];
+
+      if (!moveSessionActive) {
+        moveSessionActive = true;
+        moveTotalDx = 0;
+        moveTotalDy = 0;
+
+        if (hasActiveSelection) {
+          moveSelectedContentCanvas = document.createElement('canvas');
+          moveSelectedContentCanvas.width = canvasWidth;
+          moveSelectedContentCanvas.height = canvasHeight;
+          const scCtx = moveSelectedContentCanvas.getContext('2d');
+
+          scCtx.drawImage(activeLayer.canvas, 0, 0);
+          scCtx.globalCompositeOperation = 'destination-in';
+          scCtx.drawImage(selectionMaskCanvas, 0, 0);
+
+          activeLayer.ctx.save();
+          activeLayer.ctx.globalCompositeOperation = 'destination-out';
+          activeLayer.ctx.drawImage(selectionMaskCanvas, 0, 0);
+          activeLayer.ctx.restore();
+
+          moveInitialLayerCanvas = document.createElement('canvas');
+          moveInitialLayerCanvas.width = canvasWidth;
+          moveInitialLayerCanvas.height = canvasHeight;
+          moveInitialLayerCanvas.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
+
+          moveInitialMaskCanvas = document.createElement('canvas');
+          moveInitialMaskCanvas.width = canvasWidth;
+          moveInitialMaskCanvas.height = canvasHeight;
+          moveInitialMaskCanvas.getContext('2d').drawImage(selectionMaskCanvas, 0, 0);
+        } else {
+          moveInitialLayerCanvas = document.createElement('canvas');
+          moveInitialLayerCanvas.width = canvasWidth;
+          moveInitialLayerCanvas.height = canvasHeight;
+          moveInitialLayerCanvas.getContext('2d').drawImage(activeLayer.canvas, 0, 0);
+        }
+      }
+    }
+
+    /* DESLOCAMENTO PRECISO (NUDGE) - USADO TANTO PELO MOUSE QUANTO PELAS SETAS */
+    function applyNudge(deltaX, deltaY) {
+      if (activeLayerIndex < 0) return;
+      if (!moveSessionActive) {
+        startMoveSession();
+      }
+
+      moveTotalDx += deltaX;
+      moveTotalDy += deltaY;
+
+      const activeLayer = layers[activeLayerIndex];
+      activeLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      if (hasActiveSelection && moveSelectedContentCanvas) {
+        activeLayer.ctx.drawImage(moveInitialLayerCanvas, 0, 0);
+        activeLayer.ctx.drawImage(moveSelectedContentCanvas, moveTotalDx, moveTotalDy);
+
+        selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        selectionMaskCtx.drawImage(moveInitialMaskCanvas, moveTotalDx, moveTotalDy);
+
+        activeSelectionPath = new Path2D();
+        activeSelectionPath.rect(moveTotalDx, moveTotalDy, canvasWidth, canvasHeight);
+
+        renderSelectionOverlay();
+      } else {
+        activeLayer.ctx.drawImage(moveInitialLayerCanvas, moveTotalDx, moveTotalDy);
+      }
+
+      renderCompositeCanvas();
     }
 
     function updateRectSelection(x1, y1, x2, y2) {
@@ -1671,9 +1673,29 @@
       });
     }
 
+    /* ATALHOS DE TECLADO + SUPORTE ÀS SETAS DE DIREÇÃO PARA NUDGE PRECISÃO */
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
         if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+        // AJUSTE FINO POR TECLADO (SETAS DE DIREÇÃO)
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+          e.preventDefault();
+          const step = e.shiftKey ? 10 : 1; // 1px ou 10px com Shift
+
+          let dx = 0, dy = 0;
+          if (e.code === 'ArrowLeft') dx = -step;
+          if (e.code === 'ArrowRight') dx = step;
+          if (e.code === 'ArrowUp') dy = -step;
+          if (e.code === 'ArrowDown') dy = step;
+
+          // Se a ferramenta atual for mover, ou se houver seleção/conteúdo colado
+          if (currentTool !== 'move') {
+            selectTool('move');
+          }
+          applyNudge(dx, dy);
+          return;
+        }
 
         if (e.code === 'Space' && !isSpacePressed) {
           isSpacePressed = true;
