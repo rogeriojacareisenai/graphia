@@ -91,7 +91,7 @@
       </div>
 
       <nav class="flex space-x-0.5">
-        <!-- Arquivo -->
+        <!-- Ficheiro -->
         <div class="relative dropdown">
           <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Ficheiro</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-52 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
@@ -188,7 +188,7 @@
           </div>
         </div>
 
-        <!-- Visualizar -->
+        <!-- Ver -->
         <div class="relative dropdown">
           <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Ver</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-48 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
@@ -236,21 +236,32 @@
 
       <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <button onclick="selectTool('select-rect')" id="tool-select-rect" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Seleção Retangular (M)">
-        <i class="fa-regular fa-square text-xs"></i>
-      </button>
+      <!-- GRUPO DE SELEÇÃO (RETANGULAR, OVAL, POLIGONAL, VARINHA) -->
+      <div class="relative group-container" id="selectionGroupContainer">
+        <div class="flex items-center w-8 h-8 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="selectionGroupWrapper">
+          <button id="tool-selection-group" onclick="toggleSelectionFlyout(event)" class="w-6 h-full flex items-center justify-center" title="Ferramentas de Seleção">
+            <i id="selectionGroupIcon" class="fa-regular fa-square text-xs"></i>
+          </button>
+          <button id="selectionFlyoutTrigger" class="w-2 h-full flex items-center justify-center text-[7px] text-blue-400 hover:text-white" title="Mais opções de seleção">
+            <i class="fa-solid fa-caret-right"></i>
+          </button>
+        </div>
 
-      <button onclick="selectTool('select-oval')" id="tool-select-oval" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Seleção Elíptica (L)">
-        <i class="fa-regular fa-circle text-xs"></i>
-      </button>
-
-      <button onclick="selectTool('select-poly')" id="tool-select-poly" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Seleção Poligonal (P)">
-        <i class="fa-solid fa-draw-polygon text-xs"></i>
-      </button>
-
-      <button onclick="selectTool('select-wand')" id="tool-select-wand" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Varinha Mágica (W)">
-        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-      </button>
+        <div id="selectionFlyoutMenu" class="tool-group-flyout">
+          <button onclick="selectToolFromSelectionGroup('select-rect')" id="tool-select-rect" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Seleção Retangular (M)">
+            <i class="fa-regular fa-square text-xs"></i>
+          </button>
+          <button onclick="selectToolFromSelectionGroup('select-oval')" id="tool-select-oval" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Seleção Elíptica (L)">
+            <i class="fa-regular fa-circle text-xs"></i>
+          </button>
+          <button onclick="selectToolFromSelectionGroup('select-poly')" id="tool-select-poly" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Seleção Poligonal (P)">
+            <i class="fa-solid fa-draw-polygon text-xs"></i>
+          </button>
+          <button onclick="selectToolFromSelectionGroup('select-wand')" id="tool-select-wand" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Varinha Mágica (W)">
+            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+          </button>
+        </div>
+      </div>
 
       <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
@@ -483,6 +494,7 @@
     let bucketSampleAllLayers = true;
 
     let currentTransformSubTool = 'rotate';
+    let currentSelectionSubTool = 'select-rect';
 
     let activeTransformSession = false;
     let transformBox = null;
@@ -531,31 +543,63 @@
       setupCanvasEvents();
       setupZoomAndPanEvents();
       setupKeyboardShortcuts();
-      setupTransformGroupFlyout();
+      setupToolGroupFlyouts();
       selectTool('pointer');
       setupClipboardEvents();
     };
 
-    function setupTransformGroupFlyout() {
-      const container = document.getElementById('transformGroupContainer');
-      const triggerBtn = document.getElementById('transformFlyoutTrigger');
-      const flyout = document.getElementById('transformFlyoutMenu');
+    function setupToolGroupFlyouts() {
+      // Transformações
+      const transContainer = document.getElementById('transformGroupContainer');
+      const transTriggerBtn = document.getElementById('transformFlyoutTrigger');
+      const transFlyout = document.getElementById('transformFlyoutMenu');
 
-      triggerBtn.addEventListener('click', toggleTransformFlyout);
+      transTriggerBtn.addEventListener('click', toggleTransformFlyout);
+
+      // Seleções
+      const selContainer = document.getElementById('selectionGroupContainer');
+      const selTriggerBtn = document.getElementById('selectionFlyoutTrigger');
+      const selFlyout = document.getElementById('selectionFlyoutMenu');
+
+      selTriggerBtn.addEventListener('click', toggleSelectionFlyout);
+
       document.addEventListener('click', (e) => {
-        if (!container.contains(e.target) && !flyout.contains(e.target)) {
-          flyout.style.display = 'none';
+        if (!transContainer.contains(e.target) && !transFlyout.contains(e.target)) {
+          transFlyout.style.display = 'none';
+        }
+        if (!selContainer.contains(e.target) && !selFlyout.contains(e.target)) {
+          selFlyout.style.display = 'none';
         }
       });
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') flyout.style.display = 'none';
+        if (e.key === 'Escape') {
+          transFlyout.style.display = 'none';
+          selFlyout.style.display = 'none';
+        }
       });
     }
 
     function toggleTransformFlyout(e) {
       if (e) e.stopPropagation();
+      document.getElementById('selectionFlyoutMenu').style.display = 'none';
       const wrapper = document.getElementById('transformGroupWrapper');
       const flyout = document.getElementById('transformFlyoutMenu');
+      const willOpen = flyout.style.display !== 'flex';
+      if (!willOpen) {
+        flyout.style.display = 'none';
+        return;
+      }
+      const rect = wrapper.getBoundingClientRect();
+      flyout.style.left = `${Math.round(rect.right + 4)}px`;
+      flyout.style.top = `${Math.max(8, Math.min(Math.round(rect.top), window.innerHeight - flyout.offsetHeight - 8))}px`;
+      flyout.style.display = 'flex';
+    }
+
+    function toggleSelectionFlyout(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('transformFlyoutMenu').style.display = 'none';
+      const wrapper = document.getElementById('selectionGroupWrapper');
+      const flyout = document.getElementById('selectionFlyoutMenu');
       const willOpen = flyout.style.display !== 'flex';
       if (!willOpen) {
         flyout.style.display = 'none';
@@ -577,6 +621,21 @@
       };
       document.getElementById('transformGroupIcon').className = `fa-solid ${iconMap[toolName]} text-xs`;
       document.getElementById('transformFlyoutMenu').style.display = 'none';
+      selectTool(toolName);
+    }
+
+    function selectToolFromSelectionGroup(toolName) {
+      currentSelectionSubTool = toolName;
+      const iconMap = {
+        'select-rect': 'fa-regular fa-square',
+        'select-oval': 'fa-regular fa-circle',
+        'select-poly': 'fa-solid fa-draw-polygon',
+        'select-wand': 'fa-solid fa-wand-magic-sparkles'
+      };
+      const iconClass = iconMap[toolName];
+      const isSolid = iconClass.includes('fa-solid');
+      document.getElementById('selectionGroupIcon').className = `${iconClass} text-xs ${isSolid ? '' : ''}`;
+      document.getElementById('selectionFlyoutMenu').style.display = 'none';
       selectTool(toolName);
     }
 
@@ -962,10 +1021,6 @@
       showToast('Toda a área selecionada');
     }
 
-    function desdeselectAll() {
-      deselectAll();
-    }
-
     function deselectAll() {
       commitMove();
       cancelTransformSession();
@@ -1030,6 +1085,7 @@
       }
 
       const isTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(tool);
+      const isSelectionTool = ['select-rect', 'select-oval', 'select-poly', 'select-wand'].includes(tool);
 
       if (!isTransformTool && activeTransformSession) {
         confirmTransformSession();
@@ -1050,6 +1106,14 @@
 
       if (isTransformTool) {
         const groupWrapper = document.getElementById('transformGroupWrapper');
+        if (groupWrapper) {
+          groupWrapper.classList.remove('text-gray-300');
+          groupWrapper.classList.add('bg-blue-600', 'text-white');
+        }
+      }
+
+      if (isSelectionTool) {
+        const groupWrapper = document.getElementById('selectionGroupWrapper');
         if (groupWrapper) {
           groupWrapper.classList.remove('text-gray-300');
           groupWrapper.classList.add('bg-blue-600', 'text-white');
@@ -2261,10 +2325,10 @@
 
         switch (e.key.toLowerCase()) {
           case 'a': selectTool('pointer'); break;
-          case 'm': selectTool('select-rect'); break;
-          case 'l': selectTool('select-oval'); break;
-          case 'p': selectTool('select-poly'); break;
-          case 'w': selectTool('select-wand'); break;
+          case 'm': selectToolFromSelectionGroup('select-rect'); break;
+          case 'l': selectToolFromSelectionGroup('select-oval'); break;
+          case 'p': selectToolFromSelectionGroup('select-poly'); break;
+          case 'w': selectToolFromSelectionGroup('select-wand'); break;
           case 'b': selectTool('brush'); break;
           case 'e': selectTool('eraser'); break;
           case 'v': selectTool('move'); break;
@@ -2495,7 +2559,9 @@
       const names = {
         brush: 'Pincel', eraser: 'Borracha', shape: 'Desenhar Forma',
         move: 'Mover Conteúdo', bucket: 'Preenchimento', rotate: 'Rodar',
-        scale: 'Redimensionar', shear: 'Cisalhar', flip: 'Inverter'
+        scale: 'Redimensionar', shear: 'Cisalhar', flip: 'Inverter',
+        'select-rect': 'Seleção Retangular', 'select-oval': 'Seleção Elíptica',
+        'select-poly': 'Seleção Poligonal', 'select-wand': 'Varinha Mágica'
       };
       return names[tool] || 'Ação';
     }
