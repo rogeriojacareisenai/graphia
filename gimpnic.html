@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Balde de Tinta Corrigido</title>
+  <title>GIMP Web Studio - Transformações com Âncoras Interativas</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -157,6 +157,26 @@
           </div>
         </div>
 
+        <!-- Transformar -->
+        <div class="relative dropdown">
+          <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Transformar</button>
+          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+            <button onclick="quickFlip('h')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-arrows-left-right w-5"></i> Inverter Horizontalmente
+            </button>
+            <button onclick="quickFlip('v')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-arrows-up-down w-5"></i> Inverter Verticalmente
+            </button>
+            <hr class="border-gimp-border my-1">
+            <button onclick="quickRotate(90)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-rotate-right w-5"></i> Rotacionar 90° Horário
+            </button>
+            <button onclick="quickRotate(-90)" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-rotate-left w-5"></i> Rotacionar 90° Anti-horário
+            </button>
+          </div>
+        </div>
+
         <!-- Visualizar -->
         <div class="relative dropdown">
           <button class="px-2.5 py-1 rounded hover:bg-gimp-hover hover:text-white transition">Visualizar</button>
@@ -226,6 +246,25 @@
         <i class="fa-solid fa-arrows-up-down-left-right"></i>
       </button>
 
+      <!-- FERRAMENTAS DE TRANSFORMAÇÃO -->
+      <button onclick="selectTool('rotate')" id="tool-rotate" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Rotacionar com Âncoras (R)">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+
+      <button onclick="selectTool('scale')" id="tool-scale" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Redimensionar / Escalar com Âncoras (Shift+S)">
+        <i class="fa-solid fa-expand"></i>
+      </button>
+
+      <button onclick="selectTool('shear')" id="tool-shear" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Cisalhar / Inclinar (S)">
+        <i class="fa-solid fa-italic"></i>
+      </button>
+
+      <button onclick="selectTool('flip')" id="tool-flip" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Inverter / Espelhar (F)">
+        <i class="fa-solid fa-right-left"></i>
+      </button>
+
+      <hr class="w-7 border-gimp-border my-1">
+
       <button onclick="selectTool('brush')" id="tool-brush" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Pincel (B)">
         <i class="fa-solid fa-paint-brush"></i>
       </button>
@@ -272,6 +311,19 @@
       <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75 m-auto">
         <canvas id="compositeCanvas" class="block border border-zinc-700 shadow-2xl"></canvas>
         <canvas id="selectionCanvas" class="absolute top-0 left-0 pointer-events-none"></canvas>
+      </div>
+
+      <!-- PAINEL FLUTUANTE DE CONFIRMAÇÃO DE TRANSFORMAÇÃO -->
+      <div id="transformActionFloatingBar" class="fixed top-14 left-1/2 -translate-x-1/2 bg-gimp-panel/95 backdrop-blur border border-blue-500 rounded-lg p-2 flex items-center space-x-3 text-xs shadow-2xl z-40 hidden">
+        <span class="text-blue-400 font-semibold flex items-center">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> <span id="transformModeText">Transformando...</span>
+        </span>
+        <button onclick="confirmTransformSession()" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium shadow flex items-center">
+          <i class="fa-solid fa-check mr-1"></i> Confirmar (Enter)
+        </button>
+        <button onclick="cancelTransformSession()" class="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-gray-200 rounded font-medium flex items-center">
+          <i class="fa-solid fa-xmark mr-1"></i> Cancelar (Esc)
+        </button>
       </div>
 
       <div class="fixed bottom-4 left-16 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded-lg p-1.5 flex items-center space-x-2 text-xs shadow-lg z-30">
@@ -403,6 +455,14 @@
     let fontText = 'Inter, sans-serif';
     let fontSize = 24;
     let wandTolerance = 30;
+    let bucketSampleAllLayers = true;
+
+    // ESTADO E SESSÃO DE TRANSFORMAÇÃO INTERATIVA COM ÂNCORAS
+    let activeTransformSession = false;
+    let transformBox = null; // { x, y, width, height, angle, scaleX, scaleY, shearX, shearY, flipH, flipV }
+    let originalTransformState = null;
+    let transformSourceCanvas = null;
+    let activeHandle = null; // 'tl','tm','tr','mr','br','bm','bl','ml','rotate','center'
 
     let isDrawing = false;
     let startX = 0, startY = 0;
@@ -473,6 +533,7 @@
       activeSelectionPath = null;
       polyPoints = [];
       commitMove();
+      cancelTransformSession();
 
       const bgCanvas = document.createElement('canvas');
       bgCanvas.width = width;
@@ -521,6 +582,7 @@
 
     function addNewLayer(name = null, srcCanvas = null, drawX = 0, drawY = 0) {
       commitMove();
+      cancelTransformSession();
       const layerCanvas = document.createElement('canvas');
       layerCanvas.width = canvasWidth;
       layerCanvas.height = canvasHeight;
@@ -551,6 +613,7 @@
 
     function duplicateActiveLayer() {
       commitMove();
+      cancelTransformSession();
       if (activeLayerIndex < 0) return;
       const curr = layers[activeLayerIndex];
       addNewLayer(`${curr.name} (Cópia)`, curr.canvas);
@@ -558,6 +621,7 @@
 
     function deleteActiveLayer() {
       commitMove();
+      cancelTransformSession();
       if (layers.length <= 1) {
         showToast('Não é possível excluir a única camada');
         return;
@@ -571,6 +635,7 @@
 
     function moveLayerUp() {
       commitMove();
+      cancelTransformSession();
       if (activeLayerIndex >= layers.length - 1) return;
       const temp = layers[activeLayerIndex];
       layers[activeLayerIndex] = layers[activeLayerIndex + 1];
@@ -583,6 +648,7 @@
 
     function moveLayerDown() {
       commitMove();
+      cancelTransformSession();
       if (activeLayerIndex <= 0) return;
       const temp = layers[activeLayerIndex];
       layers[activeLayerIndex] = layers[activeLayerIndex - 1];
@@ -603,6 +669,7 @@
     function selectLayer(index) {
       if (index === activeLayerIndex) return;
       commitMove();
+      cancelTransformSession();
       activeLayerIndex = index;
       renderLayersList();
       updateLayerPropsUI();
@@ -631,12 +698,18 @@
 
     function renderCompositeCanvas() {
       compositeCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-      layers.forEach(layer => {
+      layers.forEach((layer, idx) => {
         if (!layer.visible) return;
         compositeCtx.save();
         compositeCtx.globalAlpha = layer.opacity;
         compositeCtx.globalCompositeOperation = layer.blendMode;
-        compositeCtx.drawImage(layer.canvas, 0, 0);
+
+        // Se a camada estiver em transformação interativa, renderiza o preview transformado
+        if (activeTransformSession && idx === activeLayerIndex) {
+          renderTransformPreview(compositeCtx);
+        } else {
+          compositeCtx.drawImage(layer.canvas, 0, 0);
+        }
         compositeCtx.restore();
       });
     }
@@ -723,6 +796,7 @@
 
     function undo() {
       commitMove();
+      cancelTransformSession();
       if (historyIndex > 0) {
         historyIndex--;
         restoreHistoryState(historyStack[historyIndex]);
@@ -732,6 +806,7 @@
 
     function redo() {
       commitMove();
+      cancelTransformSession();
       if (historyIndex < historyStack.length - 1) {
         historyIndex++;
         restoreHistoryState(historyStack[historyIndex]);
@@ -782,6 +857,7 @@
         }`;
         div.onclick = () => {
           commitMove();
+          cancelTransformSession();
           historyIndex = idx;
           restoreHistoryState(historyStack[idx]);
         };
@@ -792,6 +868,7 @@
 
     function selectAll() {
       commitMove();
+      cancelTransformSession();
       selectionMaskCtx.fillStyle = '#ffffff';
       selectionMaskCtx.fillRect(0, 0, canvasWidth, canvasHeight);
       hasActiveSelection = true;
@@ -807,6 +884,7 @@
 
     function deselectAll() {
       commitMove();
+      cancelTransformSession();
       selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
       hasActiveSelection = false;
       activeSelectionPath = null;
@@ -818,6 +896,12 @@
 
     function renderSelectionOverlay() {
       selectionCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Renderiza a caixa de transformação e Âncoras se uma ferramenta de transformação estiver ativa
+      if (activeTransformSession && transformBox) {
+        renderTransformAnchorsAndBox(selectionCtx);
+        return;
+      }
 
       if (zoomBox) {
         selectionCtx.save();
@@ -862,6 +946,13 @@
         commitMove(); 
       }
 
+      const isTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(tool);
+      const isPrevTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(currentTool);
+
+      if (!isTransformTool && activeTransformSession) {
+        confirmTransformSession();
+      }
+
       if (currentTool === 'select-poly' && tool !== 'select-poly' && polyPoints.length > 2) {
         finishPolySelection();
       }
@@ -877,6 +968,10 @@
 
       updateWorkbenchCursor();
       renderToolProperties();
+
+      if (isTransformTool && !activeTransformSession) {
+        initTransformSession();
+      }
     }
 
     function updateWorkbenchCursor() {
@@ -926,7 +1021,50 @@
           break;
         case 'move':
           icon = 'fa-arrows-up-down-left-right'; name = 'Mover';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o mouse ou use Setas (ou Shift+Setas para 10px) para ajuste fino.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o mouse para mover.</span>`;
+          break;
+        case 'rotate':
+          icon = 'fa-rotate'; name = 'Rotacionar Interativo';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-3">
+              <span class="text-gray-300">Arraste a âncora redonda superior no canvas para girar.</span>
+              <label class="text-gray-400">Ângulo:</label>
+              <input type="number" id="rotateValInput" value="${Math.round(transformBox ? transformBox.angle : 0)}" oninput="updateTransformFromInputs()" class="w-16 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> °
+            </div>`;
+          break;
+        case 'scale':
+          icon = 'fa-expand'; name = 'Redimensionar Interativo';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-3">
+              <span class="text-gray-300">Arraste as âncoras dos cantos/lados para escalar.</span>
+              <label class="text-gray-400">Dimensões:</label>
+              <input type="number" id="scaleWInput" value="${Math.round(transformBox ? transformBox.width * transformBox.scaleX : 0)}" oninput="updateTransformFromInputs()" class="w-16 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> px
+              <span>x</span>
+              <input type="number" id="scaleHInput" value="${Math.round(transformBox ? transformBox.height * transformBox.scaleY : 0)}" oninput="updateTransformFromInputs()" class="w-16 bg-gimp-dark border border-gimp-border rounded px-1 text-center font-mono text-white"> px
+            </div>`;
+          break;
+        case 'shear':
+          icon = 'fa-italic'; name = 'Cisalhar Interativo';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-3">
+              <span class="text-gray-300">Ajuste os valores de inclinação nos eixos:</span>
+              <label class="text-gray-400">X:</label>
+              <input type="number" id="shearXInput" value="${transformBox ? transformBox.shearX : 0}" step="2" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> °
+              <label class="text-gray-400">Y:</label>
+              <input type="number" id="shearYInput" value="${transformBox ? transformBox.shearY : 0}" step="2" oninput="updateTransformFromInputs()" class="w-14 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> °
+            </div>`;
+          break;
+        case 'flip':
+          icon = 'fa-right-left'; name = 'Inverter / Espelhar';
+          propsEl.innerHTML = `
+            <div class="flex items-center space-x-2">
+              <button onclick="toggleFlipSession('h')" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center">
+                <i class="fa-solid fa-arrows-left-right mr-1.5"></i> Espelhar Horizontal
+              </button>
+              <button onclick="toggleFlipSession('v')" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center">
+                <i class="fa-solid fa-arrows-up-down mr-1.5"></i> Espelhar Vertical
+              </button>
+            </div>`;
           break;
         case 'brush':
           icon = 'fa-paint-brush'; name = 'Pincel';
@@ -948,7 +1086,11 @@
           break;
         case 'bucket':
           icon = 'fa-fill-drip'; name = 'Balde de Tinta';
-          propsEl.innerHTML = `<span class="text-gray-400">Clique na área que deseja preencher com a cor selecionada.</span>`;
+          propsEl.innerHTML = `
+            <label class="flex items-center space-x-2 cursor-pointer text-gray-200">
+              <input type="checkbox" ${bucketSampleAllLayers ? 'checked' : ''} onchange="bucketSampleAllLayers = this.checked" class="rounded accent-blue-600">
+              <span>Amostrar Todas as Camadas (Detectar visível)</span>
+            </label>`;
           break;
         case 'shape':
           icon = 'fa-shapes'; name = 'Formas';
@@ -966,6 +1108,261 @@
       }
 
       titleEl.innerHTML = `<i class="${icon} mr-1.5"></i> ${name}`;
+    }
+
+    /* MOTOR DE TRANSFORMAÇÃO INTERATIVO COM ÂNCORAS */
+    function initTransformSession() {
+      if (activeLayerIndex < 0) return;
+      const layer = layers[activeLayerIndex];
+
+      const bounds = getSelectionBoundingBox();
+
+      // Isola o conteúdo a ser transformado
+      transformSourceCanvas = document.createElement('canvas');
+      transformSourceCanvas.width = bounds.width;
+      transformSourceCanvas.height = bounds.height;
+      const tCtx = transformSourceCanvas.getContext('2d');
+
+      if (hasActiveSelection) {
+        const selCanvas = document.createElement('canvas');
+        selCanvas.width = canvasWidth;
+        selCanvas.height = canvasHeight;
+        const sCtx = selCanvas.getContext('2d');
+        sCtx.drawImage(layer.canvas, 0, 0);
+        sCtx.globalCompositeOperation = 'destination-in';
+        sCtx.drawImage(selectionMaskCanvas, 0, 0);
+
+        tCtx.drawImage(selCanvas, bounds.minX, bounds.minY, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
+      } else {
+        tCtx.drawImage(layer.canvas, bounds.minX, bounds.minY, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
+      }
+
+      transformBox = {
+        x: bounds.minX,
+        y: bounds.minY,
+        width: bounds.width,
+        height: bounds.height,
+        angle: 0,
+        scaleX: 1,
+        scaleY: 1,
+        shearX: 0,
+        shearY: 0,
+        flipH: false,
+        flipV: false
+      };
+
+      activeTransformSession = true;
+      document.getElementById('transformActionFloatingBar').classList.remove('hidden');
+      document.getElementById('transformModeText').innerText = `Transformando: ${layer.name}`;
+
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+      renderToolProperties();
+    }
+
+    function renderTransformPreview(targetCtx) {
+      if (!transformBox || !transformSourceCanvas) return;
+
+      const centerX = transformBox.x + (transformBox.width * transformBox.scaleX) / 2;
+      const centerY = transformBox.y + (transformBox.height * transformBox.scaleY) / 2;
+
+      targetCtx.save();
+      targetCtx.translate(centerX, centerY);
+      targetCtx.rotate((transformBox.angle * Math.PI) / 180);
+      targetCtx.transform(1, Math.tan((transformBox.shearY * Math.PI) / 180), Math.tan((transformBox.shearX * Math.PI) / 180), 1, 0, 0);
+      targetCtx.scale(transformBox.flipH ? -transformBox.scaleX : transformBox.scaleX, transformBox.flipV ? -transformBox.scaleY : transformBox.scaleY);
+
+      targetCtx.drawImage(transformSourceCanvas, -transformBox.width / 2, -transformBox.height / 2);
+      targetCtx.restore();
+    }
+
+    function renderTransformAnchorsAndBox(ctx) {
+      if (!transformBox) return;
+
+      const w = transformBox.width * transformBox.scaleX;
+      const h = transformBox.height * transformBox.scaleY;
+      const cx = transformBox.x + w / 2;
+      const cy = transformBox.y + h / 2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((transformBox.angle * Math.PI) / 180);
+
+      // Caixa Delimitadora
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(-w / 2, -h / 2, w, h);
+
+      // Haste da Âncora de Rotação Superior
+      ctx.beginPath();
+      ctx.setLineDash([]);
+      ctx.moveTo(0, -h / 2);
+      ctx.lineTo(0, -h / 2 - 25);
+      ctx.stroke();
+
+      // Âncora de Rotação (Círculo Topo)
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath();
+      ctx.arc(0, -h / 2 - 25, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Âncoras Quadradas (8 Alças de Canto e Centro de Borda)
+      const handles = [
+        { id: 'tl', x: -w / 2, y: -h / 2 },
+        { id: 'tm', x: 0, y: -h / 2 },
+        { id: 'tr', x: w / 2, y: -h / 2 },
+        { id: 'mr', x: w / 2, y: 0 },
+        { id: 'br', x: w / 2, y: h / 2 },
+        { id: 'bm', x: 0, y: h / 2 },
+        { id: 'bl', x: -w / 2, y: h / 2 },
+        { id: 'ml', x: -w / 2, y: 0 }
+      ];
+
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#1d4ed8';
+      ctx.lineWidth = 1.5;
+
+      handles.forEach(hnd => {
+        ctx.fillRect(hnd.x - 4, hnd.y - 4, 8, 8);
+        ctx.strokeRect(hnd.x - 4, hnd.y - 4, 8, 8);
+      });
+
+      // Pivô Central
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function getAnchorHandleAtCoords(coords) {
+      if (!transformBox) return null;
+
+      const w = transformBox.width * transformBox.scaleX;
+      const h = transformBox.height * transformBox.scaleY;
+      const cx = transformBox.x + w / 2;
+      const cy = transformBox.y + h / 2;
+
+      // Converte coordenadas do canvas para o sistema local da caixa rotacionada
+      const rad = (-transformBox.angle * Math.PI) / 180;
+      const dx = coords.x - cx;
+      const dy = coords.y - cy;
+      const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+      const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+      // Checa Âncora de Rotação no topo
+      if (Math.hypot(localX, localY - (-h / 2 - 25)) <= 8) return 'rotate';
+
+      const handles = [
+        { id: 'tl', x: -w / 2, y: -h / 2 },
+        { id: 'tm', x: 0, y: -h / 2 },
+        { id: 'tr', x: w / 2, y: -h / 2 },
+        { id: 'mr', x: w / 2, y: 0 },
+        { id: 'br', x: w / 2, y: h / 2 },
+        { id: 'bm', x: 0, y: h / 2 },
+        { id: 'bl', x: -w / 2, y: h / 2 },
+        { id: 'ml', x: -w / 2, y: 0 }
+      ];
+
+      for (const hnd of handles) {
+        if (Math.abs(localX - hnd.x) <= 8 && Math.abs(localY - hnd.y) <= 8) {
+          return hnd.id;
+        }
+      }
+
+      // Dentro da caixa para arraste/centro
+      if (Math.abs(localX) <= w / 2 && Math.abs(localY) <= h / 2) {
+        return 'center';
+      }
+
+      return null;
+    }
+
+    function updateTransformFromInputs() {
+      if (!transformBox) return;
+      const rotIn = document.getElementById('rotateValInput');
+      const wIn = document.getElementById('scaleWInput');
+      const hIn = document.getElementById('scaleHInput');
+      const sxIn = document.getElementById('shearXInput');
+      const syIn = document.getElementById('shearYInput');
+
+      if (rotIn) transformBox.angle = parseFloat(rotIn.value) || 0;
+      if (wIn && transformBox.width > 0) transformBox.scaleX = (parseFloat(wIn.value) || 1) / transformBox.width;
+      if (hIn && transformBox.height > 0) transformBox.scaleY = (parseFloat(hIn.value) || 1) / transformBox.height;
+      if (sxIn) transformBox.shearX = parseFloat(sxIn.value) || 0;
+      if (syIn) transformBox.shearY = parseFloat(syIn.value) || 0;
+
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+    }
+
+    function toggleFlipSession(dir) {
+      if (!transformBox) return;
+      if (dir === 'h') transformBox.flipH = !transformBox.flipH;
+      if (dir === 'v') transformBox.flipV = !transformBox.flipV;
+
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+    }
+
+    function confirmTransformSession() {
+      if (!activeTransformSession || !transformBox || activeLayerIndex < 0) return;
+
+      const layer = layers[activeLayerIndex];
+
+      // Se houver seleção, apaga o conteúdo original selecionado da camada antes de desenhar o novo
+      if (hasActiveSelection) {
+        layer.ctx.save();
+        layer.ctx.globalCompositeOperation = 'destination-out';
+        layer.ctx.drawImage(selectionMaskCanvas, 0, 0);
+        layer.ctx.restore();
+      } else {
+        layer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      // Aplica a transformação definitiva na camada
+      renderTransformPreview(layer.ctx);
+
+      activeTransformSession = false;
+      transformBox = null;
+      transformSourceCanvas = null;
+      document.getElementById('transformActionFloatingBar').classList.add('hidden');
+
+      renderLayersList();
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+      saveHistoryState('Aplicar Transformação');
+      showToast('Transformação aplicada');
+    }
+
+    function cancelTransformSession() {
+      if (!activeTransformSession) return;
+      activeTransformSession = false;
+      transformBox = null;
+      transformSourceCanvas = null;
+      document.getElementById('transformActionFloatingBar').classList.add('hidden');
+
+      renderCompositeCanvas();
+      renderSelectionOverlay();
+      showToast('Transformação cancelada');
+    }
+
+    function quickRotate(deg) {
+      if (!activeTransformSession) initTransformSession();
+      if (transformBox) {
+        transformBox.angle += deg;
+        renderCompositeCanvas();
+        renderSelectionOverlay();
+        renderToolProperties();
+      }
+    }
+
+    function quickFlip(dir) {
+      if (!activeTransformSession) initTransformSession();
+      toggleFlipSession(dir);
     }
 
     function applyViewportTransform() {
@@ -1056,6 +1453,19 @@
 
         if (currentTool === 'pointer') return;
 
+        // Se uma ferramenta de transformação estiver ativa, testa interação com as Âncoras
+        if (activeTransformSession) {
+          const handle = getAnchorHandleAtCoords(coords);
+          if (handle) {
+            isDrawing = true;
+            activeHandle = handle;
+            startX = coords.x;
+            startY = coords.y;
+            originalTransformState = JSON.parse(JSON.stringify(transformBox));
+            return;
+          }
+        }
+
         if (currentTool === 'select-poly') {
           polyPoints.push({ x: coords.x, y: coords.y });
           renderSelectionOverlay();
@@ -1093,6 +1503,7 @@
         } else if (currentTool === 'bucket') {
           floodFill(Math.floor(coords.x), Math.floor(coords.y), primaryColor);
           renderCompositeCanvas();
+          renderLayersList();
           saveHistoryState('Preenchimento');
         } else if (currentTool === 'picker') {
           pickColor(coords.x, coords.y);
@@ -1104,6 +1515,41 @@
       const moveAction = (e) => {
         if (!isDrawing || isPanning) return;
         const coords = getCanvasCoords(e);
+
+        // MANIPULAÇÃO DIRETA DAS ÂNCORAS DE TRANSFORMAÇÃO
+        if (activeTransformSession && activeHandle && originalTransformState) {
+          const dx = coords.x - startX;
+          const dy = coords.y - startY;
+
+          if (activeHandle === 'rotate') {
+            const cx = originalTransformState.x + (originalTransformState.width * originalTransformState.scaleX) / 2;
+            const cy = originalTransformState.y + (originalTransformState.height * originalTransformState.scaleY) / 2;
+            const angleRad = Math.atan2(coords.y - cy, coords.x - cx);
+            let deg = (angleRad * 180) / Math.PI + 90;
+            transformBox.angle = deg;
+          } else if (activeHandle === 'center') {
+            transformBox.x = originalTransformState.x + dx;
+            transformBox.y = originalTransformState.y + dy;
+          } else {
+            // Escala por alças
+            let dw = dx, dh = dy;
+            if (activeHandle.includes('r')) transformBox.scaleX = Math.max(0.1, (originalTransformState.width * originalTransformState.scaleX + dw) / originalTransformState.width);
+            if (activeHandle.includes('l')) {
+              transformBox.scaleX = Math.max(0.1, (originalTransformState.width * originalTransformState.scaleX - dw) / originalTransformState.width);
+              transformBox.x = originalTransformState.x + dw;
+            }
+            if (activeHandle.includes('b')) transformBox.scaleY = Math.max(0.1, (originalTransformState.height * originalTransformState.scaleY + dh) / originalTransformState.height);
+            if (activeHandle.includes('t')) {
+              transformBox.scaleY = Math.max(0.1, (originalTransformState.height * originalTransformState.scaleY - dh) / originalTransformState.height);
+              transformBox.y = originalTransformState.y + dh;
+            }
+          }
+
+          renderCompositeCanvas();
+          renderSelectionOverlay();
+          renderToolProperties();
+          return;
+        }
 
         if (currentTool === 'zoom') {
           zoomBox = {
@@ -1143,6 +1589,7 @@
       const endAction = (e) => {
         if (!isDrawing) return;
         isDrawing = false;
+        activeHandle = null;
 
         if (currentTool === 'zoom') {
           const coords = getCanvasCoords(e);
@@ -1420,31 +1867,33 @@
       ctx.restore();
     }
 
-    /* CORREÇÃO DO BALDE DE TINTA (FLOOD FILL CORRIGIDO) */
     function floodFill(startX, startY, fillColorHex) {
       commitMove();
       if (activeLayerIndex < 0) return;
 
-      const ctx = layers[activeLayerIndex].ctx;
-      const imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-      const data = imgData.data;
+      const targetLayer = layers[activeLayerIndex];
+      const targetCtx = targetLayer.ctx;
+
+      const sourceCtx = bucketSampleAllLayers ? compositeCtx : targetCtx;
+      const sampleData = sourceCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+
+      const targetLayerDataObj = targetCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+      const targetLayerData = targetLayerDataObj.data;
 
       const fillColor = hexToRgb(fillColorHex);
       const targetPos = (startY * canvasWidth + startX) * 4;
 
-      const targetR = data[targetPos];
-      const targetG = data[targetPos + 1];
-      const targetB = data[targetPos + 2];
-      const targetA = data[targetPos + 3];
-
-      if (targetR === fillColor.r && targetG === fillColor.g && targetB === fillColor.b && targetA === 255) return;
+      const targetR = sampleData[targetPos];
+      const targetG = sampleData[targetPos + 1];
+      const targetB = sampleData[targetPos + 2];
+      const targetA = sampleData[targetPos + 3];
 
       const maskData = hasActiveSelection ? selectionMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data : null;
       const pixelsToCheck = [startX, startY];
       const visited = new Uint8Array(canvasWidth * canvasHeight);
 
       const colorMatch = (pos) => {
-        const r = data[pos], g = data[pos + 1], b = data[pos + 2], a = data[pos + 3];
+        const r = sampleData[pos], g = sampleData[pos + 1], b = sampleData[pos + 2], a = sampleData[pos + 3];
         return Math.abs(r - targetR) <= 30 &&
                Math.abs(g - targetG) <= 30 &&
                Math.abs(b - targetB) <= 30 &&
@@ -1464,10 +1913,10 @@
         if (hasActiveSelection && maskData[pos + 3] === 0) continue;
 
         if (colorMatch(pos)) {
-          data[pos] = fillColor.r;
-          data[pos + 1] = fillColor.g;
-          data[pos + 2] = fillColor.b;
-          data[pos + 3] = 255;
+          targetLayerData[pos] = fillColor.r;
+          targetLayerData[pos + 1] = fillColor.g;
+          targetLayerData[pos + 2] = fillColor.b;
+          targetLayerData[pos + 3] = 255;
 
           if (x > 0) pixelsToCheck.push(x - 1, y);
           if (x < canvasWidth - 1) pixelsToCheck.push(x + 1, y);
@@ -1476,7 +1925,7 @@
         }
       }
 
-      ctx.putImageData(imgData, 0, 0);
+      targetCtx.putImageData(targetLayerDataObj, 0, 0);
     }
 
     function getSelectionBoundingBox() {
@@ -1682,6 +2131,16 @@
       window.addEventListener('keydown', (e) => {
         if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
+        if (e.key === 'Enter') {
+          if (activeTransformSession) { confirmTransformSession(); return; }
+          if (currentTool === 'select-poly') { finishPolySelection(); return; }
+        }
+
+        if (e.key === 'Escape' && activeTransformSession) {
+          cancelTransformSession();
+          return;
+        }
+
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
           e.preventDefault();
           const step = e.shiftKey ? 10 : 1;
@@ -1723,11 +2182,6 @@
           return;
         }
 
-        if (e.key === 'Enter' && currentTool === 'select-poly') {
-          finishPolySelection();
-          return;
-        }
-
         switch (e.key.toLowerCase()) {
           case 'a': selectTool('pointer'); break;
           case 'm': selectTool('select-rect'); break;
@@ -1737,6 +2191,12 @@
           case 'b': selectTool('brush'); break;
           case 'e': selectTool('eraser'); break;
           case 'v': selectTool('move'); break;
+          case 'r': selectTool('rotate'); break;
+          case 's': 
+            if (e.shiftKey) selectTool('scale');
+            else selectTool('shear'); 
+            break;
+          case 'f': selectTool('flip'); break;
           case 'g': selectTool('bucket'); break;
           case 'u': selectTool('shape'); break;
           case 't': selectTool('text'); break;
@@ -1756,6 +2216,7 @@
 
     async function saveProject(saveAs = false) {
       commitMove();
+      cancelTransformSession();
       const projectData = {
         version: "1.0",
         width: canvasWidth,
@@ -1809,6 +2270,7 @@
       if (!file) return;
 
       commitMove();
+      cancelTransformSession();
       projectFileName = file.name;
       document.getElementById('file-name-display').innerText = projectFileName;
 
@@ -1867,6 +2329,7 @@
 
     function addTextPrompt(x, y) {
       commitMove();
+      cancelTransformSession();
       const text = prompt('Digite o texto a ser inserido:');
       if (!text) return;
 
@@ -1897,6 +2360,7 @@
       if (!file) return;
 
       commitMove();
+      cancelTransformSession();
       const reader = new FileReader();
       reader.onload = function(event) {
         const img = new Image();
@@ -1920,6 +2384,7 @@
 
     function exportImage(format) {
       commitMove();
+      cancelTransformSession();
       const link = document.createElement('a');
       link.download = `exportacao.${format}`;
       link.href = compositeCanvas.toDataURL(`image/${format}`, 0.95);
@@ -1942,6 +2407,7 @@
 
     function clearActiveLayer() {
       commitMove();
+      cancelTransformSession();
       if (activeLayerIndex < 0) return;
       layers[activeLayerIndex].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       renderCompositeCanvas();
@@ -1951,7 +2417,8 @@
     function getToolName(tool) {
       const names = {
         brush: 'Pincel', eraser: 'Borracha', shape: 'Desenhar Forma',
-        move: 'Mover Conteúdo', bucket: 'Preenchimento'
+        move: 'Mover Conteúdo', bucket: 'Preenchimento', rotate: 'Rotacionar Interativo',
+        scale: 'Redimensionar Interativo', shear: 'Cisalhar Interativo', flip: 'Inverter'
       };
       return names[tool] || 'Ação';
     }
