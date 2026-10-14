@@ -704,8 +704,18 @@
         compositeCtx.globalAlpha = layer.opacity;
         compositeCtx.globalCompositeOperation = layer.blendMode;
 
-        // Se a camada estiver em transformação interativa, renderiza o preview transformado
+        // Se a camada estiver em transformação interativa, renderiza o restante da camada e o preview transformado por cima
         if (activeTransformSession && idx === activeLayerIndex) {
+          if (hasActiveSelection) {
+            const tempRestCanvas = document.createElement('canvas');
+            tempRestCanvas.width = canvasWidth;
+            tempRestCanvas.height = canvasHeight;
+            const trCtx = tempRestCanvas.getContext('2d');
+            trCtx.drawImage(layer.canvas, 0, 0);
+            trCtx.globalCompositeOperation = 'destination-out';
+            trCtx.drawImage(selectionMaskCanvas, 0, 0);
+            compositeCtx.drawImage(tempRestCanvas, 0, 0);
+          }
           renderTransformPreview(compositeCtx);
         } else {
           compositeCtx.drawImage(layer.canvas, 0, 0);
@@ -897,7 +907,6 @@
     function renderSelectionOverlay() {
       selectionCtx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      // Renderiza a caixa de transformação e Âncoras se uma ferramenta de transformação estiver ativa
       if (activeTransformSession && transformBox) {
         renderTransformAnchorsAndBox(selectionCtx);
         return;
@@ -947,7 +956,6 @@
       }
 
       const isTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(tool);
-      const isPrevTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(currentTool);
 
       if (!isTransformTool && activeTransformSession) {
         confirmTransformSession();
@@ -1110,14 +1118,12 @@
       titleEl.innerHTML = `<i class="${icon} mr-1.5"></i> ${name}`;
     }
 
-    /* MOTOR DE TRANSFORMAÇÃO INTERATIVO COM ÂNCORAS */
     function initTransformSession() {
       if (activeLayerIndex < 0) return;
       const layer = layers[activeLayerIndex];
 
       const bounds = getSelectionBoundingBox();
 
-      // Isola o conteúdo a ser transformado
       transformSourceCanvas = document.createElement('canvas');
       transformSourceCanvas.width = bounds.width;
       transformSourceCanvas.height = bounds.height;
@@ -1188,27 +1194,23 @@
       ctx.translate(cx, cy);
       ctx.rotate((transformBox.angle * Math.PI) / 180);
 
-      // Caixa Delimitadora
       ctx.strokeStyle = '#3b82f6';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([6, 4]);
       ctx.strokeRect(-w / 2, -h / 2, w, h);
 
-      // Haste da Âncora de Rotação Superior
       ctx.beginPath();
       ctx.setLineDash([]);
       ctx.moveTo(0, -h / 2);
       ctx.lineTo(0, -h / 2 - 25);
       ctx.stroke();
 
-      // Âncora de Rotação (Círculo Topo)
       ctx.fillStyle = '#2563eb';
       ctx.beginPath();
       ctx.arc(0, -h / 2 - 25, 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Âncoras Quadradas (8 Alças de Canto e Centro de Borda)
       const handles = [
         { id: 'tl', x: -w / 2, y: -h / 2 },
         { id: 'tm', x: 0, y: -h / 2 },
@@ -1229,7 +1231,6 @@
         ctx.strokeRect(hnd.x - 4, hnd.y - 4, 8, 8);
       });
 
-      // Pivô Central
       ctx.fillStyle = '#ef4444';
       ctx.beginPath();
       ctx.arc(0, 0, 4, 0, Math.PI * 2);
@@ -1246,14 +1247,12 @@
       const cx = transformBox.x + w / 2;
       const cy = transformBox.y + h / 2;
 
-      // Converte coordenadas do canvas para o sistema local da caixa rotacionada
       const rad = (-transformBox.angle * Math.PI) / 180;
       const dx = coords.x - cx;
       const dy = coords.y - cy;
       const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
       const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
 
-      // Checa Âncora de Rotação no topo
       if (Math.hypot(localX, localY - (-h / 2 - 25)) <= 8) return 'rotate';
 
       const handles = [
@@ -1273,7 +1272,6 @@
         }
       }
 
-      // Dentro da caixa para arraste/centro
       if (Math.abs(localX) <= w / 2 && Math.abs(localY) <= h / 2) {
         return 'center';
       }
@@ -1313,7 +1311,6 @@
 
       const layer = layers[activeLayerIndex];
 
-      // Se houver seleção, apaga o conteúdo original selecionado da camada antes de desenhar o novo
       if (hasActiveSelection) {
         layer.ctx.save();
         layer.ctx.globalCompositeOperation = 'destination-out';
@@ -1323,7 +1320,6 @@
         layer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       }
 
-      // Aplica a transformação definitiva na camada
       renderTransformPreview(layer.ctx);
 
       activeTransformSession = false;
@@ -1453,7 +1449,6 @@
 
         if (currentTool === 'pointer') return;
 
-        // Se uma ferramenta de transformação estiver ativa, testa interação com as Âncoras
         if (activeTransformSession) {
           const handle = getAnchorHandleAtCoords(coords);
           if (handle) {
@@ -1516,7 +1511,6 @@
         if (!isDrawing || isPanning) return;
         const coords = getCanvasCoords(e);
 
-        // MANIPULAÇÃO DIRETA DAS ÂNCORAS DE TRANSFORMAÇÃO
         if (activeTransformSession && activeHandle && originalTransformState) {
           const dx = coords.x - startX;
           const dy = coords.y - startY;
@@ -1531,7 +1525,6 @@
             transformBox.x = originalTransformState.x + dx;
             transformBox.y = originalTransformState.y + dy;
           } else {
-            // Escala por alças
             let dw = dx, dh = dy;
             if (activeHandle.includes('r')) transformBox.scaleX = Math.max(0.1, (originalTransformState.width * originalTransformState.scaleX + dw) / originalTransformState.width);
             if (activeHandle.includes('l')) {
