@@ -63,6 +63,23 @@
     .cursor-grab { cursor: grab !important; }
     .cursor-grabbing { cursor: grabbing !important; }
     .cursor-crosshair { cursor: crosshair !important; }
+
+    /* Estilo para o menu de grupo de ferramentas estilo GIMP */
+    .tool-group-flyout {
+      display: none;
+      position: fixed;
+      left: 56px;
+      top: 0;
+      background-color: #28282c;
+      border: 1px solid #3f3f46;
+      border-radius: 4px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      padding: 4px;
+      z-index: 50;
+      flex-direction: row;
+      gap: 4px;
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body class="bg-gimp-darkest text-gray-200 h-screen flex flex-col font-sans overflow-hidden select-none">
@@ -246,22 +263,33 @@
         <i class="fa-solid fa-arrows-up-down-left-right"></i>
       </button>
 
-      <!-- FERRAMENTAS DE TRANSFORMAÇÃO -->
-      <button onclick="selectTool('rotate')" id="tool-rotate" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Rotacionar com Âncoras (R)">
-        <i class="fa-solid fa-rotate"></i>
-      </button>
+      <!-- GRUPO DE FERRAMENTAS DE TRANSFORMAÇÃO (ESTILO GIMP: CLIQUE NA SETINHA ABRE O MENU LATERAL) -->
+      <div class="relative group-container" id="transformGroupContainer">
+        <div class="flex items-center w-9 h-9 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="transformGroupWrapper">
+          <button id="tool-transform-group" onclick="toggleTransformFlyout(event)" class="w-7 h-full flex items-center justify-center" title="Abrir opções de transformações geométricas">
+            <i id="transformGroupIcon" class="fa-solid fa-rotate"></i>
+          </button>
+          <button id="transformFlyoutTrigger" class="w-2.5 h-full flex items-center justify-center pr-0.5 text-[8px] text-blue-400 hover:text-white" title="Mais ferramentas de transformação">
+            <i class="fa-solid fa-caret-right"></i>
+          </button>
+        </div>
 
-      <button onclick="selectTool('scale')" id="tool-scale" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Redimensionar / Escalar com Âncoras (Shift+S)">
-        <i class="fa-solid fa-expand"></i>
-      </button>
-
-      <button onclick="selectTool('shear')" id="tool-shear" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Cisalhar / Inclinar (S)">
-        <i class="fa-solid fa-italic"></i>
-      </button>
-
-      <button onclick="selectTool('flip')" id="tool-flip" class="tool-btn p-2.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-9 h-9 flex items-center justify-center" title="Inverter / Espelhar (F)">
-        <i class="fa-solid fa-right-left"></i>
-      </button>
+        <!-- Menu Lateral Flutuante (Flyout) -->
+        <div id="transformFlyoutMenu" class="tool-group-flyout">
+          <button onclick="selectToolFromGroup('rotate')" id="tool-rotate" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Rotacionar (R)">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+          <button onclick="selectToolFromGroup('scale')" id="tool-scale" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Redimensionar (Shift+S)">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+          <button onclick="selectToolFromGroup('shear')" id="tool-shear" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Cisalhar (S)">
+            <i class="fa-solid fa-italic"></i>
+          </button>
+          <button onclick="selectToolFromGroup('flip')" id="tool-flip" class="tool-btn p-2 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Inverter (F)">
+            <i class="fa-solid fa-right-left"></i>
+          </button>
+        </div>
+      </div>
 
       <hr class="w-7 border-gimp-border my-1">
 
@@ -457,12 +485,13 @@
     let wandTolerance = 30;
     let bucketSampleAllLayers = true;
 
-    // ESTADO E SESSÃO DE TRANSFORMAÇÃO INTERATIVA COM ÂNCORAS
+    let currentTransformSubTool = 'rotate';
+
     let activeTransformSession = false;
-    let transformBox = null; // { x, y, width, height, angle, scaleX, scaleY, shearX, shearY, flipH, flipV }
+    let transformBox = null;
     let originalTransformState = null;
     let transformSourceCanvas = null;
-    let activeHandle = null; // 'tl','tm','tr','mr','br','bm','bl','ml','rotate','center'
+    let activeHandle = null;
 
     let isDrawing = false;
     let startX = 0, startY = 0;
@@ -505,9 +534,55 @@
       setupCanvasEvents();
       setupZoomAndPanEvents();
       setupKeyboardShortcuts();
+      setupTransformGroupFlyout();
       selectTool('pointer');
       setupClipboardEvents();
     };
+
+    function setupTransformGroupFlyout() {
+      const container = document.getElementById('transformGroupContainer');
+      const triggerBtn = document.getElementById('transformFlyoutTrigger');
+      const flyout = document.getElementById('transformFlyoutMenu');
+
+      // O menu usa position:fixed para não ser cortado pelo overflow da barra lateral.
+      triggerBtn.addEventListener('click', toggleTransformFlyout);
+      document.addEventListener('click', (e) => {
+        if (!container.contains(e.target) && !flyout.contains(e.target)) {
+          flyout.style.display = 'none';
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') flyout.style.display = 'none';
+      });
+    }
+
+    function toggleTransformFlyout(e) {
+      if (e) e.stopPropagation();
+      const wrapper = document.getElementById('transformGroupWrapper');
+      const flyout = document.getElementById('transformFlyoutMenu');
+      const willOpen = flyout.style.display !== 'flex';
+      if (!willOpen) {
+        flyout.style.display = 'none';
+        return;
+      }
+      const rect = wrapper.getBoundingClientRect();
+      flyout.style.left = `${Math.round(rect.right + 6)}px`;
+      flyout.style.top = `${Math.max(8, Math.min(Math.round(rect.top), window.innerHeight - flyout.offsetHeight - 8))}px`;
+      flyout.style.display = 'flex';
+    }
+
+    function selectToolFromGroup(toolName) {
+      currentTransformSubTool = toolName;
+      const iconMap = {
+        'rotate': 'fa-rotate',
+        'scale': 'fa-expand',
+        'shear': 'fa-italic',
+        'flip': 'fa-right-left'
+      };
+      document.getElementById('transformGroupIcon').className = `fa-solid ${iconMap[toolName]}`;
+      document.getElementById('transformFlyoutMenu').style.display = 'none';
+      selectTool(toolName);
+    }
 
     function initProject(width, height, bgType) {
       canvasWidth = width;
@@ -704,7 +779,6 @@
         compositeCtx.globalAlpha = layer.opacity;
         compositeCtx.globalCompositeOperation = layer.blendMode;
 
-        // Se a camada estiver em transformação interativa, renderiza o restante da camada e o preview transformado por cima
         if (activeTransformSession && idx === activeLayerIndex) {
           if (hasActiveSelection) {
             const tempRestCanvas = document.createElement('canvas');
@@ -973,6 +1047,14 @@
       });
       const activeBtn = document.getElementById(`tool-${tool}`);
       if (activeBtn) activeBtn.classList.add('bg-blue-600', 'text-white');
+
+      if (isTransformTool) {
+        const groupWrapper = document.getElementById('transformGroupWrapper');
+        if (groupWrapper) {
+          groupWrapper.classList.remove('text-gray-300');
+          groupWrapper.classList.add('bg-blue-600', 'text-white');
+        }
+      }
 
       updateWorkbenchCursor();
       renderToolProperties();
@@ -2184,12 +2266,12 @@
           case 'b': selectTool('brush'); break;
           case 'e': selectTool('eraser'); break;
           case 'v': selectTool('move'); break;
-          case 'r': selectTool('rotate'); break;
+          case 'r': selectToolFromGroup('rotate'); break;
           case 's': 
-            if (e.shiftKey) selectTool('scale');
-            else selectTool('shear'); 
+            if (e.shiftKey) selectToolFromGroup('scale');
+            else selectToolFromGroup('shear'); 
             break;
-          case 'f': selectTool('flip'); break;
+          case 'f': selectToolFromGroup('flip'); break;
           case 'g': selectTool('bucket'); break;
           case 'u': selectTool('shape'); break;
           case 't': selectTool('text'); break;
