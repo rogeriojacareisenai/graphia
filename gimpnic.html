@@ -1840,49 +1840,94 @@
     }
 
     function performWandSelection(startX, startY) {
+      // A varinha trabalha sobre a imagem composta (camadas visíveis), mas grava
+      // a máscara real da seleção. Coordenadas inválidas são ignoradas.
+      startX = Math.floor(startX);
+      startY = Math.floor(startY);
+      if (startX < 0 || startY < 0 || startX >= canvasWidth || startY >= canvasHeight) return;
+
       const imgData = compositeCtx.getImageData(0, 0, canvasWidth, canvasHeight);
       const data = imgData.data;
+      const pixelCount = canvasWidth * canvasHeight;
+      const seedPos = startY * canvasWidth + startX;
+      const seedIdx = seedPos * 4;
+      const targetR = data[seedIdx], targetG = data[seedIdx + 1];
+      const targetB = data[seedIdx + 2], targetA = data[seedIdx + 3];
+      const tolerance = Math.max(0, Math.min(100, Number(wandTolerance) || 0));
+      // A tolerância é calculada por distância RGB média; pixels transparentes
+      // são comparados também pelo canal alfa.
+      const threshold = tolerance * 4;
+      const colorMatch = (idx) => {
+        const alphaDiff = Math.abs(data[idx + 3] - targetA);
+        if (alphaDiff > threshold) return false;
+        if (targetA === 0 && data[idx + 3] === 0) return true;
+        const rgbDiff = Math.abs(data[idx] - targetR) +
+          Math.abs(data[idx + 1] - targetG) + Math.abs(data[idx + 2] - targetB);
+        return rgbDiff <= threshold;
+      };
 
       const maskImg = selectionMaskCtx.createImageData(canvasWidth, canvasHeight);
       const maskData = maskImg.data;
+      const visited = new Uint8Array(pixelCount);
+      // Fila linear de índices de pixel (evita misturar x/y e evita crescer
+      // uma fila de pares de coordenadas).
+      const queue = new Int32Array(pixelCount);
+      let head = 0, tail = 0;
+      queue[tail++] = seedPos;
+      visited[seedPos] = 1;
 
-      const targetIdx = (startY * canvasWidth + startX) * 4;
-      const targetR = data[targetIdx], targetG = data[targetIdx + 1], targetB = data[targetIdx + 2], targetA = data[targetIdx + 3];
-
-      const queue = [startX, startY];
-      const visited = new Uint8Array(canvasWidth * canvasHeight);
-
-      const colorMatch = (idx) => {
-        const diff = Math.abs(data[idx] - targetR) + Math.abs(data[idx+1] - targetG) + Math.abs(data[idx+2] - targetB) + Math.abs(data[idx+3] - targetA);
-        return diff <= (wandTolerance * 4);
-      };
-
-      while (queue.length > 0) {
-        const y = queue.pop();
-        const x = queue.pop();
-        const pos = y * canvasWidth + x;
-
-        if (visited[pos]) continue;
-        visited[pos] = 1;
-
+      while (head < tail) {
+        const pos = queue[head++];
         const idx = pos * 4;
-        if (colorMatch(idx)) {
-          maskData[idx] = 255; maskData[idx + 1] = 255; maskData[idx + 2] = 255; maskData[idx + 3] = 255;
-          if (x > 0) queue.push(x - 1, y);
-          if (x < canvasWidth - 1) queue.push(x + 1, y);
-          if (y > 0) queue.push(x, y - 1);
-          if (y < canvasHeight - 1) queue.push(x, y + 1);
+        if (!colorMatch(idx)) continue;
+
+        maskData[idx] = 255;
+        maskData[idx + 1] = 255;
+        maskData[idx + 2] = 255;
+        maskData[idx + 3] = 255;
+
+        const x = pos % canvasWidth;
+        const y = (pos / canvasWidth) | 0;
+        const neighbors = [];
+        if (x > 0) neighbors.push(pos - 1);
+        if (x < canvasWidth - 1) neighbors.push(pos + 1);
+        if (y > 0) neighbors.push(pos - canvasWidth);
+        if (y < canvasHeight - 1) neighbors.push(pos + canvasWidth);
+        for (let i = 0; i < neighbors.length; i++) {
+          const n = neighbors[i];
+          if (!visited[n]) {
+            visited[n] = 1;
+            // Só pixels que combinam são enfileirados; marca-se visited na
+            // inserção para que cada pixel seja processado uma única vez.
+            if (colorMatch(n * 4)) queue[tail++] = n;
+          }
         }
       }
 
       selectionMaskCtx.putImageData(maskImg, 0, 0);
-      hasActiveSelection = true;
-      activeSelectionPath = new Path2D();
-      activeSelectionPath.rect(0, 0, canvasWidth, canvasHeight);
 
+      // Constrói um contorno verdadeiro a partir das bordas da máscara.
+      // Isso permite que pincel, borracha, mover e outras operações respeitem
+      // a região selecionada, em vez de tratar o canvas inteiro como seleção.
+      const path = new Path2D();
+      const selected = (x, y) => x >= 0 && y >= 0 && x < canvasWidth && y < canvasHeight &&
+        maskData[(y * canvasWidth + x) * 4 + 3] > 0;
+      for (let y = 0; y < canvasHeight; y++) {
+        for (let x = 0; x < canvasWidth; x++) {
+          if (!selected(x, y)) continue;
+          if (!selected(x, y - 1)) { path.moveTo(x, y); path.lineTo(x + 1, y); }
+          if (!selected(x + 1, y)) { path.moveTo(x + 1, y); path.lineTo(x + 1, y + 1); }
+          if (!selected(x, y + 1)) { path.moveTo(x + 1, y + 1); path.lineTo(x, y + 1); }
+          if (!selected(x - 1, y)) { path.moveTo(x, y + 1); path.lineTo(x, y); }
+        }
+      }
+
+      hasActiveSelection = tail > 0;
+      activeSelectionPath = hasActiveSelection ? path : null;
+      polyPoints = [];
       renderSelectionOverlay();
       saveHistoryState('Seleção Varinha Mágica');
-      showToast('Seleção por Varinha Mágica aplicada');
+      showToast(hasActiveSelection ? 'Seleção por Varinha Mágica aplicada' : 'Nenhuma área selecionada');
     }
 
     function drawStroke(x, y, isStart) {
