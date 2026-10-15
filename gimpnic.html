@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Filtros, Seleção e Objetos de Texto Arrastáveis</title>
+  <title>GIMP Web Studio - Filtros, Seleção e Objetos de Texto Arrastáveis e Rotacionáveis</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -559,7 +559,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE EDIÇÃO DE TEXTO (ESTILO GIMP) -->
+  <!-- MODAL DE EDIÇÃO DE TEXTO (ESTILO GIMP COM ROTAÇÃO) -->
   <div id="textEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
     <div class="bg-gimp-panel border border-gimp-border rounded shadow-2xl w-96 p-4 space-y-3">
       <h3 class="text-sm font-bold text-white border-b border-gimp-border pb-1.5 flex items-center justify-between">
@@ -577,15 +577,19 @@
             <input type="number" id="textModalSize" value="32" min="8" max="200" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
           </div>
           <div>
-            <label class="block text-gray-400 mb-1">Tipo de Letra:</label>
-            <select id="textModalFont" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
-              <option value="Inter, sans-serif">Inter</option>
-              <option value="Arial, sans-serif">Arial</option>
-              <option value="'Courier New', monospace">Courier New</option>
-              <option value="Georgia, serif">Georgia</option>
-              <option value="'Impact', sans-serif">Impact</option>
-            </select>
+            <label class="block text-gray-400 mb-1">Rotação (°):</label>
+            <input type="number" id="textModalAngle" value="0" min="-360" max="360" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none font-mono">
           </div>
+        </div>
+        <div>
+          <label class="block text-gray-400 mb-1">Tipo de Letra:</label>
+          <select id="textModalFont" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
+            <option value="Inter, sans-serif">Inter</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Impact', sans-serif">Impact</option>
+          </select>
         </div>
       </div>
       <div class="flex justify-between items-center pt-2 border-t border-gimp-border">
@@ -657,7 +661,6 @@
     let moveTotalDx = 0;                    
     let moveTotalDy = 0;                    
 
-    // Variáveis para arrastar o objeto de texto
     let draggingTextObject = null;
     let dragTextOffsetX = 0;
     let dragTextOffsetY = 0;
@@ -1042,13 +1045,23 @@
         compositeCtx.restore();
       });
 
-      // Renderizar objetos de texto por cima das camadas ativas
+      // Renderizar objetos de texto com suporte à rotação individual
       textObjects.forEach(txtObj => {
         compositeCtx.save();
         compositeCtx.font = `${txtObj.fontSize}px ${txtObj.fontFamily}`;
         compositeCtx.fillStyle = txtObj.color;
         compositeCtx.textBaseline = 'top';
-        compositeCtx.fillText(txtObj.text, txtObj.x, txtObj.y);
+
+        const metrics = compositeCtx.measureText(txtObj.text);
+        const textWidth = metrics.width;
+        const textHeight = txtObj.fontSize;
+        const centerX = txtObj.x + textWidth / 2;
+        const centerY = txtObj.y + textHeight / 2;
+
+        compositeCtx.translate(centerX, centerY);
+        compositeCtx.rotate(((txtObj.angle || 0) * Math.PI) / 180);
+        compositeCtx.fillText(txtObj.text, -textWidth / 2, -textHeight / 2);
+
         compositeCtx.restore();
       });
     }
@@ -1109,7 +1122,7 @@
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'flex-1 truncate font-medium';
-        nameSpan.innerText = txtObj.text;
+        nameSpan.innerText = `${txtObj.text} (${txtObj.angle || 0}°)`;
 
         item.appendChild(icon);
         item.appendChild(nameSpan);
@@ -2024,13 +2037,22 @@
         }
 
         if (currentTool === 'text') {
-          // Verificar se clicou em algum objeto de texto existente para arrastá-lo ou selecioná-lo
+          // Verificar se clicou em algum objeto de texto existente (considerando rotação aproximada)
           const clickedText = textObjects.slice().reverse().find(txt => {
             compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
             const metrics = compositeCtx.measureText(txt.text);
             const w = metrics.width;
             const h = txt.fontSize;
-            return coords.x >= txt.x && coords.x <= txt.x + w && coords.y >= txt.y && coords.y <= txt.y + h;
+            const cx = txt.x + w / 2;
+            const cy = txt.y + h / 2;
+
+            const rad = -((txt.angle || 0) * Math.PI) / 180;
+            const dx = coords.x - cx;
+            const dy = coords.y - cy;
+            const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+            const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+            return Math.abs(localX) <= w / 2 && Math.abs(localY) <= h / 2;
           });
 
           if (clickedText) {
@@ -2201,7 +2223,18 @@
           const clickedText = textObjects.slice().reverse().find(txt => {
             compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
             const metrics = compositeCtx.measureText(txt.text);
-            return coords.x >= txt.x && coords.x <= txt.x + metrics.width && coords.y >= txt.y && coords.y <= txt.y + txt.fontSize;
+            const w = metrics.width;
+            const h = txt.fontSize;
+            const cx = txt.x + w / 2;
+            const cy = txt.y + h / 2;
+
+            const rad = -((txt.angle || 0) * Math.PI) / 180;
+            const dx = coords.x - cx;
+            const dy = coords.y - cy;
+            const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+            const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+            return Math.abs(localX) <= w / 2 && Math.abs(localY) <= h / 2;
           });
           if (clickedText) {
             openTextModalForEdit(clickedText.id);
@@ -2213,11 +2246,12 @@
       });
     }
 
-    // GESTÃO DE OBJETOS DE TEXTO ESTILO GIMP
+    // GESTÃO DE OBJETOS DE TEXTO COM SUPORTE A ROTAÇÃO
     function openTextModalForNew(x, y) {
       activeTextObjectId = null;
       document.getElementById('textModalContent').value = 'Novo Texto';
       document.getElementById('textModalSize').value = 32;
+      document.getElementById('textModalAngle').value = 0;
       document.getElementById('textModalFont').value = 'Inter, sans-serif';
       document.getElementById('textModalDeleteBtn').classList.add('hidden');
 
@@ -2237,6 +2271,7 @@
       activeTextObjectId = id;
       document.getElementById('textModalContent').value = txtObj.text;
       document.getElementById('textModalSize').value = txtObj.fontSize;
+      document.getElementById('textModalAngle').value = txtObj.angle || 0;
       document.getElementById('textModalFont').value = txtObj.fontFamily;
       document.getElementById('textModalDeleteBtn').classList.remove('hidden');
 
@@ -2255,6 +2290,7 @@
     function saveTextObjectConfirm() {
       const textVal = document.getElementById('textModalContent').value;
       const sizeVal = parseInt(document.getElementById('textModalSize').value) || 24;
+      const angleVal = parseFloat(document.getElementById('textModalAngle').value) || 0;
       const fontVal = document.getElementById('textModalFont').value;
 
       if (!textVal.trim()) {
@@ -2267,6 +2303,7 @@
         if (txtObj) {
           txtObj.text = textVal;
           txtObj.fontSize = sizeVal;
+          txtObj.angle = angleVal;
           txtObj.fontFamily = fontVal;
           saveHistoryState('Editar Objeto de Texto');
         }
@@ -2277,6 +2314,7 @@
           x: window._tempTextX || 50,
           y: window._tempTextY || 50,
           fontSize: sizeVal,
+          angle: angleVal,
           fontFamily: fontVal,
           color: primaryColor
         });
@@ -2940,10 +2978,10 @@
       commitMove();
       cancelTransformSession();
       const projectData = {
-        version: "1.1",
+        version: "1.2",
         width: canvasWidth,
         height: canvasHeight,
-        textObjects: textObjects, // Salva perfeitamente todas as propriedades do texto
+        textObjects: textObjects,
         layers: layers.map(l => ({
           id: l.id, name: l.name, visible: l.visible, opacity: l.opacity, blendMode: l.blendMode,
           dataUrl: l.canvas.toDataURL('image/png')
@@ -3003,7 +3041,6 @@
           const project = JSON.parse(event.target.result);
           canvasWidth = project.width;
           canvasHeight = project.height;
-          // Restaura corretamente os objetos de texto para permitir alterações posteriores
           textObjects = project.textObjects || [];
 
           compositeCanvas.width = canvasWidth;
