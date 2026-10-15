@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Filtros, Seleção e Objetos de Texto Arrastáveis e Rotacionáveis</title>
+  <title>GIMP Web Studio - Biblioteca de Pincéis e Pressão de Caneta</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -90,6 +90,12 @@ input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius:
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; margin-top: -5px; width: 15px; height: 15px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
 input[type="range"]::-moz-range-track { height: 5px; border-radius: 999px; background: #4b5563; }
 input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
+
+.brush-floating-panel{position:fixed;left:82px;top:105px;width:330px;max-height:calc(100vh - 125px);overflow:hidden;background:#292929;color:#eee;border:1px solid #555;border-radius:8px;box-shadow:0 12px 32px #0009;z-index:1000;font-size:12px}
+.brush-panel-header{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;background:#3b3b3b;border-bottom:1px solid #555;cursor:move;touch-action:none;font-weight:600;user-select:none}
+.brush-window-btn{width:23px;height:23px;border-radius:4px;color:#ddd;background:#4a4a4a}.brush-window-btn:hover{background:#666;color:white}
+.brush-panel-body{overflow:auto;max-height:calc(100vh - 160px);padding:9px}.brush-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.brush-choice{display:flex;align-items:center;gap:7px;text-align:left;padding:7px 6px;background:#363636;border:1px solid #4a4a4a;border-radius:5px;color:#ddd;min-width:0}.brush-choice:hover{background:#444}.brush-choice.active{border-color:#60a5fa;background:#183b5d;color:#fff}.brush-swatch{width:27px;height:19px;flex:none;border-radius:3px;background:#202020;display:flex;align-items:center;justify-content:center;color:#fff}.brush-settings{border-top:1px solid #4a4a4a;margin-top:9px;padding-top:9px;display:grid;gap:8px}.brush-settings>label{display:grid;grid-template-columns:1fr auto;gap:3px 8px;color:#ddd}.brush-settings input[type=range]{grid-column:1 / -1;width:100%;accent-color:#60a5fa}.brush-checks{display:grid;gap:5px}.brush-checks label{display:flex;align-items:center;gap:6px}.brush-help{font-size:10px;line-height:1.35;color:#aaa}.brush-restore-btn{position:fixed;left:82px;top:70px;z-index:999;background:#333;border:1px solid #555;color:#eee;border-radius:5px;padding:6px 9px;font-size:12px;box-shadow:0 4px 12px #0008}
 </style>
 </head>
 <body class="bg-gimp-darkest text-gray-200 h-screen flex flex-col font-sans overflow-hidden select-none">
@@ -401,6 +407,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         <i class="fa-solid fa-paint-brush text-xs"></i>
       </button>
 
+      <button onclick="toggleBrushPanel()" id="openBrushPanelBtn" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Biblioteca de pincéis (20 tipos)">
+        <i class="fa-solid fa-brush text-xs"></i>
+      </button>
+
       <button onclick="selectTool('eraser')" id="tool-eraser" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Borracha (E)">
         <i class="fa-solid fa-eraser text-xs"></i>
       </button>
@@ -641,6 +651,31 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     </div>
   </div>
 
+  <!-- Biblioteca flutuante de pincéis, otimizada para caneta digitalizadora -->
+  <section id="brushPanel" class="brush-floating-panel" role="dialog" aria-label="Biblioteca de pincéis">
+    <div id="brushPanelHeader" class="brush-panel-header">
+      <span><i class="fa-solid fa-brush mr-2"></i>Pincéis — mesa digitalizadora</span>
+      <div class="flex items-center gap-1">
+        <button type="button" onclick="minimizeBrushPanel()" title="Minimizar" class="brush-window-btn"><i class="fa-solid fa-minus"></i></button>
+        <button type="button" onclick="closeBrushPanel()" title="Fechar" class="brush-window-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div id="brushPanelBody" class="brush-panel-body">
+      <div class="brush-grid" id="brushChoices"></div>
+      <div class="brush-settings">
+        <label>Tamanho <span id="brushSizeLabel">10 px</span><input id="brushSizeControl" type="range" min="1" max="120" value="10"></label>
+        <label>Opacidade <span id="brushOpacityLabel">100%</span><input id="brushOpacityControl" type="range" min="1" max="100" value="100"></label>
+        <label>Precisão da pressão <span id="pressurePrecisionLabel">5/10</span><input id="pressurePrecisionControl" type="range" min="1" max="10" value="5"></label>
+        <div class="brush-checks">
+          <label><input id="pressureSizeToggle" type="checkbox" checked> Pressão controla tamanho</label>
+          <label><input id="pressureOpacityToggle" type="checkbox"> Pressão controla opacidade</label>
+        </div>
+        <p class="brush-help">Use uma caneta compatível com pressão. Com mouse, o traço usa pressão simulada.</p>
+      </div>
+    </div>
+  </section>
+  <button id="restoreBrushPanelBtn" onclick="openBrushPanel()" class="brush-restore-btn" style="display:none" title="Abrir biblioteca de pincéis"><i class="fa-solid fa-brush mr-1"></i>Pincéis</button>
+
   <div id="toast" class="fixed bottom-4 right-4 bg-blue-600 text-white px-3 py-1.5 rounded shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
     <i class="fa-solid fa-circle-info"></i>
     <span id="toast-message">Notificação</span>
@@ -671,6 +706,34 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
     let brushSize = 10;
     let brushOpacity = 1.0;
+    let currentBrushType = 'pencil';
+    let currentPenPressure = 0.5;
+    let pressurePrecision = 5;
+    let pressureControlsSize = true;
+    let pressureControlsOpacity = false;
+    let activePointerType = 'mouse';
+    const brushLibrary = [
+      {id:'pencil',name:'Lápis HB',icon:'fa-pencil',desc:'Traço seco e fino'},
+      {id:'pencil-soft',name:'Lápis macio',icon:'fa-pencil',desc:'Sombreado suave'},
+      {id:'colored-pencil',name:'Lápis de cor',icon:'fa-pen',desc:'Pigmento texturizado'},
+      {id:'charcoal',name:'Carvão',icon:'fa-cloud',desc:'Traço áspero'},
+      {id:'chalk',name:'Giz',icon:'fa-grip-lines',desc:'Traço poroso'},
+      {id:'ink-pen',name:'Caneta técnica',icon:'fa-pen',desc:'Linha uniforme'},
+      {id:'fountain',name:'Caneta-tinteiro',icon:'fa-feather-pointed',desc:'Variação de pressão'},
+      {id:'nib',name:'Pena caligráfica',icon:'fa-feather',desc:'Ponta inclinada'},
+      {id:'ballpoint',name:'Esferográfica',icon:'fa-pen-nib',desc:'Tinta compacta'},
+      {id:'gel',name:'Caneta gel',icon:'fa-pen',desc:'Linha brilhante'},
+      {id:'marker',name:'Marcador',icon:'fa-highlighter',desc:'Cobertura média'},
+      {id:'highlighter',name:'Marca-texto',icon:'fa-highlighter',desc:'Transparente'},
+      {id:'brush-round',name:'Pincel redondo',icon:'fa-paintbrush',desc:'Pintura suave'},
+      {id:'brush-flat',name:'Pincel chato',icon:'fa-brush',desc:'Ponta larga'},
+      {id:'watercolor',name:'Aquarela',icon:'fa-droplet',desc:'Lavagem translúcida'},
+      {id:'oil',name:'Tinta a óleo',icon:'fa-palette',desc:'Pincelada encorpada'},
+      {id:'airbrush',name:'Aerógrafo',icon:'fa-spray-can',desc:'Borda difusa'},
+      {id:'pixel',name:'Pincel pixel',icon:'fa-border-all',desc:'Quadrados definidos'},
+      {id:'dotted',name:'Pincel pontilhado',icon:'fa-ellipsis',desc:'Pontos espaçados'},
+      {id:'calligraphy',name:'Caligrafia',icon:'fa-signature',desc:'Espessura variável'}
+    ];
     let shapeType = 'shape-rect';
     let shapeFill = true;
     let fontText = 'Inter, sans-serif';
@@ -2594,9 +2657,19 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         }
       };
 
-      viewport.addEventListener('mousedown', startAction);
-      window.addEventListener('mousemove', moveAction);
-      window.addEventListener('mouseup', endAction);
+      viewport.addEventListener('pointerdown', (e) => {
+        activePointerType = e.pointerType || 'mouse';
+        currentPenPressure = readPenPressure(e);
+        try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
+        startAction(e);
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (e.pointerType) activePointerType = e.pointerType;
+        if (isDrawing) currentPenPressure = readPenPressure(e);
+        moveAction(e);
+      });
+      window.addEventListener('pointerup', (e) => { currentPenPressure = readPenPressure(e); endAction(e); });
+      window.addEventListener('pointercancel', endAction);
 
       viewport.addEventListener('dblclick', (e) => {
         if (currentTool === 'text') {
@@ -2947,32 +3020,70 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       showToast(hasActiveSelection ? 'Seleção aplicada' : 'Nenhuma área seleccionada');
     }
 
+    function readPenPressure(e) {
+      if (e && e.pointerType === 'pen' && Number.isFinite(e.pressure) && e.pressure > 0) {
+        // Precisão 1 = resposta mais suave; 10 = resposta mais direta à pressão.
+        const raw = Math.max(0.01, Math.min(1, e.pressure));
+        const exponent = 1.65 - (pressurePrecision - 1) * 0.13;
+        return Math.max(0.025, Math.min(1, Math.pow(raw, exponent)));
+      }
+      if (e && e.pointerType === 'touch' && Number.isFinite(e.pressure) && e.pressure > 0) return Math.max(0.25, Math.min(1, e.pressure));
+      return 0.5; // Mouse ou dispositivo sem leitura de pressão.
+    }
+
     function drawStroke(x, y, isStart) {
       if (activeLayerIndex < 0) return;
       const ctx = layers[activeLayerIndex].ctx;
-
+      const brush = brushLibrary.find(b => b.id === currentBrushType) || brushLibrary[0];
+      const pressure = Math.max(0.025, Math.min(1, currentPenPressure || 0.5));
+      const sizeFactor = pressureControlsSize ? (0.18 + pressure * 0.92) : 1;
+      const opacityFactor = pressureControlsOpacity ? (0.12 + pressure * 0.88) : 1;
+      const width = Math.max(0.35, brushSize * sizeFactor);
+      const x0 = isStart ? x : lastX, y0 = isStart ? y : lastY;
       ctx.save();
       if (hasActiveSelection && activeSelectionPath) ctx.clip(activeSelectionPath);
+      ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = currentTool === 'eraser' ? 'rgba(0,0,0,1)' : primaryColor;
+      ctx.fillStyle = currentTool === 'eraser' ? 'rgba(0,0,0,1)' : primaryColor;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = width;
+      ctx.globalAlpha = currentTool === 'eraser' ? 1 : Math.max(0.01, Math.min(1, brushOpacity * opacityFactor));
+      ctx.setLineDash([]); ctx.shadowBlur = 0; ctx.shadowColor = primaryColor;
 
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.lineWidth = brushSize;
-
-      if (currentTool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
-      } else {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = brushOpacity;
-        ctx.strokeStyle = primaryColor;
+      if (currentTool !== 'eraser') {
+        switch (brush.id) {
+          case 'pencil': ctx.globalAlpha *= 0.82; ctx.lineWidth = Math.max(0.6, width * 0.58); break;
+          case 'pencil-soft': ctx.globalAlpha *= 0.38 + pressure * 0.25; ctx.shadowBlur = width * 0.18; break;
+          case 'colored-pencil': ctx.globalAlpha *= 0.72; ctx.lineWidth = Math.max(0.7, width * 0.7); break;
+          case 'charcoal': ctx.globalAlpha *= 0.65; ctx.lineWidth = width * 1.05; ctx.setLineDash([Math.max(1,width*.28), Math.max(1,width*.12)]); break;
+          case 'chalk': ctx.globalAlpha *= 0.72; ctx.setLineDash([Math.max(1,width*.48), Math.max(1,width*.2)]); break;
+          case 'ink-pen': ctx.lineWidth = Math.max(0.6, brushSize * 0.42); break;
+          case 'fountain': ctx.lineWidth = Math.max(0.7, brushSize * (0.22 + pressure * 1.05)); break;
+          case 'nib': ctx.lineWidth = Math.max(0.7, brushSize * (0.35 + pressure * 0.8)); ctx.lineCap = 'butt'; break;
+          case 'ballpoint': ctx.globalAlpha *= 0.86; ctx.lineWidth = Math.max(0.7, width * 0.48); break;
+          case 'gel': ctx.globalAlpha *= 0.94; ctx.shadowBlur = Math.max(0.5,width*.08); break;
+          case 'marker': ctx.globalAlpha *= 0.55; ctx.lineWidth = width * 1.5; ctx.lineCap = 'square'; break;
+          case 'highlighter': ctx.globalAlpha *= 0.24; ctx.lineWidth = width * 1.8; ctx.lineCap = 'square'; break;
+          case 'brush-round': ctx.globalAlpha *= 0.92; ctx.lineWidth = width * 1.25; break;
+          case 'brush-flat': ctx.lineWidth = width * 1.35; ctx.lineCap = 'butt'; break;
+          case 'watercolor': ctx.globalAlpha *= 0.25 + pressure * 0.28; ctx.lineWidth = width * 1.45; ctx.shadowBlur = width * 0.22; break;
+          case 'oil': ctx.globalAlpha *= 0.9; ctx.lineWidth = width * 1.35; ctx.shadowBlur = width * 0.08; break;
+          case 'airbrush': ctx.globalAlpha *= 0.12 + pressure * 0.12; ctx.lineWidth = width * 2.4; ctx.shadowBlur = width * 0.75; break;
+          case 'pixel': ctx.setLineDash([]); ctx.lineCap = 'butt'; ctx.lineWidth = Math.max(1, Math.round(width)); break;
+          case 'dotted': ctx.setLineDash([Math.max(1,width*.12), Math.max(2,width*.7)]); ctx.lineWidth = Math.max(1,width*.65); break;
+          case 'calligraphy': ctx.lineWidth = Math.max(0.7, brushSize * (0.18 + pressure * 1.15)); ctx.lineCap = 'butt'; break;
+        }
       }
-
       ctx.beginPath();
-      if (isStart) { ctx.moveTo(x, y); ctx.lineTo(x, y); }
-      else { ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); }
+      if (isStart) { ctx.moveTo(x, y); ctx.lineTo(x + 0.01, y + 0.01); }
+      else { ctx.moveTo(x0, y0); ctx.lineTo(x, y); }
       ctx.stroke();
+      // Pontilhado e carvão recebem uma textura leve para não parecerem apenas uma linha tracejada.
+      if (!isStart && currentTool !== 'eraser' && (brush.id === 'charcoal' || brush.id === 'colored-pencil')) {
+        const dist = Math.hypot(x-x0,y-y0), count = Math.min(16, Math.ceil(dist / Math.max(3, brushSize*.35)));
+        ctx.globalAlpha *= 0.32; ctx.setLineDash([]);
+        for (let n=0;n<count;n++) { const t=(n+1)/(count+1); const jitter=(Math.random()-.5)*Math.max(1,brushSize*.45); ctx.beginPath(); ctx.arc(x0+(x-x0)*t+jitter,y0+(y-y0)*t-jitter,Math.max(.35,width*.09),0,Math.PI*2); ctx.fill(); }
+      }
       ctx.restore();
-
       renderCompositeCanvas();
     }
 
@@ -3600,6 +3711,64 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         toast.classList.add('opacity-0', 'pointer-events-none');
       }, 2500);
     }
+
+    function toggleBrushPanel() {
+      const panel = document.getElementById('brushPanel');
+      if (panel.style.display === 'none') openBrushPanel(); else closeBrushPanel();
+    }
+    function openBrushPanel() {
+      const panel = document.getElementById('brushPanel');
+      panel.style.display = 'block';
+      document.getElementById('restoreBrushPanelBtn').style.display = 'none';
+    }
+    function closeBrushPanel() {
+      document.getElementById('brushPanel').style.display = 'none';
+      document.getElementById('restoreBrushPanelBtn').style.display = 'block';
+    }
+    function minimizeBrushPanel() {
+      const body = document.getElementById('brushPanelBody');
+      const panel = document.getElementById('brushPanel');
+      const minimized = body.style.display === 'none';
+      body.style.display = minimized ? 'block' : 'none';
+      panel.style.maxHeight = minimized ? 'calc(100vh - 125px)' : '34px';
+    }
+    function chooseBrush(id) {
+      currentBrushType = id;
+      document.querySelectorAll('.brush-choice').forEach(el => el.classList.toggle('active', el.dataset.brush === id));
+      const selected = brushLibrary.find(b => b.id === id);
+      if (selected) showToast('Pincel selecionado: ' + selected.name);
+      if (currentTool !== 'brush') selectTool('brush');
+    }
+    function setupBrushPanel() {
+      const choices = document.getElementById('brushChoices');
+      if (!choices) return;
+      choices.innerHTML = brushLibrary.map(b => `<button type="button" class="brush-choice ${b.id===currentBrushType?'active':''}" data-brush="${b.id}" onclick="chooseBrush('${b.id}')" title="${b.desc}"><span class="brush-swatch"><i class="fa-solid ${b.icon}"></i></span><span><strong>${b.name}</strong><small class="block text-gray-400">${b.desc}</small></span></button>`).join('');
+      const size = document.getElementById('brushSizeControl');
+      const opacity = document.getElementById('brushOpacityControl');
+      const precision = document.getElementById('pressurePrecisionControl');
+      size.addEventListener('input', () => { brushSize = Number(size.value); document.getElementById('brushSizeLabel').textContent = brushSize+' px'; renderToolProperties(); });
+      opacity.addEventListener('input', () => { brushOpacity = Number(opacity.value)/100; document.getElementById('brushOpacityLabel').textContent = opacity.value+'%'; });
+      precision.addEventListener('input', () => { pressurePrecision = Number(precision.value); document.getElementById('pressurePrecisionLabel').textContent = pressurePrecision+'/10'; });
+      document.getElementById('pressureSizeToggle').addEventListener('change', e => pressureControlsSize = e.target.checked);
+      document.getElementById('pressureOpacityToggle').addEventListener('change', e => pressureControlsOpacity = e.target.checked);
+      // Arraste pela barra de título, com mouse, caneta ou toque.
+      const panel = document.getElementById('brushPanel'), header = document.getElementById('brushPanelHeader');
+      let drag = null;
+      header.addEventListener('pointerdown', e => {
+        if (e.target.closest('button')) return;
+        const r = panel.getBoundingClientRect(); drag = {x:e.clientX-r.left,y:e.clientY-r.top};
+        header.setPointerCapture(e.pointerId); e.preventDefault();
+      });
+      header.addEventListener('pointermove', e => {
+        if (!drag) return;
+        const left = Math.max(0, Math.min(window.innerWidth-panel.offsetWidth, e.clientX-drag.x));
+        const top = Math.max(0, Math.min(window.innerHeight-34, e.clientY-drag.y));
+        panel.style.left = left+'px'; panel.style.top = top+'px';
+      });
+      const stopDrag = () => { drag = null; };
+      header.addEventListener('pointerup', stopDrag); header.addEventListener('pointercancel', stopDrag);
+    }
+    setupBrushPanel();
   </script>
 </body>
 </html>
