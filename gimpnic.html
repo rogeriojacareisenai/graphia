@@ -156,14 +156,25 @@
               <span><i class="fa-solid fa-trash-can w-5"></i> Limpar Seleção</span>
               <span class="text-[10px] text-gray-400">Del</span>
             </button>
-            <hr class="border-gimp-border my-1">
+          </div>
+        </div>
+
+        <!-- Selecionar (Novo Menu Principal Estilo GIMP) -->
+        <div class="relative dropdown">
+          <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Selecionar</button>
+          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
             <button onclick="selectAll()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-object-group w-5"></i> Selecionar Tudo</span>
+              <span><i class="fa-solid fa-object-group w-5"></i> Tudo</span>
               <span class="text-[10px] text-gray-400">Ctrl+A</span>
             </button>
             <button onclick="deselectAll()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-circle-xmark w-5"></i> Selecionar Nada</span>
-              <span class="text-[10px] text-gray-400">Ctrl+D</span>
+              <span><i class="fa-solid fa-circle-xmark w-5"></i> Nada</span>
+              <span class="text-[10px] text-gray-400">Ctrl+Shift+A / Ctrl+D</span>
+            </button>
+            <hr class="border-gimp-border my-1">
+            <button onclick="invertSelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-arrows-rotate w-5"></i> Inverter</span>
+              <span class="text-[10px] text-gray-400">Ctrl+I</span>
             </button>
           </div>
         </div>
@@ -549,14 +560,12 @@
     };
 
     function setupToolGroupFlyouts() {
-      // Transformações
       const transContainer = document.getElementById('transformGroupContainer');
       const transTriggerBtn = document.getElementById('transformFlyoutTrigger');
       const transFlyout = document.getElementById('transformFlyoutMenu');
 
       transTriggerBtn.addEventListener('click', toggleTransformFlyout);
 
-      // Seleções
       const selContainer = document.getElementById('selectionGroupContainer');
       const selTriggerBtn = document.getElementById('selectionFlyoutTrigger');
       const selFlyout = document.getElementById('selectionFlyoutMenu');
@@ -633,8 +642,7 @@
         'select-wand': 'fa-solid fa-wand-magic-sparkles'
       };
       const iconClass = iconMap[toolName];
-      const isSolid = iconClass.includes('fa-solid');
-      document.getElementById('selectionGroupIcon').className = `${iconClass} text-xs ${isSolid ? '' : ''}`;
+      document.getElementById('selectionGroupIcon').className = `${iconClass} text-xs`;
       document.getElementById('selectionFlyoutMenu').style.display = 'none';
       selectTool(toolName);
     }
@@ -1031,6 +1039,42 @@
       renderSelectionOverlay();
       saveHistoryState('Selecionar Nada');
       showToast('Seleção desfeita');
+    }
+
+    function invertSelection() {
+      commitMove();
+      cancelTransformSession();
+
+      const imgData = selectionMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+      const data = imgData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = 255 - data[i];
+        data[i + 1] = 255 - data[i + 1];
+        data[i + 2] = 255 - data[i + 2];
+        data[i + 3] = 255 - data[i + 3];
+      }
+
+      selectionMaskCtx.putImageData(imgData, 0, 0);
+      hasActiveSelection = true;
+
+      const path = new Path2D();
+      const selected = (x, y) => x >= 0 && y >= 0 && x < canvasWidth && y < canvasHeight &&
+        data[(y * canvasWidth + x) * 4 + 3] > 0;
+      for (let y = 0; y < canvasHeight; y++) {
+        for (let x = 0; x < canvasWidth; x++) {
+          if (!selected(x, y)) continue;
+          if (!selected(x, y - 1)) { path.moveTo(x, y); path.lineTo(x + 1, y); }
+          if (!selected(x + 1, y)) { path.moveTo(x + 1, y); path.lineTo(x + 1, y + 1); }
+          if (!selected(x, y + 1)) { path.moveTo(x + 1, y + 1); path.lineTo(x, y + 1); }
+          if (!selected(x - 1, y)) { path.moveTo(x, y + 1); path.lineTo(x, y); }
+        }
+      }
+
+      activeSelectionPath = path;
+      renderSelectionOverlay();
+      saveHistoryState('Inverter Seleção');
+      showToast('Seleção invertida');
     }
 
     function renderSelectionOverlay() {
@@ -2309,6 +2353,7 @@
           const key = e.key.toLowerCase();
           if (key === 'a') { e.preventDefault(); selectAll(); }
           else if (key === 'd') { e.preventDefault(); deselectAll(); }
+          else if (key === 'i') { e.preventDefault(); invertSelection(); }
           else if (key === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
           else if (key === 'y') { e.preventDefault(); redo(); }
           else if (key === 'x') { e.preventDefault(); cutSelection(); }
