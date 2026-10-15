@@ -220,7 +220,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
                 <button onclick="applyFilter('hue-saturation')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Matiz e saturação...</button>
                 <button onclick="applyFilter('colorize')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Colorizar...</button>
                 <button onclick="applyFilter('posterize')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Posterizar...</button>
-                <button onclick="applyFilter('threshold')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Threshold / Limiar (preto e branco)...</button>
+                <button onclick="applyFilter('threshold')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Limiar (preto e branco)...</button>
                 <button onclick="applyFilter('color-to-alpha')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Cor para Alfa...</button>
               </div>
             </div>
@@ -1325,13 +1325,54 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       });
     }
 
+    // Permite mover diálogos de filtro arrastando a barra de título.
+    function makeFilterDialogDraggable(dialog, handle, overlay) {
+      if (!dialog || !handle) return;
+      handle.style.cursor = 'grab';
+      handle.style.userSelect = 'none';
+      handle.style.touchAction = 'none';
+      handle.title = 'Arraste para mover esta janela';
+      let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+      handle.addEventListener('pointerdown', (e) => {
+        if (e.button !== undefined && e.button !== 0) return;
+        if (e.target.closest('button, input, select, textarea, a')) return;
+        const rect = dialog.getBoundingClientRect();
+        // Ao iniciar o arrasto, fixa a posição atual antes de mover.
+        dialog.style.position = 'fixed';
+        dialog.style.left = rect.left + 'px';
+        dialog.style.top = rect.top + 'px';
+        dialog.style.margin = '0';
+        dialog.style.transform = 'none';
+        dialog.style.width = rect.width + 'px';
+        dialog.style.maxWidth = 'calc(100vw - 24px)';
+        startX = e.clientX; startY = e.clientY;
+        startLeft = rect.left; startTop = rect.top;
+        dragging = true;
+        handle.style.cursor = 'grabbing';
+        try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+        e.preventDefault();
+      });
+      handle.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const maxLeft = Math.max(8, window.innerWidth - dialog.offsetWidth - 8);
+        const maxTop = Math.max(8, window.innerHeight - dialog.offsetHeight - 8);
+        const left = Math.min(maxLeft, Math.max(8, startLeft + e.clientX - startX));
+        const top = Math.min(maxTop, Math.max(8, startTop + e.clientY - startY));
+        dialog.style.left = left + 'px';
+        dialog.style.top = top + 'px';
+      });
+      const stopDrag = () => { dragging = false; handle.style.cursor = 'grab'; };
+      handle.addEventListener('pointerup', stopDrag);
+      handle.addEventListener('pointercancel', stopDrag);
+    }
+
     async function askFilterValues(title, controls, onPreview) {
       return new Promise(resolve => {
         const overlay = document.createElement('div');
         // MODIFICAÇÃO: Fundo limpo sem escurecimento/blur (removido bg-black/70 e backdrop-blur-sm)
         overlay.className = 'fixed inset-0 flex items-center justify-center z-[100] p-4 pointer-events-none';
-        overlay.innerHTML = `<div class="w-full max-w-md rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl pointer-events-auto">
-          <div class="px-4 py-3 border-b border-gimp-border font-semibold flex items-center justify-between">
+        overlay.innerHTML = `<div data-filter-dialog class="w-full max-w-md rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl pointer-events-auto">
+          <div data-filter-titlebar class="px-4 py-3 border-b border-gimp-border font-semibold flex items-center justify-between">
             <span>${title}</span>
             <button type="button" data-close class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
           </div>
@@ -1358,6 +1399,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         overlay.querySelector('[data-apply]').onclick = () => finish([...fields.querySelectorAll('input[type=range]')].map(el => Number(el.value)));
         overlay.addEventListener('keydown', e => { if (e.key === 'Escape') finish(null); if (e.key === 'Enter') finish([...fields.querySelectorAll('input[type=range]')].map(el => Number(el.value))); });
         document.body.appendChild(overlay);
+        makeFilterDialogDraggable(overlay.querySelector('[data-filter-dialog]'), overlay.querySelector('[data-filter-titlebar]'), overlay);
         const first = overlay.querySelector('input[type=range]'); if (first) first.focus();
       });
     }
@@ -1377,8 +1419,8 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       if (filterType === 'color-to-alpha') {
         const colorDialog = document.createElement('div');
         colorDialog.className = 'fixed inset-0 flex items-center justify-center z-[100] p-4';
-        colorDialog.innerHTML = `<div class="w-full max-w-sm rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl">
-          <div class="px-4 py-3 border-b border-gimp-border font-semibold">Cor para Alfa</div>
+        colorDialog.innerHTML = `<div data-filter-dialog class="w-full max-w-sm rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl">
+          <div data-filter-titlebar class="px-4 py-3 border-b border-gimp-border font-semibold">Cor para Alfa</div>
           <div class="p-4 space-y-3 text-sm">
             <p>Escolha a cor que deverá ficar transparente.</p>
             <label class="flex items-center justify-between gap-3">Cor a remover
@@ -1391,6 +1433,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
             <button type="button" data-ca-next class="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white">Continuar</button>
           </div></div>`;
         document.body.appendChild(colorDialog);
+        makeFilterDialogDraggable(colorDialog.querySelector('[data-filter-dialog]'), colorDialog.querySelector('[data-filter-titlebar]'), colorDialog);
         const chosenColor = await new Promise(resolve => {
           colorDialog.querySelector('[data-ca-cancel]').onclick = () => { colorDialog.remove(); resolve(null); };
           colorDialog.querySelector('[data-ca-next]').onclick = () => {
@@ -1489,7 +1532,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
             else if(filterType==='hue-saturation'){let [hh,ss,ll]=rgbToHsl(r,g,b);hh=(hh+amount/360+1)%1;ss=Math.max(0,Math.min(1,ss*(1+amount2/100)));[r,g,b]=hslToRgb(hh,ss,ll);}
             else if(filterType==='colorize'){const lum=(.299*r+.587*g+.114*b)/255;r=lum*amount;g=lum*amount2;b=lum*blue;}
             else if(filterType==='posterize'){const step=255/(amount-1);r=Math.round(r/step)*step;g=Math.round(g/step)*step;b=Math.round(b/step)*step;}
-            else if(filterType==='threshold'){const luminance=(0.2126*r+0.7152*g+0.0722*b);const v=luminance>=amount?255:0;r=v;g=v;b=v;}
+            else if(filterType==='threshold'){const v=(.299*r+.587*g+.114*b)>=amount?255:0;r=g=b=v;}
             else if(filterType==='noise'){const n=(Math.random()*2-1)*amount*2.55;r+=n;g+=n;b+=n;}
             else if(filterType==='emboss'){const left=(x>0?i-4:i);const up=(y>0?i-w*4:i);r=128+(src[i]-src[left])*amount+(src[i]-src[up])*amount*.5;g=128+(src[i+1]-src[left+1])*amount+(src[i+1]-src[up+1])*amount*.5;b=128+(src[i+2]-src[left+2])*amount+(src[i+2]-src[up+2])*amount*.5;}
             else if(filterType==='edge-detect'){const left=x>0?i-4:i,right=x<w-1?i+4:i,up=y>0?i-w*4:i,down=y<h-1?i+w*4:i;const lum=j=>.299*src[j]+.587*src[j+1]+.114*src[j+2];const v=clamp(Math.abs(lum(right)-lum(left))+Math.abs(lum(down)-lum(up)));r=g=b=v;}
@@ -1510,7 +1553,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       else if (filterType === 'brightness-contrast') { title = 'Brilho e contraste'; controls = [{label:'Brilho',initial:0,min:-100,max:100,step:1},{label:'Contraste',initial:0,min:-100,max:100,step:1}]; }
       else if (filterType === 'hue-saturation') { title = 'Matiz e saturação'; controls = [{label:'Matiz',initial:0,min:-180,max:180,step:1,unit:'°'},{label:'Saturação',initial:0,min:-100,max:100,step:1,unit:'%'}]; }
       else if (filterType === 'posterize') { title = 'Posterizar'; controls = [{label:'Níveis por canal',initial:4,min:2,max:32,step:1}]; }
-      else if (filterType === 'threshold') { title = 'Threshold / Limiar'; controls = [{label:'Ponto de corte (0 = preto, 255 = branco)',initial:128,min:0,max:255,step:1}]; }
+      else if (filterType === 'threshold') { title = 'Limiar'; controls = [{label:'Ponto de corte',initial:128,min:0,max:255,step:1}]; }
       else if (filterType === 'noise') { title = 'Adicionar ruído'; controls = [{label:'Intensidade',initial:20,min:0,max:100,step:1,unit:'%'}]; }
       else if (filterType === 'emboss') { title = 'Relevo (Emboss)'; controls = [{label:'Intensidade do relevo',initial:1,min:0,max:10,step:0.1}]; }
       else if (filterType === 'vignette') { title = 'Vinheta'; controls = [{label:'Intensidade',initial:55,min:0,max:100,step:1,unit:'%'}]; }
