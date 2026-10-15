@@ -221,6 +221,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
                 <button onclick="applyFilter('colorize')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Colorizar...</button>
                 <button onclick="applyFilter('posterize')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Posterizar...</button>
                 <button onclick="applyFilter('threshold')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Limiar (preto e branco)...</button>
+                <button onclick="applyFilter('color-to-alpha')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Cor para Alfa...</button>
               </div>
             </div>
 
@@ -1370,6 +1371,67 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       const ctx = layer.ctx;
       const w = canvasWidth, h = canvasHeight;
       const originalBackup = ctx.getImageData(0, 0, w, h);
+
+      // GIMP-like Color to Alpha: remove a chosen color with adjustable tolerance,
+      // preserving partial transparency at antialiased edges.
+      if (filterType === 'color-to-alpha') {
+        const colorDialog = document.createElement('div');
+        colorDialog.className = 'fixed inset-0 flex items-center justify-center z-[100] p-4';
+        colorDialog.innerHTML = `<div class="w-full max-w-sm rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl">
+          <div class="px-4 py-3 border-b border-gimp-border font-semibold">Cor para Alfa</div>
+          <div class="p-4 space-y-3 text-sm">
+            <p>Escolha a cor que deverá ficar transparente.</p>
+            <label class="flex items-center justify-between gap-3">Cor a remover
+              <input id="colorAlphaTarget" type="color" value="#ffffff" class="w-16 h-8 bg-gimp-darkest border border-gimp-border rounded cursor-pointer">
+            </label>
+            <p class="text-xs text-gray-400">A tolerância será ajustada na próxima janela. As áreas selecionadas, se houver, serão respeitadas.</p>
+          </div>
+          <div class="px-4 py-3 border-t border-gimp-border flex justify-end gap-2">
+            <button type="button" data-ca-cancel class="px-3 py-1.5 rounded border border-gimp-border hover:bg-gimp-hover">Cancelar</button>
+            <button type="button" data-ca-next class="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white">Continuar</button>
+          </div></div>`;
+        document.body.appendChild(colorDialog);
+        const chosenColor = await new Promise(resolve => {
+          colorDialog.querySelector('[data-ca-cancel]').onclick = () => { colorDialog.remove(); resolve(null); };
+          colorDialog.querySelector('[data-ca-next]').onclick = () => {
+            const val = colorDialog.querySelector('#colorAlphaTarget').value;
+            colorDialog.remove(); resolve(val);
+          };
+        });
+        if (!chosenColor) { showToast('Cor para Alfa cancelado'); return; }
+        const target = hexToRgb(chosenColor);
+        const controls = [{label:'Tolerância da cor',initial:24,min:0,max:180,step:1}];
+        const applyColorAlpha = (vals) => {
+          const tolerance = vals[0];
+          const src = originalBackup.data;
+          const mask = hasActiveSelection ? selectionMaskCtx.getImageData(0,0,w,h).data : null;
+          const out = new ImageData(new Uint8ClampedArray(src), w, h);
+          for (let i=0; i<src.length; i+=4) {
+            if (mask && mask[i+3]===0) continue;
+            if (src[i+3]===0) continue;
+            const dr=src[i]-target.r, dg=src[i+1]-target.g, db=src[i+2]-target.b;
+            const distance=Math.sqrt(dr*dr+dg*dg+db*db)/Math.sqrt(3);
+            if (distance <= tolerance) {
+              out.data[i+3] = Math.round(src[i+3] * (distance / Math.max(1,tolerance)));
+            }
+          }
+          ctx.putImageData(out,0,0);
+          renderCompositeCanvas();
+        };
+        applyColorAlpha(controls.map(c=>c.initial));
+        const values = await askFilterValues('Cor para Alfa — Ajustes', controls, applyColorAlpha);
+        if (values === null) {
+          ctx.putImageData(originalBackup,0,0);
+          renderCompositeCanvas();
+          showToast('Filtro cancelado');
+        } else {
+          applyColorAlpha(values);
+          saveHistoryState('Cor para Alfa aplicado');
+          renderLayersList(); renderCompositeCanvas();
+          showToast('Cor convertida em transparência');
+        }
+        return;
+      }
 
       const processFilterValues = (values) => {
         const original = new ImageData(new Uint8ClampedArray(originalBackup.data), originalBackup.width, originalBackup.height);
