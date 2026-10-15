@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Filtros, Seleção e Objetos de Texto</title>
+  <title>GIMP Web Studio - Filtros, Seleção e Objetos de Texto Arrastáveis</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -66,6 +66,7 @@
     .cursor-grabbing { cursor: grabbing !important; }
     .cursor-crosshair { cursor: crosshair !important; }
     .cursor-text { cursor: text !important; }
+    .cursor-move { cursor: move !important; }
 
     .tool-group-flyout {
       display: none;
@@ -656,6 +657,11 @@
     let moveTotalDx = 0;                    
     let moveTotalDy = 0;                    
 
+    // Variáveis para arrastar o objeto de texto
+    let draggingTextObject = null;
+    let dragTextOffsetX = 0;
+    let dragTextOffsetY = 0;
+
     let selectionMaskCanvas = null;
     let selectionMaskCtx = null;
     let hasActiveSelection = false;
@@ -921,7 +927,7 @@
       renderLayersList();
       renderCompositeCanvas();
       saveHistoryState('Nova Camada');
-      showToast('New layer created');
+      showToast('Nova camada criada');
       return layer;
     }
 
@@ -1525,7 +1531,7 @@
 
     function updateWorkbenchCursor() {
       const workbench = document.getElementById('workbench');
-      workbench.classList.remove('cursor-zoom-in', 'cursor-zoom-out', 'cursor-grab', 'cursor-grabbing', 'cursor-crosshair', 'cursor-text');
+      workbench.classList.remove('cursor-zoom-in', 'cursor-zoom-out', 'cursor-grab', 'cursor-grabbing', 'cursor-crosshair', 'cursor-text', 'cursor-move');
 
       if (isSpacePressed || isPanning) {
         workbench.classList.add(isPanning ? 'cursor-grabbing' : 'cursor-grab');
@@ -1657,7 +1663,7 @@
           break;
         case 'text':
           icon = 'fa-font'; name = 'Texto';
-          propsEl.innerHTML = `<span class="text-gray-400">Clique na área de trabalho para adicionar ou editar um objeto de texto.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Clique e arraste texto para mover. Dê duplo clique para editar.</span>`;
           break;
         case 'zoom':
           icon = 'fa-magnifying-glass'; name = 'Ampliação';
@@ -2018,7 +2024,7 @@
         }
 
         if (currentTool === 'text') {
-          // Verificar se clicou em algum objeto de texto existente para editá-lo
+          // Verificar se clicou em algum objeto de texto existente para arrastá-lo ou selecioná-lo
           const clickedText = textObjects.slice().reverse().find(txt => {
             compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
             const metrics = compositeCtx.measureText(txt.text);
@@ -2028,7 +2034,10 @@
           });
 
           if (clickedText) {
-            openTextModalForEdit(clickedText.id);
+            draggingTextObject = clickedText;
+            dragTextOffsetX = coords.x - clickedText.x;
+            dragTextOffsetY = coords.y - clickedText.y;
+            isDrawing = true;
           } else {
             openTextModalForNew(coords.x, coords.y);
           }
@@ -2066,6 +2075,13 @@
       const moveAction = (e) => {
         if (!isDrawing || isPanning) return;
         const coords = getCanvasCoords(e);
+
+        if (currentTool === 'text' && draggingTextObject) {
+          draggingTextObject.x = coords.x - dragTextOffsetX;
+          draggingTextObject.y = coords.y - dragTextOffsetY;
+          renderCompositeCanvas();
+          return;
+        }
 
         if (currentTool === 'select-poly' && draggingPolyPointIndex !== -1) {
           polyPoints[draggingPolyPointIndex].x = coords.x;
@@ -2146,6 +2162,13 @@
         if (!isDrawing) return;
         isDrawing = false;
         activeHandle = null;
+
+        if (currentTool === 'text' && draggingTextObject) {
+          draggingTextObject = null;
+          saveHistoryState('Mover Objeto de Texto');
+          return;
+        }
+
         if (draggingPolyPointIndex !== -1) {
           draggingPolyPointIndex = -1;
           renderSelectionOverlay();
@@ -2172,7 +2195,18 @@
       window.addEventListener('mousemove', moveAction);
       window.addEventListener('mouseup', endAction);
 
-      viewport.addEventListener('dblclick', () => {
+      viewport.addEventListener('dblclick', (e) => {
+        if (currentTool === 'text') {
+          const coords = getCanvasCoords(e);
+          const clickedText = textObjects.slice().reverse().find(txt => {
+            compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
+            const metrics = compositeCtx.measureText(txt.text);
+            return coords.x >= txt.x && coords.x <= txt.x + metrics.width && coords.y >= txt.y && coords.y <= txt.y + txt.fontSize;
+          });
+          if (clickedText) {
+            openTextModalForEdit(clickedText.id);
+          }
+        }
         if (currentTool === 'select-poly') {
           finishPolySelection();
         }
