@@ -296,6 +296,15 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     </div>
 
     <div class="text-gray-400 text-[11px] flex items-center space-x-3">
+      <button
+        type="button"
+        id="openNewTabBtn"
+        onclick="openNewApplicationTab()"
+        class="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold transition flex items-center gap-1.5"
+        title="Abrir uma nova aba independente (Ctrl+Alt+N)">
+        <i class="fa-solid fa-up-right-from-square"></i>
+        <span>Nova aba</span>
+      </button>
       <span id="file-name-display" class="font-medium text-gray-300">Sem_Titulo.gimpweb</span>
       <span id="image-dimensions-display"><i class="fa-regular fa-image me-1"></i> 800 x 600 px</span>
       <span id="zoom-level-display" class="bg-gimp-panel px-1.5 py-0.5 rounded border border-gimp-border font-mono text-blue-400">100%</span>
@@ -3161,6 +3170,12 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'n') {
+          e.preventDefault();
+          openNewApplicationTab();
+          return;
+        }
+
         if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
         if (e.key === 'Enter') {
@@ -3433,6 +3448,19 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     function hexToRgb(hex) {
       const bigint = parseInt(hex.replace('#', ''), 16);
       return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    }
+
+    // Abre outra instância completa do editor numa nova aba do navegador.
+    // Cada aba possui seu próprio documento, camadas, histórico e ferramentas.
+    function openNewApplicationTab() {
+      const newTab = window.open(window.location.href, '_blank');
+
+      if (newTab) {
+        newTab.focus();
+        showToast('Nova aba do editor aberta.');
+      } else {
+        showToast('O navegador bloqueou a nova aba. Permita pop-ups para este arquivo.');
+      }
     }
 
     function openNewImageModal() {
