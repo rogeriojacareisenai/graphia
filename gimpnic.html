@@ -431,8 +431,8 @@
     </aside>
 
     <!-- ÁREA DE TRABALHO (CANVAS) -->
-    <main id="workbench" class="flex-1 bg-[#1a1a1a] overflow-auto relative flex p-12 checkerboard cursor-default select-none scroll-smooth">
-      <div id="canvas-viewport" class="relative shadow-2xl origin-center transition-transform duration-75 m-auto">
+    <main id="workbench" class="flex-1 bg-[#1a1a1a] overflow-auto relative flex items-start p-12 checkerboard cursor-default select-none">
+      <div id="canvas-viewport" class="relative shadow-2xl origin-top-left flex-none">
         <canvas id="compositeCanvas" class="block border border-zinc-700 shadow-2xl"></canvas>
         <canvas id="selectionCanvas" class="absolute top-0 left-0 pointer-events-none"></canvas>
       </div>
@@ -452,7 +452,7 @@
 
       <div class="fixed bottom-3 left-16 bg-gimp-panel/90 backdrop-blur border border-gimp-border rounded px-1.5 py-1 flex items-center space-x-1.5 text-xs shadow-lg z-30">
         <button onclick="zoomOut()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Reduzir (-)"><i class="fa-solid fa-minus text-[10px]"></i></button>
-        <button onclick="resetZoom()" class="px-1.5 py-0.5 hover:bg-gimp-hover rounded font-mono text-gray-200 text-[10px]">100%</button>
+        <button onclick="resetZoom()" id="zoom-bottom-display" class="px-1.5 py-0.5 hover:bg-gimp-hover rounded font-mono text-gray-200 text-[10px]">100%</button>
         <button onclick="zoomIn()" class="p-1 hover:bg-gimp-hover rounded text-gray-300" title="Ampliar (+)"><i class="fa-solid fa-plus text-[10px]"></i></button>
       </div>
     </main>
@@ -1942,57 +1942,111 @@
       toggleFlipSession(dir);
     }
 
+    function updateZoomDisplay() {
+      const label = `${Math.round(zoomLevel * 100)}%`;
+      const topLabel = document.getElementById('zoom-level-display');
+      const bottomLabel = document.getElementById('zoom-bottom-display');
+      if (topLabel) topLabel.innerText = `Zoom: ${label}`;
+      if (bottomLabel) bottomLabel.innerText = label;
+    }
+
+    // O zoom funciona como no GIMP: o canvas é ampliado a partir do canto
+    // superior esquerdo, mas o ponto de interesse é reposicionado depois
+    // para permanecer no centro da janela de trabalho.
     function applyViewportTransform() {
       const vp = document.getElementById('canvas-viewport');
-      vp.style.transform = `scale(${zoomLevel})`;
-      document.getElementById('zoom-level-display').innerText = `${Math.round(zoomLevel * 100)}%`;
+      vp.style.transform = 'none';
+      vp.style.transformOrigin = 'top left';
+      vp.style.zoom = String(zoomLevel);
+      updateZoomDisplay();
+    }
+
+    function clampZoom(value) {
+      // Faixa semelhante à utilizada pelo GIMP: 6,25% até 6400%.
+      return Math.max(0.0625, Math.min(64, value));
     }
 
     function setZoomCenter(newZoom) {
-      const clampedZoom = Math.max(0.1, Math.min(8.0, newZoom));
-      if (clampedZoom === zoomLevel) return;
-
       const workbench = document.getElementById('workbench');
+      const vp = document.getElementById('canvas-viewport');
       const oldZoom = zoomLevel;
-      zoomLevel = clampedZoom;
+      const newValue = clampZoom(newZoom);
+      if (Math.abs(newValue - oldZoom) < 0.000001) return;
+
+      // Ponto central atual, expresso em coordenadas do canvas.
+      const centerX = (workbench.scrollLeft + workbench.clientWidth / 2 - vp.offsetLeft) / oldZoom;
+      const centerY = (workbench.scrollTop + workbench.clientHeight / 2 - vp.offsetTop) / oldZoom;
+
+      zoomLevel = newValue;
       applyViewportTransform();
 
-      const centerX = workbench.clientWidth / 2;
-      const centerY = workbench.clientHeight / 2;
-      
-      workbench.scrollLeft = (workbench.scrollLeft + centerX) * (zoomLevel / oldZoom) - centerX;
-      workbench.scrollTop = (workbench.scrollTop + centerY) * (zoomLevel / oldZoom) - centerY;
+      // Mantém o mesmo ponto no centro após a mudança, como no GIMP.
+      workbench.scrollLeft = Math.max(0, vp.offsetLeft + centerX * zoomLevel - workbench.clientWidth / 2);
+      workbench.scrollTop = Math.max(0, vp.offsetTop + centerY * zoomLevel - workbench.clientHeight / 2);
     }
 
-    // --- CORREÇÃO DO ZOOM POR RETÂNGULO CONSIDERANDO O CENTRO COMO REFERÊNCIA ---
+    // Zoom por área — comportamento equivalente ao Zoom Tool do GIMP:
+    // 1. o retângulo desenhado define EXATAMENTE a região de interesse;
+    // 2. o fator é calculado pelos dois eixos para que TODO o retângulo caiba;
+    // 3. a proporção do conteúdo não é alterada;
+    // 4. depois do zoom, o centro do retângulo fica no centro da janela;
+    // 5. não existe um limite artificial de 400%: uma área pequena pode
+    //    naturalmente resultar em 800%, 1600% etc., como no GIMP.
     function zoomToArea(x1, y1, x2, y2) {
-      const rectW = Math.abs(x2 - x1);
-      const rectH = Math.abs(y2 - y1);
-      if (rectW < 5 || rectH < 5) return;
+      const left = Math.max(0, Math.min(x1, x2));
+      const top = Math.max(0, Math.min(y1, y2));
+      const right = Math.min(canvasWidth, Math.max(x1, x2));
+      const bottom = Math.min(canvasHeight, Math.max(y1, y2));
+      const rectW = right - left;
+      const rectH = bottom - top;
+
+      if (rectW < 2 || rectH < 2) {
+        showToast('Desenhe um retângulo para definir a área de zoom');
+        return;
+      }
 
       const workbench = document.getElementById('workbench');
-      const wRect = workbench.getBoundingClientRect();
-      const scaleX = wRect.width / rectW;
-      const scaleY = wRect.height / rectH;
-      const targetZoom = Math.max(0.1, Math.min(8.0, Math.min(scaleX, scaleY) * 0.9));
+      const vp = document.getElementById('canvas-viewport');
+
+      // Margem visual semelhante à área útil do GIMP. Ela não faz parte
+      // da área selecionada: serve apenas para não encostar nas bordas.
+      const margin = 16;
+      const availableW = Math.max(1, workbench.clientWidth - margin * 2);
+      const availableH = Math.max(1, workbench.clientHeight - margin * 2);
+
+      // O menor fator é obrigatório: assim nenhuma parte do retângulo
+      // selecionado fica escondida horizontal ou verticalmente.
+      const fitX = availableW / rectW;
+      const fitY = availableH / rectH;
+      const targetZoom = clampZoom(Math.min(fitX, fitY));
 
       zoomLevel = targetZoom;
       applyViewportTransform();
 
-      // Calcular o centro exato do retângulo de zoom definido pelo utilizador
-      const targetCenterX = Math.min(x1, x2) + rectW / 2;
-      const targetCenterY = Math.min(y1, y2) + rectH / 2;
+      // Centro da seleção em coordenadas do conteúdo ampliado.
+      const selectionCenterX = left + rectW / 2;
+      const selectionCenterY = top + rectH / 2;
 
-      // Alinhar esse centro perfeitamente ao centro do container (workbench)
-      workbench.scrollLeft = targetCenterX * zoomLevel - wRect.width / 2;
-      workbench.scrollTop = targetCenterY * zoomLevel - wRect.height / 2;
+      // Centraliza a área selecionada na janela. O canto superior esquerdo
+      // continua sendo a origem geométrica do cálculo, sem deslocamento
+      // arbitrário que possa fazer parte do retângulo desaparecer.
+      workbench.scrollLeft = Math.max(0,
+        vp.offsetLeft + selectionCenterX * zoomLevel - workbench.clientWidth / 2);
+      workbench.scrollTop = Math.max(0,
+        vp.offsetTop + selectionCenterY * zoomLevel - workbench.clientHeight / 2);
 
-      showToast('Área Ampliada');
+      showToast(`Zoom: ${Math.round(zoomLevel * 100)}% — área selecionada enquadrada`);
     }
 
     function zoomIn() { setZoomCenter(zoomLevel * 1.25); }
     function zoomOut() { setZoomCenter(zoomLevel / 1.25); }
-    function resetZoom() { zoomLevel = 1.0; applyViewportTransform(); }
+    function resetZoom() {
+      zoomLevel = 1.0;
+      applyViewportTransform();
+      const workbench = document.getElementById('workbench');
+      workbench.scrollLeft = 0;
+      workbench.scrollTop = 0;
+    }
 
     function setupZoomAndPanEvents() {
       const workbench = document.getElementById('workbench');
