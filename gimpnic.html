@@ -380,9 +380,32 @@
         <i class="fa-solid fa-fill-drip text-xs"></i>
       </button>
 
-      <button onclick="selectTool('shape')" id="tool-shape" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Formas (U)">
-        <i class="fa-solid fa-shapes text-xs"></i>
-      </button>
+      <!-- GRUPO DE FORMAS GRÁFICAS -->
+      <div class="relative group-container" id="shapeGroupContainer">
+        <div class="flex items-center w-8 h-8 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="shapeGroupWrapper">
+          <button id="tool-shape-group" onclick="toggleShapeFlyout(event)" class="w-6 h-full flex items-center justify-center" title="Ferramentas de Formas">
+            <i id="shapeGroupIcon" class="fa-regular fa-square text-xs"></i>
+          </button>
+          <button id="shapeFlyoutTrigger" class="w-2 h-full flex items-center justify-center text-[7px] text-blue-400 hover:text-white" title="Mais opções de formas">
+            <i class="fa-solid fa-caret-right"></i>
+          </button>
+        </div>
+
+        <div id="shapeFlyoutMenu" class="tool-group-flyout">
+          <button onclick="selectToolFromShapeGroup('shape-rect')" id="tool-shape-rect" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Retângulo (U)">
+            <i class="fa-regular fa-square text-xs"></i>
+          </button>
+          <button onclick="selectToolFromShapeGroup('shape-circle')" id="tool-shape-circle" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Círculo / Elipse">
+            <i class="fa-regular fa-circle text-xs"></i>
+          </button>
+          <button onclick="selectToolFromShapeGroup('shape-poly')" id="tool-shape-poly" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Polígono">
+            <i class="fa-solid fa-draw-polygon text-xs"></i>
+          </button>
+          <button onclick="selectToolFromShapeGroup('shape-line')" id="tool-shape-line" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Linha">
+            <i class="fa-solid fa-slash text-xs"></i>
+          </button>
+        </div>
+      </div>
 
       <button onclick="selectTool('text')" id="tool-text" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Texto (T)">
         <i class="fa-solid fa-font text-xs"></i>
@@ -553,10 +576,11 @@
     let currentTool = 'pointer';
     let primaryColor = '#000000';
     let secondaryColor = '#ffffff';
+    let strokeColor = '#000000'; // Cor de contorno para formas
 
     let brushSize = 10;
     let brushOpacity = 1.0;
-    let shapeType = 'rect';
+    let shapeType = 'shape-rect';
     let shapeFill = true;
     let fontText = 'Inter, sans-serif';
     let fontSize = 24;
@@ -565,6 +589,7 @@
 
     let currentTransformSubTool = 'rotate';
     let currentSelectionSubTool = 'select-rect';
+    let currentShapeSubTool = 'shape-rect';
 
     let activeTransformSession = false;
     let transformBox = null;
@@ -623,14 +648,17 @@
       const transContainer = document.getElementById('transformGroupContainer');
       const transTriggerBtn = document.getElementById('transformFlyoutTrigger');
       const transFlyout = document.getElementById('transformFlyoutMenu');
-
       transTriggerBtn.addEventListener('click', toggleTransformFlyout);
 
       const selContainer = document.getElementById('selectionGroupContainer');
       const selTriggerBtn = document.getElementById('selectionFlyoutTrigger');
       const selFlyout = document.getElementById('selectionFlyoutMenu');
-
       selTriggerBtn.addEventListener('click', toggleSelectionFlyout);
+
+      const shapeContainer = document.getElementById('shapeGroupContainer');
+      const shapeTriggerBtn = document.getElementById('shapeFlyoutTrigger');
+      const shapeFlyout = document.getElementById('shapeFlyoutMenu');
+      shapeTriggerBtn.addEventListener('click', toggleShapeFlyout);
 
       document.addEventListener('click', (e) => {
         if (!transContainer.contains(e.target) && !transFlyout.contains(e.target)) {
@@ -639,11 +667,15 @@
         if (!selContainer.contains(e.target) && !selFlyout.contains(e.target)) {
           selFlyout.style.display = 'none';
         }
+        if (!shapeContainer.contains(e.target) && !shapeFlyout.contains(e.target)) {
+          shapeFlyout.style.display = 'none';
+        }
       });
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           transFlyout.style.display = 'none';
           selFlyout.style.display = 'none';
+          shapeFlyout.style.display = 'none';
         }
       });
     }
@@ -651,6 +683,7 @@
     function toggleTransformFlyout(e) {
       if (e) e.stopPropagation();
       document.getElementById('selectionFlyoutMenu').style.display = 'none';
+      document.getElementById('shapeFlyoutMenu').style.display = 'none';
       const wrapper = document.getElementById('transformGroupWrapper');
       const flyout = document.getElementById('transformFlyoutMenu');
       const willOpen = flyout.style.display !== 'flex';
@@ -667,8 +700,26 @@
     function toggleSelectionFlyout(e) {
       if (e) e.stopPropagation();
       document.getElementById('transformFlyoutMenu').style.display = 'none';
+      document.getElementById('shapeFlyoutMenu').style.display = 'none';
       const wrapper = document.getElementById('selectionGroupWrapper');
       const flyout = document.getElementById('selectionFlyoutMenu');
+      const willOpen = flyout.style.display !== 'flex';
+      if (!willOpen) {
+        flyout.style.display = 'none';
+        return;
+      }
+      const rect = wrapper.getBoundingClientRect();
+      flyout.style.left = `${Math.round(rect.right + 4)}px`;
+      flyout.style.top = `${Math.max(8, Math.min(Math.round(rect.top), window.innerHeight - flyout.offsetHeight - 8))}px`;
+      flyout.style.display = 'flex';
+    }
+
+    function toggleShapeFlyout(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('transformFlyoutMenu').style.display = 'none';
+      document.getElementById('selectionFlyoutMenu').style.display = 'none';
+      const wrapper = document.getElementById('shapeGroupWrapper');
+      const flyout = document.getElementById('shapeFlyoutMenu');
       const willOpen = flyout.style.display !== 'flex';
       if (!willOpen) {
         flyout.style.display = 'none';
@@ -705,6 +756,21 @@
       document.getElementById('selectionGroupIcon').className = `${iconClass} text-xs`;
       document.getElementById('selectionFlyoutMenu').style.display = 'none';
       selectTool(toolName);
+    }
+
+    function selectToolFromShapeGroup(toolName) {
+      currentShapeSubTool = toolName;
+      shapeType = toolName;
+      const iconMap = {
+        'shape-rect': 'fa-regular fa-square',
+        'shape-circle': 'fa-regular fa-circle',
+        'shape-poly': 'fa-solid fa-draw-polygon',
+        'shape-line': 'fa-solid fa-slash'
+      };
+      const iconClass = iconMap[toolName] || 'fa-regular fa-square';
+      document.getElementById('shapeGroupIcon').className = `${iconClass} text-xs`;
+      document.getElementById('shapeFlyoutMenu').style.display = 'none';
+      selectTool('shape');
     }
 
     function initProject(width, height, bgType) {
@@ -1073,7 +1139,6 @@
       });
     }
 
-    // APLICAR FILTROS GIMP
     function applyFilter(filterType) {
       commitMove();
       cancelTransformSession();
@@ -1314,6 +1379,7 @@
 
       const isTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(tool);
       const isSelectionTool = ['select-rect', 'select-oval', 'select-poly', 'select-wand'].includes(tool);
+      const isShapeTool = tool === 'shape';
 
       if (!isTransformTool && activeTransformSession) {
         confirmTransformSession();
@@ -1348,6 +1414,14 @@
         }
       }
 
+      if (isShapeTool) {
+        const groupWrapper = document.getElementById('shapeGroupWrapper');
+        if (groupWrapper) {
+          groupWrapper.classList.remove('text-gray-300');
+          groupWrapper.classList.add('bg-blue-600', 'text-white');
+        }
+      }
+
       updateWorkbenchCursor();
       renderToolProperties();
 
@@ -1362,7 +1436,7 @@
 
       if (isSpacePressed || isPanning) {
         workbench.classList.add(isPanning ? 'cursor-grabbing' : 'cursor-grab');
-      } else if (currentTool === 'zoom' || currentTool.startsWith('select-')) {
+      } else if (currentTool === 'zoom' || currentTool.startsWith('select-') || currentTool === 'shape') {
         workbench.classList.add('cursor-crosshair');
       }
     }
@@ -1469,13 +1543,22 @@
             </label>`;
           break;
         case 'shape':
-          icon = 'fa-shapes'; name = 'Formas';
+          icon = 'fa-shapes'; name = 'Forma Gráfica';
           propsEl.innerHTML = `
-            <select onchange="shapeType = this.value" class="bg-gimp-dark border border-gimp-border rounded px-2 py-0.5 text-xs text-white">
-              <option value="rect" ${shapeType==='rect'?'selected':''}>Retângulo</option>
-              <option value="circle" ${shapeType==='circle'?'selected':''}>Elipse</option>
-              <option value="line" ${shapeType==='line'?'selected':''}>Linha</option>
-            </select>`;
+            <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-1.5">
+                <label class="text-gray-400">Contorno:</label>
+                <input type="color" id="strokeColorInput" value="${strokeColor}" onchange="strokeColor = this.value" class="w-6 h-5 cursor-pointer border border-gimp-border bg-transparent p-0">
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <label class="text-gray-400">Espessura:</label>
+                <input type="number" min="1" max="50" value="${brushSize}" onchange="brushSize = parseInt(this.value) || 1" class="w-12 bg-gimp-dark border border-gimp-border rounded px-1 text-center text-white"> px
+              </div>
+              <label class="flex items-center space-x-1.5 cursor-pointer text-gray-200">
+                <input type="checkbox" ${shapeFill ? 'checked' : ''} onchange="shapeFill = this.checked" class="rounded accent-blue-600">
+                <span>Preencher</span>
+              </label>
+            </div>`;
           break;
         case 'zoom':
           icon = 'fa-magnifying-glass'; name = 'Ampliação';
@@ -2241,24 +2324,40 @@
       if (hasActiveSelection && activeSelectionPath) ctx.clip(activeSelectionPath);
 
       ctx.fillStyle = primaryColor;
-      ctx.strokeStyle = primaryColor;
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = brushSize;
       ctx.globalAlpha = brushOpacity;
 
       ctx.beginPath();
-      if (shapeType === 'rect') {
+      if (shapeType === 'shape-rect') {
         const w = x2 - x1, h = y2 - y1;
         if (shapeFill) ctx.fillRect(x1, y1, w, h);
         ctx.strokeRect(x1, y1, w, h);
-      } else if (shapeType === 'circle') {
+      } else if (shapeType === 'shape-circle') {
         const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
         const cx = Math.min(x1, x2) + rx, cy = Math.min(y1, y2) + ry;
         ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
         if (shapeFill) ctx.fill();
         ctx.stroke();
-      } else if (shapeType === 'line') {
+      } else if (shapeType === 'shape-line') {
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
+        ctx.stroke();
+      } else if (shapeType === 'shape-poly') {
+        // Exemplo simples de polígono regular (triângulo ou losango baseado na bounding box)
+        const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+        const cx = Math.min(x1, x2) + rx, cy = Math.min(y1, y2) + ry;
+        const sides = 5; // Pentágono
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
+          const px = cx + rx * Math.cos(angle);
+          const py = cy + ry * Math.sin(angle);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        if (shapeFill) ctx.fill();
         ctx.stroke();
       }
       ctx.restore();
@@ -2587,7 +2686,7 @@
             break;
           case 'f': selectToolFromGroup('flip'); break;
           case 'g': selectTool('bucket'); break;
-          case 'u': selectTool('shape'); break;
+          case 'u': selectToolFromShapeGroup('shape-rect'); break;
           case 't': selectTool('text'); break;
           case 'i': selectTool('picker'); break;
           case 'z': selectTool('zoom'); break;
@@ -2809,7 +2908,8 @@
         move: 'Mover Conteúdo', bucket: 'Preenchimento', rotate: 'Rodar',
         scale: 'Redimensionar', shear: 'Cisalhar', flip: 'Inverter',
         'select-rect': 'Seleção Retangular', 'select-oval': 'Seleção Elíptica',
-        'select-poly': 'Seleção Poligonal', 'select-wand': 'Varinha Mágica'
+        'select-poly': 'Seleção Poligonal', 'select-wand': 'Varinha Mágica',
+        'shape-rect': 'Retângulo', 'shape-circle': 'Círculo', 'shape-poly': 'Polígono', 'shape-line': 'Linha'
       };
       return names[tool] || 'Ação';
     }
