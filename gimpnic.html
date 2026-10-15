@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GIMP Web Studio - Filtros e Seleção Poligonal</title>
+  <title>GIMP Web Studio - Filtros, Seleção e Objetos de Texto</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -65,6 +65,7 @@
     .cursor-grab { cursor: grab !important; }
     .cursor-grabbing { cursor: grabbing !important; }
     .cursor-crosshair { cursor: crosshair !important; }
+    .cursor-text { cursor: text !important; }
 
     .tool-group-flyout {
       display: none;
@@ -182,12 +183,10 @@
           </div>
         </div>
 
-        <!-- FILTROS (GIMP STYLE) -->
+        <!-- FILTROS -->
         <div class="relative dropdown">
           <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Filtros</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
-            
-            <!-- Desfoque -->
             <div class="relative has-submenu">
               <button class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
                 <span><i class="fa-solid fa-droplet w-5"></i> Desfoque</span>
@@ -199,7 +198,6 @@
               </div>
             </div>
 
-            <!-- Cores -->
             <div class="relative has-submenu">
               <button class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
                 <span><i class="fa-solid fa-palette w-5"></i> Cores</span>
@@ -212,7 +210,6 @@
               </div>
             </div>
 
-            <!-- Melhorar / Enhance -->
             <div class="relative has-submenu">
               <button class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
                 <span><i class="fa-solid fa-wand-magic w-5"></i> Melhorar</span>
@@ -224,7 +221,6 @@
               </div>
             </div>
 
-            <!-- Distorções -->
             <div class="relative has-submenu">
               <button class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
                 <span><i class="fa-solid fa-water w-5"></i> Distorções</span>
@@ -234,7 +230,6 @@
                 <button onclick="applyFilter('emboss')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white">Relevo (Emboss)</button>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -461,8 +456,8 @@
       </div>
     </main>
 
-    <!-- PAINÉIS LATERAIS DIREITOS (CAMADAS E HISTÓRICO) -->
-    <aside class="w-68 bg-gimp-dark border-l border-gimp-border flex flex-col z-20 shrink-0 w-72">
+    <!-- PAINÉIS LATERAIS DIREITOS (CAMADAS, TEXTOS E HISTÓRICO) -->
+    <aside class="w-72 bg-gimp-dark border-l border-gimp-border flex flex-col z-20 shrink-0">
 
       <div class="flex-1 flex flex-col min-h-0 border-b border-gimp-border">
         <div class="bg-gimp-panel px-2.5 py-1.5 border-b border-gimp-border flex items-center justify-between">
@@ -510,7 +505,17 @@
         </div>
       </div>
 
-      <div class="h-40 flex flex-col min-h-0 bg-gimp-dark">
+      <!-- PAINEL DE OBJETOS DE TEXTO -->
+      <div class="h-36 flex flex-col min-h-0 bg-gimp-dark border-b border-gimp-border">
+        <div class="bg-gimp-panel px-2.5 py-1 border-b border-gimp-border flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
+            <i class="fa-solid fa-font mr-1.5 text-blue-400"></i> Objetos de Texto
+          </span>
+        </div>
+        <div id="text-objects-list" class="flex-1 overflow-y-auto p-1 space-y-1 text-xs"></div>
+      </div>
+
+      <div class="h-32 flex flex-col min-h-0 bg-gimp-dark">
         <div class="bg-gimp-panel px-2.5 py-1 border-b border-gimp-border flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
             <i class="fa-solid fa-clock-rotate-left mr-1.5 text-blue-400"></i> Histórico
@@ -553,6 +558,45 @@
     </div>
   </div>
 
+  <!-- MODAL DE EDIÇÃO DE TEXTO (ESTILO GIMP) -->
+  <div id="textEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-gimp-panel border border-gimp-border rounded shadow-2xl w-96 p-4 space-y-3">
+      <h3 class="text-sm font-bold text-white border-b border-gimp-border pb-1.5 flex items-center justify-between">
+        <span class="flex items-center"><i class="fa-solid fa-font text-blue-500 mr-2"></i> Editor de Objeto de Texto</span>
+        <button onclick="closeTextModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </h3>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-400 mb-1">Texto:</label>
+          <textarea id="textModalContent" rows="3" class="w-full bg-gimp-darkest border border-gimp-border rounded p-2 text-white focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-gray-400 mb-1">Tamanho (px):</label>
+            <input type="number" id="textModalSize" value="32" min="8" max="200" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Tipo de Letra:</label>
+            <select id="textModalFont" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
+              <option value="Inter, sans-serif">Inter</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="'Impact', sans-serif">Impact</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-between items-center pt-2 border-t border-gimp-border">
+        <button id="textModalDeleteBtn" onclick="deleteCurrentTextObject()" class="px-3 py-1 bg-red-600/80 hover:bg-red-600 text-white text-xs rounded hidden">Eliminar</button>
+        <div class="flex space-x-2 ml-auto">
+          <button onclick="closeTextModal()" class="px-3 py-1 bg-gimp-hover hover:bg-zinc-700 text-gray-300 text-xs rounded">Cancelar</button>
+          <button onclick="saveTextObjectConfirm()" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded">Aplicar Objeto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="fixed bottom-4 right-4 bg-blue-600 text-white px-3 py-1.5 rounded shadow-xl text-xs flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none z-50">
     <i class="fa-solid fa-circle-info"></i>
     <span id="toast-message">Notificação</span>
@@ -570,20 +614,23 @@
     let isSpacePressed = false;
 
     let layers = [];
+    let textObjects = [];
+    let activeTextObjectId = null;
     let activeLayerIndex = -1;
     let layerCounter = 1;
+    let textCounter = 1;
 
     let currentTool = 'pointer';
     let primaryColor = '#000000';
     let secondaryColor = '#ffffff';
-    let strokeColor = '#000000'; // Cor de contorno para formas
+    let strokeColor = '#000000';
 
     let brushSize = 10;
     let brushOpacity = 1.0;
     let shapeType = 'shape-rect';
     let shapeFill = true;
     let fontText = 'Inter, sans-serif';
-    let fontSize = 24;
+    let fontSize = 32;
     let wandTolerance = 30;
     let bucketSampleAllLayers = true;
 
@@ -790,9 +837,11 @@
       document.getElementById('image-dimensions-display').innerHTML = `<i class="fa-regular fa-image me-1"></i> ${width} x ${height} px`;
 
       layers = [];
+      textObjects = [];
       historyStack = [];
       historyIndex = -1;
       layerCounter = 1;
+      textCounter = 1;
       hasActiveSelection = false;
       activeSelectionPath = null;
       polyPoints = [];
@@ -824,6 +873,7 @@
 
       activeLayerIndex = 0;
       renderLayersList();
+      renderTextObjectsList();
       renderCompositeCanvas();
       renderSelectionOverlay();
       saveHistoryState('Novo Projeto');
@@ -871,7 +921,7 @@
       renderLayersList();
       renderCompositeCanvas();
       saveHistoryState('Nova Camada');
-      showToast('Nova camada criada');
+      showToast('New layer created');
       return layer;
     }
 
@@ -985,6 +1035,16 @@
         }
         compositeCtx.restore();
       });
+
+      // Renderizar objetos de texto por cima das camadas ativas
+      textObjects.forEach(txtObj => {
+        compositeCtx.save();
+        compositeCtx.font = `${txtObj.fontSize}px ${txtObj.fontFamily}`;
+        compositeCtx.fillStyle = txtObj.color;
+        compositeCtx.textBaseline = 'top';
+        compositeCtx.fillText(txtObj.text, txtObj.x, txtObj.y);
+        compositeCtx.restore();
+      });
     }
 
     function renderLayersList() {
@@ -1024,6 +1084,33 @@
       }
     }
 
+    function renderTextObjectsList() {
+      const container = document.getElementById('text-objects-list');
+      container.innerHTML = '';
+
+      if (textObjects.length === 0) {
+        container.innerHTML = `<div class="text-gray-500 text-center py-2">Sem objetos de texto</div>`;
+        return;
+      }
+
+      textObjects.forEach((txtObj) => {
+        const item = document.createElement('div');
+        item.className = `flex items-center space-x-2 p-1.5 rounded cursor-pointer text-xs border bg-gimp-dark border-gimp-border text-gray-300 hover:bg-gimp-hover`;
+        item.onclick = () => openTextModalForEdit(txtObj.id);
+
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-font text-blue-400 w-4 text-center';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'flex-1 truncate font-medium';
+        nameSpan.innerText = txtObj.text;
+
+        item.appendChild(icon);
+        item.appendChild(nameSpan);
+        container.appendChild(item);
+      });
+    }
+
     function saveHistoryState(actionName) {
       if (historyIndex < historyStack.length - 1) {
         historyStack = historyStack.slice(0, historyIndex + 1);
@@ -1044,6 +1131,8 @@
         };
       });
 
+      const textObjectsBackup = JSON.parse(JSON.stringify(textObjects));
+
       const maskBackup = document.createElement('canvas');
       maskBackup.width = canvasWidth;
       maskBackup.height = canvasHeight;
@@ -1052,6 +1141,7 @@
       historyStack.push({
         action: actionName,
         layers: layersBackup,
+        textObjects: textObjectsBackup,
         selectionMask: maskBackup,
         hasSelection: hasActiveSelection,
         activeSelectionPath: activeSelectionPath,
@@ -1105,6 +1195,8 @@
         };
       });
 
+      textObjects = JSON.parse(JSON.stringify(state.textObjects || []));
+
       selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
       selectionMaskCtx.drawImage(state.selectionMask, 0, 0);
       hasActiveSelection = state.hasSelection;
@@ -1112,6 +1204,7 @@
 
       activeLayerIndex = state.activeIdx;
       renderLayersList();
+      renderTextObjectsList();
       renderCompositeCanvas();
       renderSelectionOverlay();
       updateLayerPropsUI();
@@ -1432,12 +1525,14 @@
 
     function updateWorkbenchCursor() {
       const workbench = document.getElementById('workbench');
-      workbench.classList.remove('cursor-zoom-in', 'cursor-zoom-out', 'cursor-grab', 'cursor-grabbing', 'cursor-crosshair');
+      workbench.classList.remove('cursor-zoom-in', 'cursor-zoom-out', 'cursor-grab', 'cursor-grabbing', 'cursor-crosshair', 'cursor-text');
 
       if (isSpacePressed || isPanning) {
         workbench.classList.add(isPanning ? 'cursor-grabbing' : 'cursor-grab');
       } else if (currentTool === 'zoom' || currentTool.startsWith('select-') || currentTool === 'shape') {
         workbench.classList.add('cursor-crosshair');
+      } else if (currentTool === 'text') {
+        workbench.classList.add('cursor-text');
       }
     }
 
@@ -1559,6 +1654,10 @@
                 <span>Preencher</span>
               </label>
             </div>`;
+          break;
+        case 'text':
+          icon = 'fa-font'; name = 'Texto';
+          propsEl.innerHTML = `<span class="text-gray-400">Clique na área de trabalho para adicionar ou editar um objeto de texto.</span>`;
           break;
         case 'zoom':
           icon = 'fa-magnifying-glass'; name = 'Ampliação';
@@ -1918,6 +2017,24 @@
           commitMove();
         }
 
+        if (currentTool === 'text') {
+          // Verificar se clicou em algum objeto de texto existente para editá-lo
+          const clickedText = textObjects.slice().reverse().find(txt => {
+            compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
+            const metrics = compositeCtx.measureText(txt.text);
+            const w = metrics.width;
+            const h = txt.fontSize;
+            return coords.x >= txt.x && coords.x <= txt.x + w && coords.y >= txt.y && coords.y <= txt.y + h;
+          });
+
+          if (clickedText) {
+            openTextModalForEdit(clickedText.id);
+          } else {
+            openTextModalForNew(coords.x, coords.y);
+          }
+          return;
+        }
+
         isDrawing = true;
         startX = coords.x;
         startY = coords.y;
@@ -1943,8 +2060,6 @@
           saveHistoryState('Preenchimento');
         } else if (currentTool === 'picker') {
           pickColor(coords.x, coords.y);
-        } else if (currentTool === 'text') {
-          addTextPrompt(coords.x, coords.y);
         }
       };
 
@@ -2062,6 +2177,92 @@
           finishPolySelection();
         }
       });
+    }
+
+    // GESTÃO DE OBJETOS DE TEXTO ESTILO GIMP
+    function openTextModalForNew(x, y) {
+      activeTextObjectId = null;
+      document.getElementById('textModalContent').value = 'Novo Texto';
+      document.getElementById('textModalSize').value = 32;
+      document.getElementById('textModalFont').value = 'Inter, sans-serif';
+      document.getElementById('textModalDeleteBtn').classList.add('hidden');
+
+      window._tempTextX = x;
+      window._tempTextY = y;
+
+      const modal = document.getElementById('textEditorModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('textModalContent').focus();
+    }
+
+    function openTextModalForEdit(id) {
+      const txtObj = textObjects.find(t => t.id === id);
+      if (!txtObj) return;
+
+      activeTextObjectId = id;
+      document.getElementById('textModalContent').value = txtObj.text;
+      document.getElementById('textModalSize').value = txtObj.fontSize;
+      document.getElementById('textModalFont').value = txtObj.fontFamily;
+      document.getElementById('textModalDeleteBtn').classList.remove('hidden');
+
+      const modal = document.getElementById('textEditorModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('textModalContent').focus();
+    }
+
+    function closeTextModal() {
+      const modal = document.getElementById('textEditorModal');
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+    }
+
+    function saveTextObjectConfirm() {
+      const textVal = document.getElementById('textModalContent').value;
+      const sizeVal = parseInt(document.getElementById('textModalSize').value) || 24;
+      const fontVal = document.getElementById('textModalFont').value;
+
+      if (!textVal.trim()) {
+        showToast('O texto não pode estar vazio');
+        return;
+      }
+
+      if (activeTextObjectId !== null) {
+        const txtObj = textObjects.find(t => t.id === activeTextObjectId);
+        if (txtObj) {
+          txtObj.text = textVal;
+          txtObj.fontSize = sizeVal;
+          txtObj.fontFamily = fontVal;
+          saveHistoryState('Editar Objeto de Texto');
+        }
+      } else {
+        textObjects.push({
+          id: textCounter++,
+          text: textVal,
+          x: window._tempTextX || 50,
+          y: window._tempTextY || 50,
+          fontSize: sizeVal,
+          fontFamily: fontVal,
+          color: primaryColor
+        });
+        saveHistoryState('Adicionar Objeto de Texto');
+      }
+
+      closeTextModal();
+      renderTextObjectsList();
+      renderCompositeCanvas();
+      showToast('Objeto de texto guardado');
+    }
+
+    function deleteCurrentTextObject() {
+      if (activeTextObjectId === null) return;
+      textObjects = textObjects.filter(t => t.id !== activeTextObjectId);
+      closeTextModal();
+      renderTextObjectsList();
+      renderCompositeCanvas();
+      saveHistoryState('Eliminar Objeto de Texto');
+      showToast('Objeto de texto eliminado');
     }
 
     function startMoveSession() {
@@ -2344,10 +2545,9 @@
         ctx.lineTo(x2, y2);
         ctx.stroke();
       } else if (shapeType === 'shape-poly') {
-        // Exemplo simples de polígono regular (triângulo ou losango baseado na bounding box)
         const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
         const cx = Math.min(x1, x2) + rx, cy = Math.min(y1, y2) + ry;
-        const sides = 5; // Pentágono
+        const sides = 5;
         ctx.beginPath();
         for (let i = 0; i < sides; i++) {
           const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
@@ -2706,9 +2906,10 @@
       commitMove();
       cancelTransformSession();
       const projectData = {
-        version: "1.0",
+        version: "1.1",
         width: canvasWidth,
         height: canvasHeight,
+        textObjects: textObjects,
         layers: layers.map(l => ({
           id: l.id, name: l.name, visible: l.visible, opacity: l.opacity, blendMode: l.blendMode,
           dataUrl: l.canvas.toDataURL('image/png')
@@ -2768,6 +2969,7 @@
           const project = JSON.parse(event.target.result);
           canvasWidth = project.width;
           canvasHeight = project.height;
+          textObjects = project.textObjects || [];
 
           compositeCanvas.width = canvasWidth;
           compositeCanvas.height = canvasHeight;
@@ -2802,6 +3004,7 @@
                 activeLayerIndex = layers.length - 1;
                 historyStack = []; historyIndex = -1;
                 renderLayersList();
+                renderTextObjectsList();
                 renderCompositeCanvas();
                 saveHistoryState('Abrir Projeto');
                 resetZoom();
@@ -2813,26 +3016,6 @@
         } catch (err) { alert('Ficheiro .gimpweb inválido.'); }
       };
       reader.readAsText(file);
-    }
-
-    function addTextPrompt(x, y) {
-      commitMove();
-      cancelTransformSession();
-      const text = prompt('Introduza o texto:');
-      if (!text) return;
-
-      const ctx = layers[activeLayerIndex].ctx;
-      ctx.save();
-      if (hasActiveSelection && activeSelectionPath) ctx.clip(activeSelectionPath);
-
-      ctx.font = `${fontSize}px ${fontText}`;
-      ctx.fillStyle = primaryColor;
-      ctx.textBaseline = 'top';
-      ctx.fillText(text, x, y);
-      ctx.restore();
-
-      renderCompositeCanvas();
-      saveHistoryState('Adicionar Texto');
     }
 
     function pickColor(x, y) {
@@ -2891,15 +3074,6 @@
       secondaryColor = temp;
       document.getElementById('primaryColorInput').value = primaryColor;
       document.getElementById('secondaryColorInput').value = secondaryColor;
-    }
-
-    function clearActiveLayer() {
-      commitMove();
-      cancelTransformSession();
-      if (activeLayerIndex < 0) return;
-      layers[activeLayerIndex].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      renderCompositeCanvas();
-      saveHistoryState('Limpar Camada');
     }
 
     function getToolName(tool) {
