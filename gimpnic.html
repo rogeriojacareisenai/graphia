@@ -559,7 +559,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE EDIÇÃO DE TEXTO (ESTILO GIMP COM ROTAÇÃO) -->
+  <!-- MODAL DE EDIÇÃO DE TEXTO (ESTILO GIMP COM ROTAÇÃO E PROPRIEDADES) -->
   <div id="textEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
     <div class="bg-gimp-panel border border-gimp-border rounded shadow-2xl w-96 p-4 space-y-3">
       <h3 class="text-sm font-bold text-white border-b border-gimp-border pb-1.5 flex items-center justify-between">
@@ -581,15 +581,21 @@
             <input type="number" id="textModalAngle" value="0" min="-360" max="360" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none font-mono">
           </div>
         </div>
-        <div>
-          <label class="block text-gray-400 mb-1">Tipo de Letra:</label>
-          <select id="textModalFont" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
-            <option value="Inter, sans-serif">Inter</option>
-            <option value="Arial, sans-serif">Arial</option>
-            <option value="'Courier New', monospace">Courier New</option>
-            <option value="Georgia, serif">Georgia</option>
-            <option value="'Impact', sans-serif">Impact</option>
-          </select>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-gray-400 mb-1">Tipo de Letra:</label>
+            <select id="textModalFont" class="w-full bg-gimp-darkest border border-gimp-border rounded px-2 py-1 text-white focus:outline-none">
+              <option value="Inter, sans-serif">Inter</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="'Impact', sans-serif">Impact</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Cor do Texto:</label>
+            <input type="color" id="textModalColor" value="#000000" class="w-full h-7 bg-gimp-darkest border border-gimp-border rounded cursor-pointer p-0">
+          </div>
         </div>
       </div>
       <div class="flex justify-between items-center pt-2 border-t border-gimp-border">
@@ -662,6 +668,7 @@
     let moveTotalDy = 0;                    
 
     let draggingTextObject = null;
+    let rotatingTextObject = null;
     let dragTextOffsetX = 0;
     let dragTextOffsetY = 0;
 
@@ -1045,11 +1052,11 @@
         compositeCtx.restore();
       });
 
-      // Renderizar objetos de texto com suporte à rotação individual
+      // Renderizar objetos de texto com suporte à rotação individual e alças visuais
       textObjects.forEach(txtObj => {
         compositeCtx.save();
         compositeCtx.font = `${txtObj.fontSize}px ${txtObj.fontFamily}`;
-        compositeCtx.fillStyle = txtObj.color;
+        compositeCtx.fillStyle = txtObj.color || '#000000';
         compositeCtx.textBaseline = 'top';
 
         const metrics = compositeCtx.measureText(txtObj.text);
@@ -1061,6 +1068,23 @@
         compositeCtx.translate(centerX, centerY);
         compositeCtx.rotate(((txtObj.angle || 0) * Math.PI) / 180);
         compositeCtx.fillText(txtObj.text, -textWidth / 2, -textHeight / 2);
+
+        // Se a ferramenta ativa for texto, exibir caixa delimitadora e alça de rotação
+        if (currentTool === 'text') {
+          compositeCtx.strokeStyle = '#3399ff';
+          compositeCtx.lineWidth = 1;
+          compositeCtx.strokeRect(-textWidth / 2 - 4, -textHeight / 2 - 4, textWidth + 8, textHeight + 8);
+
+          compositeCtx.beginPath();
+          compositeCtx.moveTo(0, -textHeight / 2 - 4);
+          compositeCtx.lineTo(0, -textHeight / 2 - 24);
+          compositeCtx.stroke();
+
+          compositeCtx.fillStyle = '#2680eb';
+          compositeCtx.beginPath();
+          compositeCtx.arc(0, -textHeight / 2 - 24, 4, 0, Math.PI * 2);
+          compositeCtx.fill();
+        }
 
         compositeCtx.restore();
       });
@@ -1536,6 +1560,7 @@
 
       updateWorkbenchCursor();
       renderToolProperties();
+      renderCompositeCanvas(); // Atualiza para mostrar/ocultar caixas de texto se necessário
 
       if (isTransformTool && !activeTransformSession) {
         initTransformSession();
@@ -1676,11 +1701,11 @@
           break;
         case 'text':
           icon = 'fa-font'; name = 'Texto';
-          propsEl.innerHTML = `<span class="text-gray-400">Clique e arraste texto para mover. Dê duplo clique para editar.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Clique para adicionar. Arraste na alça superior para rodar com o rato. Duplo clique para editar.</span>`;
           break;
         case 'zoom':
           icon = 'fa-magnifying-glass'; name = 'Ampliação';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste uma área para ampliar.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste uma área para ampliar tendo o centro como referência.</span>`;
           break;
       }
 
@@ -1925,10 +1950,21 @@
 
     function setZoomCenter(newZoom) {
       const clampedZoom = Math.max(0.1, Math.min(8.0, newZoom));
+      if (clampedZoom === zoomLevel) return;
+
+      const workbench = document.getElementById('workbench');
+      const oldZoom = zoomLevel;
       zoomLevel = clampedZoom;
       applyViewportTransform();
+
+      const centerX = workbench.clientWidth / 2;
+      const centerY = workbench.clientHeight / 2;
+      
+      workbench.scrollLeft = (workbench.scrollLeft + centerX) * (zoomLevel / oldZoom) - centerX;
+      workbench.scrollTop = (workbench.scrollTop + centerY) * (zoomLevel / oldZoom) - centerY;
     }
 
+    // --- CORREÇÃO DO ZOOM POR RETÂNGULO CONSIDERANDO O CENTRO COMO REFERÊNCIA ---
     function zoomToArea(x1, y1, x2, y2) {
       const rectW = Math.abs(x2 - x1);
       const rectH = Math.abs(y2 - y1);
@@ -1942,6 +1978,15 @@
 
       zoomLevel = targetZoom;
       applyViewportTransform();
+
+      // Calcular o centro exato do retângulo de zoom definido pelo utilizador
+      const targetCenterX = Math.min(x1, x2) + rectW / 2;
+      const targetCenterY = Math.min(y1, y2) + rectH / 2;
+
+      // Alinhar esse centro perfeitamente ao centro do container (workbench)
+      workbench.scrollLeft = targetCenterX * zoomLevel - wRect.width / 2;
+      workbench.scrollTop = targetCenterY * zoomLevel - wRect.height / 2;
+
       showToast('Área Ampliada');
     }
 
@@ -2037,7 +2082,32 @@
         }
 
         if (currentTool === 'text') {
-          // Verificar se clicou em algum objeto de texto existente (considerando rotação aproximada)
+          // --- CORREÇÃO: VERIFICAR SE CLICOU NA ALÇA DE ROTAÇÃO DO TEXTO COM O RATO ---
+          const activeTxtRot = textObjects.slice().reverse().find(txt => {
+            compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
+            const metrics = compositeCtx.measureText(txt.text);
+            const w = metrics.width;
+            const h = txt.fontSize;
+            const cx = txt.x + w / 2;
+            const cy = txt.y + h / 2;
+
+            const rad = -((txt.angle || 0) * Math.PI) / 180;
+            const dx = coords.x - cx;
+            const dy = coords.y - cy;
+            const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+            const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+            // Alça de rotação localizada exatamente em (0, -h/2 - 24)
+            return Math.hypot(localX, localY - (-h / 2 - 24)) <= 10;
+          });
+
+          if (activeTxtRot) {
+            rotatingTextObject = activeTxtRot;
+            isDrawing = true;
+            return;
+          }
+
+          // Verificar se clicou em cima do corpo do texto para arrastar
           const clickedText = textObjects.slice().reverse().find(txt => {
             compositeCtx.font = `${txt.fontSize}px ${txt.fontFamily}`;
             const metrics = compositeCtx.measureText(txt.text);
@@ -2097,6 +2167,21 @@
       const moveAction = (e) => {
         if (!isDrawing || isPanning) return;
         const coords = getCanvasCoords(e);
+
+        // --- ROTAÇÃO DE TEXTO INTERATIVA COM O RATO ---
+        if (currentTool === 'text' && rotatingTextObject) {
+          const txtObj = rotatingTextObject;
+          compositeCtx.font = `${txtObj.fontSize}px ${txtObj.fontFamily}`;
+          const metrics = compositeCtx.measureText(txtObj.text);
+          const cx = txtObj.x + metrics.width / 2;
+          const cy = txtObj.y + txtObj.fontSize / 2;
+
+          const angleRad = Math.atan2(coords.y - cy, coords.x - cx);
+          let deg = (angleRad * 180) / Math.PI + 90;
+          txtObj.angle = Math.round(deg);
+          renderCompositeCanvas();
+          return;
+        }
 
         if (currentTool === 'text' && draggingTextObject) {
           draggingTextObject.x = coords.x - dragTextOffsetX;
@@ -2185,6 +2270,14 @@
         isDrawing = false;
         activeHandle = null;
 
+        if (currentTool === 'text' && rotatingTextObject) {
+          rotatingTextObject = null;
+          renderCompositeCanvas();
+          renderTextObjectsList();
+          saveHistoryState('Rodar Objeto de Texto');
+          return;
+        }
+
         if (currentTool === 'text' && draggingTextObject) {
           draggingTextObject = null;
           saveHistoryState('Mover Objeto de Texto');
@@ -2246,13 +2339,13 @@
       });
     }
 
-    // GESTÃO DE OBJETOS DE TEXTO COM SUPORTE A ROTAÇÃO
     function openTextModalForNew(x, y) {
       activeTextObjectId = null;
       document.getElementById('textModalContent').value = 'Novo Texto';
       document.getElementById('textModalSize').value = 32;
       document.getElementById('textModalAngle').value = 0;
       document.getElementById('textModalFont').value = 'Inter, sans-serif';
+      document.getElementById('textModalColor').value = primaryColor;
       document.getElementById('textModalDeleteBtn').classList.add('hidden');
 
       window._tempTextX = x;
@@ -2273,6 +2366,7 @@
       document.getElementById('textModalSize').value = txtObj.fontSize;
       document.getElementById('textModalAngle').value = txtObj.angle || 0;
       document.getElementById('textModalFont').value = txtObj.fontFamily;
+      document.getElementById('textModalColor').value = txtObj.color || primaryColor;
       document.getElementById('textModalDeleteBtn').classList.remove('hidden');
 
       const modal = document.getElementById('textEditorModal');
@@ -2292,6 +2386,7 @@
       const sizeVal = parseInt(document.getElementById('textModalSize').value) || 24;
       const angleVal = parseFloat(document.getElementById('textModalAngle').value) || 0;
       const fontVal = document.getElementById('textModalFont').value;
+      const colorVal = document.getElementById('textModalColor').value;
 
       if (!textVal.trim()) {
         showToast('O texto não pode estar vazio');
@@ -2305,6 +2400,7 @@
           txtObj.fontSize = sizeVal;
           txtObj.angle = angleVal;
           txtObj.fontFamily = fontVal;
+          txtObj.color = colorVal;
           saveHistoryState('Editar Objeto de Texto');
         }
       } else {
@@ -2316,7 +2412,7 @@
           fontSize: sizeVal,
           angle: angleVal,
           fontFamily: fontVal,
-          color: primaryColor
+          color: colorVal
         });
         saveHistoryState('Adicionar Objeto de Texto');
       }
