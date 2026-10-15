@@ -159,7 +159,7 @@
           </div>
         </div>
 
-        <!-- Selecionar (Novo Menu Principal Estilo GIMP) -->
+        <!-- Selecionar -->
         <div class="relative dropdown">
           <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Selecionar</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
@@ -247,7 +247,7 @@
 
       <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <!-- GRUPO DE SELEÇÃO (RETANGULAR, OVAL, POLIGONAL, VARINHA) -->
+      <!-- GRUPO DE SELEÇÃO -->
       <div class="relative group-container" id="selectionGroupContainer">
         <div class="flex items-center w-8 h-8 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="selectionGroupWrapper">
           <button id="tool-selection-group" onclick="toggleSelectionFlyout(event)" class="w-6 h-full flex items-center justify-center" title="Ferramentas de Seleção">
@@ -530,6 +530,7 @@
     let hasActiveSelection = false;
     let activeSelectionPath = null;
     let polyPoints = [];
+    let draggingPolyPointIndex = -1;
 
     let zoomBox = null;
     let internalClipboardData = null;
@@ -1106,6 +1107,16 @@
           selectionCtx.lineTo(polyPoints[i].x, polyPoints[i].y);
         }
         selectionCtx.stroke();
+
+        polyPoints.forEach((pt, idx) => {
+          selectionCtx.fillStyle = (idx === 0) ? '#3399ff' : '#ffffff';
+          selectionCtx.strokeStyle = '#000000';
+          selectionCtx.lineWidth = 1;
+          selectionCtx.setLineDash([]);
+          selectionCtx.fillRect(pt.x - 3.5, pt.y - 3.5, 7, 7);
+          selectionCtx.strokeRect(pt.x - 3.5, pt.y - 3.5, 7, 7);
+        });
+
         selectionCtx.restore();
       }
 
@@ -1206,7 +1217,7 @@
           break;
         case 'select-poly':
           icon = 'fa-solid fa-draw-polygon'; name = 'Seleção Poligonal';
-          propsEl.innerHTML = `<span class="text-gray-400">Clique para adicionar pontos. Prima Enter para fechar.</span>`;
+          propsEl.innerHTML = `<span class="text-gray-400">Clique para adicionar pontos/alças (arraste para ajustar). Enter fecha.</span>`;
           break;
         case 'select-wand':
           icon = 'fa-solid fa-wand-magic-sparkles'; name = 'Varinha Mágica';
@@ -1629,6 +1640,13 @@
         }
 
         if (currentTool === 'select-poly') {
+          const hitIdx = polyPoints.findIndex(pt => Math.hypot(pt.x - coords.x, pt.y - coords.y) <= 8);
+          if (hitIdx !== -1) {
+            draggingPolyPointIndex = hitIdx;
+            isDrawing = true;
+            return;
+          }
+
           polyPoints.push({ x: coords.x, y: coords.y });
           renderSelectionOverlay();
           return;
@@ -1677,6 +1695,13 @@
       const moveAction = (e) => {
         if (!isDrawing || isPanning) return;
         const coords = getCanvasCoords(e);
+
+        if (currentTool === 'select-poly' && draggingPolyPointIndex !== -1) {
+          polyPoints[draggingPolyPointIndex].x = coords.x;
+          polyPoints[draggingPolyPointIndex].y = coords.y;
+          renderSelectionOverlay();
+          return;
+        }
 
         if (activeTransformSession && activeHandle && originalTransformState) {
           const dx = coords.x - startX;
@@ -1750,6 +1775,11 @@
         if (!isDrawing) return;
         isDrawing = false;
         activeHandle = null;
+        if (draggingPolyPointIndex !== -1) {
+          draggingPolyPointIndex = -1;
+          renderSelectionOverlay();
+          return;
+        }
 
         if (currentTool === 'zoom') {
           const coords = getCanvasCoords(e);
