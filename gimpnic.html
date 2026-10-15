@@ -254,6 +254,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         <div class="relative dropdown">
           <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Transformar</button>
           <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+            <button onclick="applyCropToSelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
+              <i class="fa-solid fa-crop w-5"></i> Recortar à Seleção
+            </button>
+            <hr class="border-gimp-border my-1">
             <button onclick="quickFlip('h')" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center">
               <i class="fa-solid fa-arrows-left-right w-5"></i> Inverter Horizontalmente
             </button>
@@ -351,10 +355,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         <i class="fa-solid fa-arrows-up-down-left-right text-xs"></i>
       </button>
 
-      <!-- GRUPO DE TRANSFORMAÇÃO -->
+      <!-- GRUPO DE TRANSFORMAÇÃO E CORTE -->
       <div class="relative group-container" id="transformGroupContainer">
         <div class="flex items-center w-8 h-8 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition relative tool-btn" id="transformGroupWrapper">
-          <button id="tool-transform-group" onclick="toggleTransformFlyout(event)" class="w-6 h-full flex items-center justify-center" title="Ferramentas de Transformação">
+          <button id="tool-transform-group" onclick="toggleTransformFlyout(event)" class="w-6 h-full flex items-center justify-center" title="Ferramentas de Transformação e Corte">
             <i id="transformGroupIcon" class="fa-solid fa-rotate text-xs"></i>
           </button>
           <button id="transformFlyoutTrigger" class="w-2 h-full flex items-center justify-center text-[7px] text-blue-400 hover:text-white" title="Mais opções">
@@ -374,6 +378,9 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
           </button>
           <button onclick="selectToolFromGroup('flip')" id="tool-flip" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Inverter (F)">
             <i class="fa-solid fa-right-left text-xs"></i>
+          </button>
+          <button onclick="selectToolFromGroup('crop')" id="tool-crop" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-7 h-7 flex items-center justify-center" title="Recortar (Shift+C)">
+            <i class="fa-solid fa-crop text-xs"></i>
           </button>
         </div>
       </div>
@@ -575,7 +582,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     </div>
   </div>
 
-  <!-- MODAL DE EDIÇÃO DE TEXTO (ESTILO GIMP COM ROTAÇÃO E PROPRIEDADES) -->
+  <!-- MODAL DE EDIÇÃO DE TEXTO -->
   <div id="textEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
     <div class="bg-gimp-panel border border-gimp-border rounded shadow-2xl w-96 p-4 space-y-3">
       <h3 class="text-sm font-bold text-white border-b border-gimp-border pb-1.5 flex items-center justify-between">
@@ -812,11 +819,16 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
     function selectToolFromGroup(toolName) {
       currentTransformSubTool = toolName;
+      if (toolName === 'crop') {
+        applyCropToSelection();
+        return;
+      }
       const iconMap = {
         'rotate': 'fa-rotate',
         'scale': 'fa-expand',
         'shear': 'fa-italic',
-        'flip': 'fa-right-left'
+        'flip': 'fa-right-left',
+        'crop': 'fa-crop'
       };
       document.getElementById('transformGroupIcon').className = `fa-solid ${iconMap[toolName]} text-xs`;
       document.getElementById('transformFlyoutMenu').style.display = 'none';
@@ -1068,7 +1080,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         compositeCtx.restore();
       });
 
-      // Renderizar objetos de texto com suporte à rotação individual e alças visuais
       textObjects.forEach(txtObj => {
         compositeCtx.save();
         compositeCtx.font = `${txtObj.fontSize}px ${txtObj.fontFamily}`;
@@ -1085,7 +1096,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         compositeCtx.rotate(((txtObj.angle || 0) * Math.PI) / 180);
         compositeCtx.fillText(txtObj.text, -textWidth / 2, -textHeight / 2);
 
-        // Se a ferramenta ativa for texto, exibir caixa delimitadora e alça de rotação
         if (currentTool === 'text') {
           compositeCtx.strokeStyle = '#3399ff';
           compositeCtx.lineWidth = 1;
@@ -1204,7 +1214,9 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         selectionMask: maskBackup,
         hasSelection: hasActiveSelection,
         activeSelectionPath: activeSelectionPath,
-        activeIdx: activeLayerIndex
+        activeIdx: activeLayerIndex,
+        width: canvasWidth,
+        height: canvasHeight
       });
 
       if (historyStack.length > MAX_HISTORY) {
@@ -1237,6 +1249,21 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     }
 
     function restoreHistoryState(state) {
+      canvasWidth = state.width;
+      canvasHeight = state.height;
+
+      compositeCanvas.width = canvasWidth;
+      compositeCanvas.height = canvasHeight;
+      selectionCanvas.width = canvasWidth;
+      selectionCanvas.height = canvasHeight;
+
+      selectionMaskCanvas.width = canvasWidth;
+      selectionMaskCanvas.height = canvasHeight;
+      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+      selectionMaskCtx.drawImage(state.selectionMask, 0, 0);
+
+      document.getElementById('image-dimensions-display').innerHTML = `<i class="fa-regular fa-image me-1"></i> ${canvasWidth} x ${canvasHeight} px`;
+
       layers = state.layers.map(l => {
         const c = document.createElement('canvas');
         c.width = canvasWidth;
@@ -1255,13 +1282,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       });
 
       textObjects = JSON.parse(JSON.stringify(state.textObjects || []));
-
-      selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-      selectionMaskCtx.drawImage(state.selectionMask, 0, 0);
       hasActiveSelection = state.hasSelection;
       activeSelectionPath = state.activeSelectionPath;
-
       activeLayerIndex = state.activeIdx;
+
       renderLayersList();
       renderTextObjectsList();
       renderCompositeCanvas();
@@ -1294,8 +1318,9 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     async function askFilterValues(title, controls, onPreview) {
       return new Promise(resolve => {
         const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4';
-        overlay.innerHTML = `<div class="w-full max-w-md rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl">
+        // MODIFICAÇÃO: Fundo limpo sem escurecimento/blur (removido bg-black/70 e backdrop-blur-sm)
+        overlay.className = 'fixed inset-0 flex items-center justify-center z-[100] p-4 pointer-events-none';
+        overlay.innerHTML = `<div class="w-full max-w-md rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl pointer-events-auto">
           <div class="px-4 py-3 border-b border-gimp-border font-semibold flex items-center justify-between">
             <span>${title}</span>
             <button type="button" data-close class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
@@ -1419,14 +1444,12 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       else if (filterType === 'emboss') { title = 'Relevo (Emboss)'; controls = [{label:'Intensidade do relevo',initial:1,min:0,max:10,step:0.1}]; }
       else if (filterType === 'vignette') { title = 'Vinheta'; controls = [{label:'Intensidade',initial:55,min:0,max:100,step:1,unit:'%'}]; }
       else {
-        // Filtros instantâneos (sem parâmetros deslizantes)
         processFilterValues([]);
         saveHistoryState(`Filtro: ${filterType}`);
         renderLayersList(); renderCompositeCanvas(); showToast('Filtro aplicado');
         return;
       }
 
-      // Aplica preview inicial imediato
       processFilterValues(controls.map(c => c.initial));
 
       const resultValues = await askFilterValues(title, controls, (vals) => {
@@ -1434,7 +1457,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       });
 
       if (resultValues === null) {
-        // Se cancelar, restaura o estado original da imagem
         ctx.putImageData(originalBackup, 0, 0);
         renderCompositeCanvas();
         showToast('Filtro cancelado');
@@ -1445,6 +1467,57 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         renderCompositeCanvas();
         showToast(`${title} aplicado`);
       }
+    }
+
+    // NOVA FUNÇÃO DE RECORTE (CROP)
+    function applyCropToSelection() {
+      commitMove();
+      cancelTransformSession();
+
+      const bounds = getSelectionBoundingBox();
+      if (!hasActiveSelection || bounds.width <= 2 || bounds.height <= 2) {
+        showToast('Selecione uma área para recortar primeiro');
+        return;
+      }
+
+      const newWidth = bounds.width;
+      const newHeight = bounds.height;
+
+      const newLayers = layers.map(l => {
+        const c = document.createElement('canvas');
+        c.width = newWidth;
+        c.height = newHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(l.canvas, bounds.minX, bounds.minY, newWidth, newHeight, 0, 0, newWidth, newHeight);
+        return {
+          id: l.id,
+          name: l.name,
+          canvas: c,
+          ctx: ctx,
+          visible: l.visible,
+          opacity: l.opacity,
+          blendMode: l.blendMode
+        };
+      });
+
+      canvasWidth = newWidth;
+      canvasHeight = newHeight;
+      layers = newLayers;
+
+      compositeCanvas.width = canvasWidth;
+      compositeCanvas.height = canvasHeight;
+      selectionCanvas.width = canvasWidth;
+      selectionCanvas.height = canvasHeight;
+      selectionMaskCanvas.width = canvasWidth;
+      selectionMaskCanvas.height = canvasHeight;
+
+      deselectAll();
+      document.getElementById('image-dimensions-display').innerHTML = `<i class="fa-regular fa-image me-1"></i> ${canvasWidth} x ${canvasHeight} px`;
+
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Recortar Imagem');
+      showToast(`Imagem recortada para ${canvasWidth}x${canvasHeight}px`);
     }
 
     function selectAll() {
@@ -1572,7 +1645,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         commitMove(); 
       }
 
-      const isTransformTool = ['rotate', 'scale', 'shear', 'flip'].includes(tool);
+      const isTransformTool = ['rotate', 'scale', 'shear', 'flip', 'crop'].includes(tool);
       const isSelectionTool = ['select-rect', 'select-oval', 'select-poly', 'select-wand'].includes(tool);
       const isShapeTool = tool === 'shape';
 
@@ -1621,7 +1694,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       renderToolProperties();
       renderCompositeCanvas();
 
-      if (isTransformTool && !activeTransformSession) {
+      if (isTransformTool && !activeTransformSession && tool !== 'crop') {
         initTransformSession();
       }
     }
@@ -1632,7 +1705,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
       if (isSpacePressed || isPanning) {
         workbench.classList.add(isPanning ? 'cursor-grabbing' : 'cursor-grab');
-      } else if (currentTool === 'zoom' || currentTool.startsWith('select-') || currentTool === 'shape') {
+      } else if (currentTool === 'zoom' || currentTool.startsWith('select-') || currentTool === 'shape' || currentTool === 'crop') {
         workbench.classList.add('cursor-crosshair');
       } else if (currentTool === 'text') {
         workbench.classList.add('cursor-text');
@@ -1676,6 +1749,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         case 'move':
           icon = 'fa-arrows-up-down-left-right'; name = 'Mover';
           propsEl.innerHTML = `<span class="text-gray-400">Arraste com o rato para mover conteúdo ou seleções.</span>`;
+          break;
+        case 'crop':
+          icon = 'fa-crop'; name = 'Recortar';
+          propsEl.innerHTML = `<span class="text-gray-400">Faça uma seleção retangular e clique em "Recortar à Seleção" no menu Transformar.</span>`;
           break;
         case 'rotate':
           icon = 'fa-rotate'; name = 'Rodar';
@@ -2138,6 +2215,10 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         const coords = getCanvasCoords(e);
         if (currentTool === 'pointer') return;
 
+        if (currentTool === 'crop') {
+          commitMove();
+        }
+
         if (activeTransformSession) {
           const handle = getAnchorHandleAtCoords(coords);
           if (handle) {
@@ -2169,7 +2250,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
           return;
         }
 
-        if (['select-rect', 'select-oval'].includes(currentTool)) {
+        if (['select-rect', 'select-oval', 'crop'].includes(currentTool)) {
           commitMove();
         }
 
@@ -2343,7 +2424,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
           layers[activeLayerIndex].ctx.putImageData(tempCanvasState, 0, 0);
           drawPreviewShape(layers[activeLayerIndex].ctx, startX, startY, coords.x, coords.y);
           renderCompositeCanvas();
-        } else if (currentTool === 'select-rect') {
+        } else if (currentTool === 'select-rect' || currentTool === 'crop') {
           updateRectSelection(startX, startY, coords.x, coords.y);
         } else if (currentTool === 'select-oval') {
           updateOvalSelection(startX, startY, coords.x, coords.y);
@@ -2383,6 +2464,11 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
           zoomToArea(startX, startY, coords.x, coords.y);
           zoomBox = null;
           renderSelectionOverlay();
+          return;
+        }
+
+        if (currentTool === 'crop') {
+          applyCropToSelection();
           return;
         }
 
@@ -3336,7 +3422,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       const names = {
         brush: 'Pincel', eraser: 'Borracha', shape: 'Desenhar Forma',
         move: 'Mover Conteúdo', bucket: 'Preenchimento', rotate: 'Rodar',
-        scale: 'Redimensionar', shear: 'Cisalhar', flip: 'Inverter',
+        scale: 'Redimensionar', shear: 'Cisalhar', flip: 'Inverter', crop: 'Recortar',
         'select-rect': 'Seleção Retangular', 'select-oval': 'Seleção Elíptica',
         'select-poly': 'Seleção Poligonal', 'select-wand': 'Varinha Mágica',
         'shape-rect': 'Retângulo', 'shape-circle': 'Círculo', 'shape-poly': 'Polígono', 'shape-line': 'Linha'
