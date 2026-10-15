@@ -137,7 +137,12 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         <!-- Ficheiro -->
         <div class="relative dropdown">
           <button class="px-2 py-0.5 rounded hover:bg-gimp-hover hover:text-white transition">Ficheiro</button>
-          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-52 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+          <div class="dropdown-content absolute left-0 top-full mt-0.5 w-56 bg-gimp-panel border border-gimp-border rounded shadow-xl py-1 z-50">
+            <button onclick="openNewApplicationTab()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
+              <span><i class="fa-solid fa-up-right-from-square w-5"></i> Nova Janela</span>
+              <span class="text-[10px] text-gray-400">Ctrl+Alt+N</span>
+            </button>
+            <hr class="border-gimp-border my-1">
             <button onclick="openNewImageModal()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
               <span><i class="fa-solid fa-file-circle-plus w-5"></i> Novo...</span>
               <span class="text-[10px] text-gray-400">Ctrl+N</span>
