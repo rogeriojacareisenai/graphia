@@ -3289,8 +3289,9 @@
     }
 
     function pasteCanvasAsNewLayer(srcCanvas) {
-      const posX = Math.round((canvasWidth - srcCanvas.width) / 2);
-      const posY = Math.round((canvasHeight - srcCanvas.height) / 2);
+      // Ctrl+V: posiciona o conteúdo colado no canto superior esquerdo da tela.
+      const posX = 0;
+      const posY = 0;
 
       deselectAll();
       const newLayer = addNewLayer('Camada Colada', srcCanvas, posX, posY);
