@@ -54,6 +54,20 @@
       background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
     }
 
+    /* Tema Highlight (Claro) customizado */
+    html.highlight-mode body { background-color: #f3f4f6 !important; color: #1f2937 !important; }
+    html.highlight-mode header { background-color: #e5e7eb !important; border-color: #d1d5db !important; color: #1f2937 !important; }
+    html.highlight-mode aside { background-color: #f9fafb !important; border-color: #d1d5db !important; color: #1f2937 !important; }
+    html.highlight-mode section#tool-properties-bar { background-color: #f3f4f6 !important; border-color: #d1d5db !important; }
+    html.highlight-mode main#workbench { background-color: #e5e7eb !important; }
+    html.highlight-mode .bg-gimp-darkest { background-color: #f3f4f6 !important; }
+    html.highlight-mode .bg-gimp-dark { background-color: #e5e7eb !important; }
+    html.highlight-mode .bg-gimp-panel { background-color: #ffffff !important; color: #1f2937 !important; border-color: #d1d5db !important; }
+    html.highlight-mode .border-gimp-border { border-color: #d1d5db !important; }
+    html.highlight-mode .hover\:bg-gimp-hover:hover { background-color: #e5e7eb !important; }
+    html.highlight-mode .text-gray-200, html.highlight-mode .text-gray-300, html.highlight-mode .text-gray-400 { color: #374151 !important; }
+    html.highlight-mode input, html.highlight-mode select, html.highlight-mode textarea { background-color: #ffffff !important; color: #111827 !important; border-color: #d1d5db !important; }
+
     .dropdown-content { display: none; }
     .dropdown:hover .dropdown-content { display: block; }
     
@@ -83,6 +97,7 @@
       gap: 4px;
       margin-left: 4px;
     }
+    html.highlight-mode .tool-group-flyout { background-color: #ffffff; border-color: #d1d5db; }
   </style>
   <style>
     /* Abertura animada do NicPaint */
@@ -108,10 +123,22 @@
     input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
 
     .brush-floating-panel{display:none;position:fixed;right:12px;top:42px;left:auto !important;width:300px;max-height:calc(100vh - 54px);overflow:hidden;background:#292929;color:#eee;border:1px solid #555;border-radius:8px;box-shadow:0 12px 32px #0009;z-index:1000;font-size:12px}
+    html.highlight-mode .brush-floating-panel { background: #ffffff; color: #1f2937; border-color: #d1d5db; }
     .brush-panel-header{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;background:#3b3b3b;border-bottom:1px solid #555;cursor:move;touch-action:none;font-weight:600;user-select:none}
+    html.highlight-mode .brush-panel-header { background: #f3f4f6; border-color: #d1d5db; color: #1f2937; }
     .brush-window-btn{width:23px;height:23px;border-radius:4px;color:#ddd;background:#4a4a4a}.brush-window-btn:hover{background:#666;color:white}
     .brush-panel-body{overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 90px);padding:9px}.brush-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}
-    .brush-choice{display:flex;align-items:center;gap:9px;text-align:left;padding:6px;background:#363636;border:1px solid #4a4a4a;border-radius:5px;color:#ddd;min-width:0;width:100%}.brush-choice:hover{background:#444}.brush-choice.active{border-color:#60a5fa;background:#183b5d;color:#fff}.brush-swatch{width:76px;height:28px;flex:none;border-radius:3px;background:repeating-conic-gradient(#333 0% 25%,#242424 0% 50%) 0/8px 8px;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}.brush-swatch svg{width:70px;height:24px;overflow:visible}.brush-choice strong{display:block;font-size:11px}.brush-choice small{font-size:10px;line-height:1.25}.brush-settings{border-top:1px solid #4a4a4a;margin-top:9px;padding-top:9px;display:grid;gap:8px}.brush-settings>label{display:grid;grid-template-columns:1fr auto;gap:3px 8px;color:#ddd}.brush-settings input[type=range]{grid-column:1 / -1;width:100%;accent-color:#60a5fa}.brush-checks{display:grid;gap:5px}.brush-checks label{display:flex;align-items:center;gap:6px}.brush-help{font-size:10px;line-height:1.35;color:#aaa}.brush-restore-btn{position:fixed;right:12px;top:42px;left:auto;z-index:999;background:#333;border:1px solid #555;color:#eee;border-radius:5px;padding:6px 9px;font-size:12px;box-shadow:0 4px 12px #0008}
+    .brush-choice{display:flex;align-items:center;gap:9px;text-align:left;padding:6px;background:#363636;border:1px solid #4a4a4a;border-radius:5px;color:#ddd;min-width:0;width:100%}.brush-choice:hover{background:#444}.brush-choice.active{border-color:#60a5fa;background:#183b5d;color:#fff}
+    html.highlight-mode .brush-choice { background: #f9fafb; border-color: #e5e7eb; color: #374151; }
+    html.highlight-mode .brush-choice:hover { background: #f3f4f6; }
+    html.highlight-mode .brush-choice.active { border-color: #3b82f6; background: #eff6ff; color: #1e3a8a; }
+    .brush-swatch{width:76px;height:28px;flex:none;border-radius:3px;background:repeating-conic-gradient(#333 0% 25%,#242424 0% 50%) 0/8px 8px;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}.brush-swatch svg{width:70px;height:24px;overflow:visible}
+    .brush-choice strong{display:block;font-size:11px}.brush-choice small{font-size:10px;line-height:1.25}
+    .brush-settings{border-top:1px solid #4a4a4a;margin-top:9px;padding-top:9px;display:grid;gap:8px}
+    html.highlight-mode .brush-settings { border-color: #e5e7eb; }
+    .brush-settings>label{display:grid;grid-template-columns:1fr auto;gap:3px 8px;color:#ddd}
+    html.highlight-mode .brush-settings>label { color: #374151; }
+    .brush-settings input[type=range]{grid-column:1 / -1;width:100%;accent-color:#60a5fa}.brush-checks{display:grid;gap:5px}.brush-checks label{display:flex;align-items:center;gap:6px}.brush-help{font-size:10px;line-height:1.35;color:#aaa}.brush-restore-btn{position:fixed;right:12px;top:42px;left:auto;z-index:999;background:#333;border:1px solid #555;color:#eee;border-radius:5px;padding:6px 9px;font-size:12px;box-shadow:0 4px 12px #0008}
   </style>
 
 <style>
@@ -210,7 +237,7 @@
               <span class="text-[10px] text-gray-400">Ctrl+C</span>
             </button>
             <button onclick="pasteSelection()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
-              <span><i class="fa-solid fa-paste w-5"></i> Colar</span>
+              <span><i class="fa-solid fa-paste w-5"></i> Colar e Transladar</span>
               <span class="text-[10px] text-gray-400">Ctrl+V</span>
             </button>
             <button onclick="clearSelectionArea()" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex justify-between items-center">
@@ -352,6 +379,15 @@
     <div class="text-gray-400 text-[11px] flex items-center space-x-3">
       <button
         type="button"
+        id="themeToggleBtn"
+        onclick="toggleThemeMode()"
+        class="px-2 py-1 rounded bg-gimp-panel border border-gimp-border hover:bg-gimp-hover text-gray-200 font-semibold transition flex items-center gap-1.5"
+        title="Alternar entre modo Dark e Highlight (Claro)">
+        <i id="themeToggleIcon" class="fa-solid fa-moon"></i>
+        <span id="themeToggleText">Highlight</span>
+      </button>
+      <button
+        type="button"
         id="openNewTabBtn"
         onclick="openNewApplicationTab()"
         class="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold transition flex items-center gap-1.5"
@@ -414,7 +450,7 @@
 
       <div class="w-6 h-[1px] bg-gimp-border my-1"></div>
 
-      <button onclick="selectTool('move')" id="tool-move" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Mover (V)">
+      <button onclick="selectTool('move')" id="tool-move" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Mover / Transladar (V)">
         <i class="fa-solid fa-arrows-up-down-left-right text-xs"></i>
       </button>
 
@@ -572,6 +608,9 @@
             <button onclick="duplicateActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-blue-400" title="Duplicar Camada">
               <i class="fa-solid fa-clone text-xs"></i>
             </button>
+            <button onclick="mergeActiveLayerDown()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-amber-400" title="Mesclar com camada abaixo">
+              <i class="fa-solid fa-object-ungroup text-xs"></i>
+            </button>
             <button onclick="deleteActiveLayer()" class="p-1 hover:bg-gimp-hover rounded text-gray-300 hover:text-red-400" title="Eliminar Camada">
               <i class="fa-solid fa-trash text-xs"></i>
             </button>
@@ -600,9 +639,12 @@
 
         <div id="layers-list" class="flex-1 overflow-y-auto p-1.5 space-y-1"></div>
 
-        <div class="bg-gimp-panel p-1 border-t border-gimp-border flex justify-around text-xs">
-          <button onclick="moveLayerUp()" class="px-2 py-0.5 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-up mr-1 text-[10px]"></i> Subir</button>
-          <button onclick="moveLayerDown()" class="px-2 py-0.5 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-down mr-1 text-[10px]"></i> Descer</button>
+        <div class="bg-gimp-panel p-1 border-t border-gimp-border flex justify-between px-2 text-xs">
+          <div class="flex space-x-1">
+            <button onclick="moveLayerUp()" class="px-2 py-0.5 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-up mr-1 text-[10px]"></i> Subir</button>
+            <button onclick="moveLayerDown()" class="px-2 py-0.5 hover:bg-gimp-hover rounded text-gray-300 flex items-center"><i class="fa-solid fa-arrow-down mr-1 text-[10px]"></i> Descer</button>
+          </div>
+          <button onclick="mergeAllVisibleLayers()" class="px-2 py-0.5 hover:bg-gimp-hover text-blue-400 rounded flex items-center" title="Mesclar todas as visíveis"><i class="fa-solid fa-layer-group mr-1 text-[10px]"></i> Mesclar Todas</button>
         </div>
       </div>
 
@@ -785,6 +827,7 @@
     let isPanning = false;
     let panStartX = 0, panStartY = 0;
     let isSpacePressed = false;
+    let isHighlightMode = false;
 
     let layers = [];
     let textObjects = [];
@@ -896,6 +939,25 @@
       selectTool('pointer');
       setupClipboardEvents();
     };
+
+    function toggleThemeMode() {
+      isHighlightMode = !isHighlightMode;
+      const htmlEl = document.documentElement;
+      const iconEl = document.getElementById('themeToggleIcon');
+      const textEl = document.getElementById('themeToggleText');
+
+      if (isHighlightMode) {
+        htmlEl.classList.add('highlight-mode');
+        iconEl.className = 'fa-solid fa-sun text-amber-500';
+        textEl.innerText = 'Dark';
+        showToast('Modo Highlight (Claro) ativado');
+      } else {
+        htmlEl.classList.remove('highlight-mode');
+        iconEl.className = 'fa-solid fa-moon';
+        textEl.innerText = 'Highlight';
+        showToast('Modo Dark ativado');
+      }
+    }
 
     function setupToolGroupFlyouts() {
       const transContainer = document.getElementById('transformGroupContainer');
@@ -1101,7 +1163,7 @@
         moveTotalDy = 0;
 
         renderLayersList();
-        saveHistoryState('Mover Conteúdo');
+        saveHistoryState('Mover/Transladar Conteúdo');
       }
     }
 
@@ -1142,6 +1204,72 @@
       if (activeLayerIndex < 0) return;
       const curr = layers[activeLayerIndex];
       addNewLayer(`${curr.name} (Cópia)`, curr.canvas);
+    }
+
+    function mergeActiveLayerDown() {
+      commitMove();
+      cancelTransformSession();
+      if (activeLayerIndex <= 0) {
+        showToast('Não há camada abaixo para mesclar');
+        return;
+      }
+
+      const upperLayer = layers[activeLayerIndex];
+      const lowerLayer = layers[activeLayerIndex - 1];
+
+      lowerLayer.ctx.save();
+      lowerLayer.ctx.globalAlpha = upperLayer.opacity;
+      lowerLayer.ctx.globalCompositeOperation = upperLayer.blendMode;
+      lowerLayer.ctx.drawImage(upperLayer.canvas, 0, 0);
+      lowerLayer.ctx.restore();
+
+      layers.splice(activeLayerIndex, 1);
+      activeLayerIndex--;
+
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Mesclar Camada com Abaixo');
+      showToast('Camadas mescladas com sucesso');
+    }
+
+    function mergeAllVisibleLayers() {
+      commitMove();
+      cancelTransformSession();
+      const visibleLayers = layers.filter(l => l.visible);
+      if (visibleLayers.length <= 1) {
+        showToast('Precisa de pelo menos duas camadas visíveis para mesclar');
+        return;
+      }
+
+      const base = document.createElement('canvas');
+      base.width = canvasWidth;
+      base.height = canvasHeight;
+      const bCtx = base.getContext('2d');
+
+      layers.forEach(l => {
+        if (!l.visible) return;
+        bCtx.save();
+        bCtx.globalAlpha = l.opacity;
+        bCtx.globalCompositeOperation = l.blendMode;
+        bCtx.drawImage(l.canvas, 0, 0);
+        bCtx.restore();
+      });
+
+      layers = [{
+        id: layerCounter++,
+        name: 'Imagem Mesclada',
+        canvas: base,
+        ctx: bCtx,
+        visible: true,
+        opacity: 1.0,
+        blendMode: 'source-over'
+      }];
+
+      activeLayerIndex = 0;
+      renderLayersList();
+      renderCompositeCanvas();
+      saveHistoryState('Mesclar Todas as Camadas');
+      showToast('Todas as camadas visíveis foram mescladas');
     }
 
     function deleteActiveLayer() {
@@ -1482,9 +1610,6 @@
       });
     }
 
-    // Funcionalidade GIMP: Tamanho da Tela de Pintura (Canvas Size)
-
-    // Redimensionamento direto da tela, como no Paint: arraste as alças das bordas.
     function resizeCanvasPreservingContent(newW, newH, offsetX = 0, offsetY = 0) {
       newW = Math.max(1, Math.min(10000, Math.round(newW)));
       newH = Math.max(1, Math.min(10000, Math.round(newH)));
@@ -1531,7 +1656,6 @@
           if (drag.dir.includes('n')) h -= dy;
           w = Math.max(1, Math.min(10000, Math.round(w)));
           h = Math.max(1, Math.min(10000, Math.round(h)));
-          // Pré-visualização do novo limite; a alteração dos pixels ocorre ao soltar.
           viewport.style.width = w + 'px'; viewport.style.height = h + 'px';
           viewport.style.outline = '1px dashed #60a5fa';
           viewport.dataset.previewWidth = w; viewport.dataset.previewHeight = h;
@@ -1609,6 +1733,14 @@
       'edge-detect':'Detecção de bordas','emboss':'Relevo (Emboss)','vignette':'Vinheta'
     };
 
+    function cloneLayerCanvas(layer) {
+      const copy = document.createElement('canvas');
+      copy.width = layer.canvas.width;
+      copy.height = layer.canvas.height;
+      copy.getContext('2d').drawImage(layer.canvas, 0, 0);
+      return copy;
+    }
+
     function applyFilter(filterType) {
       commitMove();
       cancelTransformSession();
@@ -1617,11 +1749,21 @@
         return;
       }
       closeFilterDialog(true);
-      const layer = layers[activeLayerIndex];
-      const original = document.createElement('canvas');
-      original.width = layer.canvas.width; original.height = layer.canvas.height;
-      original.getContext('2d').drawImage(layer.canvas, 0, 0);
-      filterDialogSession = { filterType, layer, original, strength: filterType === 'color-to-alpha' ? 100 : 50, alphaColor: '#ffffff', pickingAlphaColor: false };
+      const applyAll = document.getElementById('filterAllLayers').checked;
+      const targets = (applyAll ? layers : [layers[activeLayerIndex]]).map(layer => ({
+        layer,
+        original: cloneLayerCanvas(layer)
+      }));
+      filterDialogSession = {
+        filterType,
+        targets,
+        layer: layers[activeLayerIndex],
+        original: cloneLayerCanvas(layers[activeLayerIndex]),
+        strength: filterType === 'color-to-alpha' ? 100 : 50,
+        alphaColor: '#ffffff',
+        pickingAlphaColor: false,
+        applyAll
+      };
       document.getElementById('filterDialogTitle').textContent = filterDisplayNames[filterType] || 'Filtro';
       const isColorToAlpha = filterType === 'color-to-alpha';
       document.getElementById('filterStrengthSection').classList.toggle('hidden', isColorToAlpha);
@@ -1674,22 +1816,27 @@
       const strength = filterDialogSession.filterType === 'color-to-alpha' ? 100 : Math.max(0, Math.min(100, Number(value) || 0));
       filterDialogSession.strength = strength;
       if (filterDialogSession.filterType !== 'color-to-alpha') document.getElementById('filterStrengthValue').textContent = strength + '%';
-      const { layer, original, filterType } = filterDialogSession;
-      const ctx = layer.canvas.getContext('2d');
-      ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-      ctx.drawImage(original, 0, 0);
-      processFilter(filterType, strength, true);
+      filterDialogSession.targets.forEach(({layer, original}) => {
+        const ctx = layer.canvas.getContext('2d');
+        ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        ctx.drawImage(original, 0, 0);
+        processFilter(filterDialogSession.filterType, strength, true, layer);
+      });
+      renderLayersList();
+      renderCompositeCanvas();
     }
 
     function closeFilterDialog(restoreOriginal = true) {
       const dialog = document.getElementById('filterDialog');
       if (!dialog) return;
       if (filterDialogSession && restoreOriginal) {
-        const { layer, original } = filterDialogSession;
-        const ctx = layer.canvas.getContext('2d');
-        ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-        ctx.drawImage(original, 0, 0);
-        renderLayersList(); renderCompositeCanvas();
+        filterDialogSession.targets.forEach(({layer, original}) => {
+          const ctx = layer.canvas.getContext('2d');
+          ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+          ctx.drawImage(original, 0, 0);
+        });
+        renderLayersList();
+        renderCompositeCanvas();
       }
       filterDialogSession = null;
       const compositeCanvasEl = document.getElementById('compositeCanvas');
@@ -1725,7 +1872,6 @@
       const w = source.width, h = source.height;
       if (!w || !h) return;
 
-      // Os filtros atuam na camada ativa, preservando as dimensões da tela.
       const work = document.createElement('canvas');
       work.width = w; work.height = h;
       const wctx = work.getContext('2d', { willReadFrequently: true });
@@ -1756,7 +1902,6 @@
         return [clampByte((r+m)*255),clampByte((g+m)*255),clampByte((b+m)*255)];
       };
 
-      // Efeitos espaciais via Canvas 2D.
       if (filterType === 'gaussian-blur' || filterType === 'motion-blur') {
         const amount = 12;
         wctx.clearRect(0,0,w,h);
@@ -1765,7 +1910,6 @@
           wctx.drawImage(source,0,0);
           wctx.filter = 'none';
         } else {
-          // Simula movimento horizontal com várias cópias sem alterar o tamanho da camada.
           const copies = Math.max(3, Math.min(21, Math.ceil(amount * 2)));
           for (let i=0;i<copies;i++) {
             const dx = -amount/2 + amount*i/(copies-1);
@@ -1816,8 +1960,6 @@
             case 'color-to-alpha': {
               const cr=alphaColor[0], cg=alphaColor[1], cb=alphaColor[2];
               const dist=Math.max(Math.abs(r-cr),Math.abs(g-cg),Math.abs(b-cb));
-              // A cor escolhida vira totalmente transparente; tons próximos
-              // recebem alfa proporcional para suavizar bordas antialias.
               const remain=dist/255;
               if (remain <= 0) {
                 d[i+3]=0;
@@ -1851,8 +1993,6 @@
         write(img);
       }
 
-      // Combina a imagem original com o resultado conforme a intensidade.
-      // 'source' continua sendo a referência original porque work é um canvas separado.
       const filtered = document.createElement('canvas');
       filtered.width = w; filtered.height = h;
       filtered.getContext('2d').drawImage(work, 0, 0);
@@ -1860,24 +2000,18 @@
       output.width = w; output.height = h;
       const outCtx = output.getContext('2d');
       if (filterType === 'color-to-alpha') {
-        // Cor para Alfa precisa substituir os pixels, não compor o resultado
-        // sobre a imagem original; caso contrário os pixels transparentes
-        // deixam de parecer transparentes porque a imagem original fica atrás.
         outCtx.clearRect(0, 0, w, h);
         outCtx.globalAlpha = 1;
         outCtx.globalCompositeOperation = 'copy';
         outCtx.drawImage(filtered, 0, 0);
         outCtx.globalCompositeOperation = 'source-over';
       } else {
-        // Nos demais filtros, mistura a imagem original com o resultado
-        // conforme a intensidade escolhida.
         outCtx.drawImage(source, 0, 0);
         outCtx.globalAlpha = Math.max(0, Math.min(100, Number(strength))) / 100;
         outCtx.drawImage(filtered, 0, 0);
         outCtx.globalAlpha = 1;
       }
 
-      // Atualiza a camada imediatamente durante a prévia, sem registrar histórico.
       layer.ctx = layer.canvas.getContext('2d');
       layer.ctx.clearRect(0, 0, w, h);
       layer.ctx.drawImage(output, 0, 0);
@@ -2128,6 +2262,8 @@
         workbench.classList.add('cursor-crosshair');
       } else if (currentTool === 'text') {
         workbench.classList.add('cursor-text');
+      } else if (currentTool === 'move') {
+        workbench.classList.add('cursor-move');
       }
     }
 
@@ -2166,8 +2302,8 @@
             </div>`;
           break;
         case 'move':
-          icon = 'fa-arrows-up-down-left-right'; name = 'Mover';
-          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o rato para mover conteúdo ou seleções.</span>`;
+          icon = 'fa-arrows-up-down-left-right'; name = 'Mover / Transladar';
+          propsEl.innerHTML = `<span class="text-gray-400">Arraste com o rato para transladar (mudar de lugar) o conteúdo ou seleções.</span>`;
           break;
         case 'crop':
           icon = 'fa-crop'; name = 'Recortar';
@@ -3552,7 +3688,7 @@
                   tempCanvas.width = img.width;
                   tempCanvas.height = img.height;
                   tempCanvas.getContext('2d').drawImage(img, 0, 0);
-                  pasteCanvasAsNewLayer(tempCanvas);
+                  pasteCanvasAsNewLayerAndTranslocate(tempCanvas);
                   URL.revokeObjectURL(url);
                   pasted = true;
                   resolve();
@@ -3569,20 +3705,19 @@
 
       if (!pasted) {
         if (internalClipboardData && internalClipboardData.canvas) {
-          pasteCanvasAsNewLayer(internalClipboardData.canvas);
+          pasteCanvasAsNewLayerAndTranslocate(internalClipboardData.canvas);
         } else {
           showToast('Nenhum conteúdo na memória');
         }
       }
     }
 
-    function pasteCanvasAsNewLayer(srcCanvas) {
-      // Ctrl+V: posiciona o conteúdo colado no canto superior esquerdo da tela.
+    function pasteCanvasAsNewLayerAndTranslocate(srcCanvas) {
       const posX = 0;
       const posY = 0;
 
       deselectAll();
-      const newLayer = addNewLayer('Camada Colada', srcCanvas, posX, posY);
+      addNewLayer('Camada Colada', srcCanvas, posX, posY);
 
       selectionMaskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
       selectionMaskCtx.fillStyle = '#ffffff';
@@ -3591,10 +3726,11 @@
       activeSelectionPath = new Path2D();
       activeSelectionPath.rect(posX, posY, srcCanvas.width, srcCanvas.height);
 
+      // Ativar diretamente a ferramenta de mover/transladar (mudar de lugar) conforme solicitado
       selectTool('move');
       renderCompositeCanvas();
       renderSelectionOverlay();
-      showToast('Elemento colado.');
+      showToast('Colado e ativado para transladar (mudar de lugar)');
     }
 
     function clearSelectionArea() {
@@ -3629,7 +3765,7 @@
                 tempCanvas.width = img.width;
                 tempCanvas.height = img.height;
                 tempCanvas.getContext('2d').drawImage(img, 0, 0);
-                pasteCanvasAsNewLayer(tempCanvas);
+                pasteCanvasAsNewLayerAndTranslocate(tempCanvas);
               };
               img.src = ev.target.result;
             };
@@ -4048,6 +4184,10 @@
   <div id="filterDialog" class="hidden" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="filterDialogTitle">
     <div id="filterDialogHeader"><span id="filterDialogTitle">Filtro</span><button class="filter-close" type="button" title="Fechar" aria-label="Fechar janela" onclick="cancelFilterDialog()">×</button></div>
     <div class="filter-dialog-body">
+      <label class="flex items-center gap-2 mb-3 p-2 rounded border border-gray-600 bg-black/10 text-sm">
+        <input type="checkbox" id="filterAllLayers" checked class="accent-blue-500">
+        <span>Aplicar filtro a todas as camadas</span>
+      </label>
       <div id="filterStrengthSection">
         <div class="flex items-center justify-between mb-3"><label for="filterStrength" class="text-sm">Intensidade do filtro</label><strong id="filterStrengthValue" class="text-sm text-blue-300">50%</strong></div>
         <input id="filterStrength" type="range" min="0" max="100" step="1" value="50" oninput="previewFilterStrength(this.value)">
