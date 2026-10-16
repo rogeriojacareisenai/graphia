@@ -1749,10 +1749,13 @@
         return;
       }
       closeFilterDialog(true);
-      const applyAll = document.getElementById('filterAllLayers').checked;
-      const targets = (applyAll ? layers : [layers[activeLayerIndex]]).map(layer => ({
+      // Mantém uma cópia de segurança de cada camada para permitir marcar/desmarcar
+      // individualmente sem perder a imagem original durante a pré-visualização.
+      const targets = layers.map((layer, index) => ({
         layer,
-        original: cloneLayerCanvas(layer)
+        index,
+        original: cloneLayerCanvas(layer),
+        checked: true
       }));
       filterDialogSession = {
         filterType,
@@ -1761,9 +1764,9 @@
         original: cloneLayerCanvas(layers[activeLayerIndex]),
         strength: filterType === 'color-to-alpha' ? 100 : 50,
         alphaColor: '#ffffff',
-        pickingAlphaColor: false,
-        applyAll
+        pickingAlphaColor: false
       };
+      renderFilterLayerOptions();
       document.getElementById('filterDialogTitle').textContent = filterDisplayNames[filterType] || 'Filtro';
       const isColorToAlpha = filterType === 'color-to-alpha';
       document.getElementById('filterStrengthSection').classList.toggle('hidden', isColorToAlpha);
@@ -1776,6 +1779,39 @@
       document.getElementById('filterDialog').classList.remove('hidden');
       document.getElementById('filterDialog').setAttribute('aria-hidden', 'false');
       previewFilterStrength(filterType === 'color-to-alpha' ? 100 : 50);
+    }
+
+    function renderFilterLayerOptions() {
+      const container = document.getElementById('filterLayerOptions');
+      if (!container || !filterDialogSession) return;
+      container.innerHTML = '';
+      filterDialogSession.targets.forEach((target, index) => {
+        const row = document.createElement('label');
+        row.className = 'flex items-center gap-2 rounded border border-gray-600 bg-black/10 px-3 py-2 text-sm';
+        row.style.cursor = 'pointer';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = target.checked;
+        checkbox.className = 'accent-blue-500';
+        checkbox.dataset.filterLayerIndex = String(index);
+        checkbox.setAttribute('aria-label', 'Aplicar filtro à camada ' + target.layer.name);
+        checkbox.addEventListener('change', () => toggleFilterLayer(index, checkbox.checked));
+        const name = document.createElement('span');
+        name.textContent = target.layer.name || ('Camada ' + (index + 1));
+        name.style.overflowWrap = 'anywhere';
+        row.append(checkbox, name);
+        container.appendChild(row);
+      });
+      const count = document.getElementById('filterLayerCount');
+      if (count) count.textContent = filterDialogSession.targets.filter(t => t.checked).length + ' de ' + filterDialogSession.targets.length + ' camadas selecionadas';
+    }
+
+    function toggleFilterLayer(index, checked) {
+      if (!filterDialogSession || !filterDialogSession.targets[index]) return;
+      filterDialogSession.targets[index].checked = Boolean(checked);
+      const count = document.getElementById('filterLayerCount');
+      if (count) count.textContent = filterDialogSession.targets.filter(t => t.checked).length + ' de ' + filterDialogSession.targets.length + ' camadas selecionadas';
+      previewFilterStrength(filterDialogSession.strength);
     }
 
     function updateAlphaColorPreview(hex) {
@@ -1816,11 +1852,19 @@
       const strength = filterDialogSession.filterType === 'color-to-alpha' ? 100 : Math.max(0, Math.min(100, Number(value) || 0));
       filterDialogSession.strength = strength;
       if (filterDialogSession.filterType !== 'color-to-alpha') document.getElementById('filterStrengthValue').textContent = strength + '%';
-      filterDialogSession.targets.forEach(({layer, original}) => {
-        const ctx = layer.canvas.getContext('2d');
-        ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-        ctx.drawImage(original, 0, 0);
-        processFilter(filterDialogSession.filterType, strength, true, layer);
+      // Processa cada camada a partir de uma cópia imutável do seu conteúdo original.
+      // Isso evita que uma prévia seja usada como entrada da próxima camada e impede
+      // perda/acúmulo de pixels quando há três ou mais camadas.
+      const session = filterDialogSession;
+      session.targets.forEach(({layer, original, checked}) => {
+        if (!layers.some(current => current.id === layer.id)) return;
+        if (checked) {
+          processFilter(session.filterType, strength, true, layer, original, true);
+        } else {
+          const ctx = layer.canvas.getContext('2d');
+          ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+          ctx.drawImage(original, 0, 0);
+        }
       });
       renderLayersList();
       renderCompositeCanvas();
@@ -1865,10 +1909,12 @@
       showToast(isColorToAlpha ? 'Filtro aplicado: ' + name : 'Filtro aplicado: ' + name + ' (' + strength + '%)');
     }
 
-    async function processFilter(filterType, strength = 100, previewOnly = false) {
-      if (activeLayerIndex < 0 || !layers[activeLayerIndex]) return;
-      const layer = layers[activeLayerIndex];
-      const source = layer.canvas;
+    function processFilter(filterType, strength = 100, previewOnly = false, targetLayer = null, sourceCanvasOverride = null, deferRender = false) {
+      // A prévia trabalha com o snapshot original de cada camada, nunca com o
+      // resultado temporário de outra prévia. Sem targetLayer, usa a camada ativa.
+      const layer = targetLayer || (activeLayerIndex >= 0 ? layers[activeLayerIndex] : null);
+      if (!layer) return;
+      const source = sourceCanvasOverride || layer.canvas;
       const w = source.width, h = source.height;
       if (!w || !h) return;
 
@@ -2015,8 +2061,10 @@
       layer.ctx = layer.canvas.getContext('2d');
       layer.ctx.clearRect(0, 0, w, h);
       layer.ctx.drawImage(output, 0, 0);
-      renderLayersList();
-      renderCompositeCanvas();
+      if (!deferRender) {
+        renderLayersList();
+        renderCompositeCanvas();
+      }
       if (!previewOnly) {
         saveHistoryState('Filtro: ' + filterType);
         showToast('Filtro aplicado: ' + filterType);
@@ -4184,10 +4232,12 @@
   <div id="filterDialog" class="hidden" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="filterDialogTitle">
     <div id="filterDialogHeader"><span id="filterDialogTitle">Filtro</span><button class="filter-close" type="button" title="Fechar" aria-label="Fechar janela" onclick="cancelFilterDialog()">×</button></div>
     <div class="filter-dialog-body">
-      <label class="flex items-center gap-2 mb-3 p-2 rounded border border-gray-600 bg-black/10 text-sm">
-        <input type="checkbox" id="filterAllLayers" checked class="accent-blue-500">
-        <span>Aplicar filtro a todas as camadas</span>
-      </label>
+      <section class="mb-4">
+        <div class="text-sm font-semibold mb-2">Aplicar filtro às camadas</div>
+        <p class="text-xs text-gray-400 mb-2">Todas começam selecionadas. Desmarque as camadas que devem permanecer sem alteração.</p>
+        <div id="filterLayerOptions" class="flex flex-col gap-2" style="max-height:min(32vh, 260px);overflow-y:auto;overscroll-behavior:contain;"></div>
+        <div id="filterLayerCount" class="text-xs text-blue-300 mt-2" aria-live="polite"></div>
+      </section>
       <div id="filterStrengthSection">
         <div class="flex items-center justify-between mb-3"><label for="filterStrength" class="text-sm">Intensidade do filtro</label><strong id="filterStrengthValue" class="text-sm text-blue-300">50%</strong></div>
         <input id="filterStrength" type="range" min="0" max="100" step="1" value="50" oninput="previewFilterStrength(this.value)">
