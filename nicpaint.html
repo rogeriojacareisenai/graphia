@@ -1621,20 +1621,59 @@
       const original = document.createElement('canvas');
       original.width = layer.canvas.width; original.height = layer.canvas.height;
       original.getContext('2d').drawImage(layer.canvas, 0, 0);
-      filterDialogSession = { filterType, layer, original, strength: 50 };
+      filterDialogSession = { filterType, layer, original, strength: filterType === 'color-to-alpha' ? 100 : 50, alphaColor: '#ffffff', pickingAlphaColor: false };
       document.getElementById('filterDialogTitle').textContent = filterDisplayNames[filterType] || 'Filtro';
+      const isColorToAlpha = filterType === 'color-to-alpha';
+      document.getElementById('filterStrengthSection').classList.toggle('hidden', isColorToAlpha);
+      document.getElementById('colorToAlphaSection').classList.toggle('hidden', !isColorToAlpha);
       document.getElementById('filterStrength').value = '50';
       document.getElementById('filterStrengthValue').textContent = '50%';
+      updateAlphaColorPreview('#ffffff');
+      document.getElementById('alphaPickerStatus').textContent = 'Clique em “Conta-gotas” e depois escolha uma cor na imagem.';
+      document.getElementById('alphaPickButton').classList.remove('primary');
       document.getElementById('filterDialog').classList.remove('hidden');
       document.getElementById('filterDialog').setAttribute('aria-hidden', 'false');
-      previewFilterStrength(50);
+      previewFilterStrength(filterType === 'color-to-alpha' ? 100 : 50);
+    }
+
+    function updateAlphaColorPreview(hex) {
+      const swatch = document.getElementById('alphaColorSwatch');
+      const value = document.getElementById('alphaColorHex');
+      if (swatch) swatch.style.backgroundColor = hex;
+      if (value) value.textContent = String(hex || '#ffffff').toUpperCase();
+    }
+
+    function startAlphaColorPicker() {
+      if (!filterDialogSession || filterDialogSession.filterType !== 'color-to-alpha') return;
+      filterDialogSession.pickingAlphaColor = true;
+      document.getElementById('alphaPickerStatus').textContent = 'Agora clique na cor que deseja tornar transparente na imagem.';
+      document.getElementById('alphaPickButton').classList.add('primary');
+      document.getElementById('compositeCanvas').style.cursor = 'crosshair';
+      showToast('Conta-gotas: clique na cor da imagem');
+    }
+
+    function selectAlphaColorAt(x, y) {
+      if (!filterDialogSession || !filterDialogSession.pickingAlphaColor) return false;
+      const { layer, original } = filterDialogSession;
+      const px = Math.max(0, Math.min(original.width - 1, Math.floor(x)));
+      const py = Math.max(0, Math.min(original.height - 1, Math.floor(y)));
+      const pixel = original.getContext('2d', { willReadFrequently: true }).getImageData(px, py, 1, 1).data;
+      const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+      filterDialogSession.alphaColor = hex;
+      filterDialogSession.pickingAlphaColor = false;
+      document.getElementById('compositeCanvas').style.cursor = '';
+      document.getElementById('alphaPickerStatus').textContent = 'Cor selecionada. A prévia foi atualizada em tempo real.';
+      document.getElementById('alphaPickButton').classList.remove('primary');
+      updateAlphaColorPreview(hex);
+      previewFilterStrength(100);
+      return true;
     }
 
     function previewFilterStrength(value) {
       if (!filterDialogSession) return;
-      const strength = Math.max(0, Math.min(100, Number(value) || 0));
+      const strength = filterDialogSession.filterType === 'color-to-alpha' ? 100 : Math.max(0, Math.min(100, Number(value) || 0));
       filterDialogSession.strength = strength;
-      document.getElementById('filterStrengthValue').textContent = strength + '%';
+      if (filterDialogSession.filterType !== 'color-to-alpha') document.getElementById('filterStrengthValue').textContent = strength + '%';
       const { layer, original, filterType } = filterDialogSession;
       const ctx = layer.canvas.getContext('2d');
       ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
@@ -1653,6 +1692,8 @@
         renderLayersList(); renderCompositeCanvas();
       }
       filterDialogSession = null;
+      const compositeCanvasEl = document.getElementById('compositeCanvas');
+      if (compositeCanvasEl) compositeCanvasEl.style.cursor = '';
       dialog.classList.add('hidden');
       dialog.setAttribute('aria-hidden', 'true');
     }
@@ -1666,12 +1707,15 @@
       if (!filterDialogSession) return;
       const name = filterDisplayNames[filterDialogSession.filterType] || filterDialogSession.filterType;
       const strength = filterDialogSession.strength;
+      const isColorToAlpha = filterDialogSession.filterType === 'color-to-alpha';
       renderLayersList(); renderCompositeCanvas();
-      saveHistoryState('Filtro: ' + name + ' (' + strength + '%)');
+      saveHistoryState(isColorToAlpha ? 'Filtro: ' + name : 'Filtro: ' + name + ' (' + strength + '%)');
       filterDialogSession = null;
+      const compositeCanvasEl = document.getElementById('compositeCanvas');
+      if (compositeCanvasEl) compositeCanvasEl.style.cursor = '';
       document.getElementById('filterDialog').classList.add('hidden');
       document.getElementById('filterDialog').setAttribute('aria-hidden', 'true');
-      showToast('Filtro aplicado: ' + name + ' (' + strength + '%)');
+      showToast(isColorToAlpha ? 'Filtro aplicado: ' + name : 'Filtro aplicado: ' + name + ' (' + strength + '%)');
     }
 
     async function processFilter(filterType, strength = 100, previewOnly = false) {
@@ -1747,8 +1791,8 @@
         if (filterType === 'threshold') threshold=128;
         if (filterType === 'posterize') posterLevels=4;
         if (filterType === 'color-to-alpha') {
-          const hex='#ffffff'.slice(1);
-          alphaColor=[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)];
+          const hex = (filterDialogSession && filterDialogSession.filterType === 'color-to-alpha' && filterDialogSession.alphaColor) ? filterDialogSession.alphaColor : '#ffffff';
+          alphaColor=[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
         }
         if (filterType === 'sharpen') sharpenAmount=1.5;
         const original = new Uint8ClampedArray(d);
@@ -1769,7 +1813,22 @@
             case 'colorize': { const gray=(.299*r+.587*g+.114*b)/255; R=tint[0]*gray; G=tint[1]*gray; B=tint[2]*gray; break; }
             case 'posterize': { const step=255/(posterLevels-1); R=Math.round(r/step)*step; G=Math.round(g/step)*step; B=Math.round(b/step)*step; break; }
             case 'threshold': { const v=(.299*r+.587*g+.114*b)>=threshold?255:0; R=G=B=v; break; }
-            case 'color-to-alpha': { const dist=Math.max(Math.abs(r-alphaColor[0]),Math.abs(g-alphaColor[1]),Math.abs(b-alphaColor[2])); const remain=dist/255; d[i+3]=clampByte(a*remain); if(remain>0){R=clampByte((r-alphaColor[0])/remain+alphaColor[0]);G=clampByte((g-alphaColor[1])/remain+alphaColor[1]);B=clampByte((b-alphaColor[2])/remain+alphaColor[2]);} break; }
+            case 'color-to-alpha': {
+              const cr=alphaColor[0], cg=alphaColor[1], cb=alphaColor[2];
+              const dist=Math.max(Math.abs(r-cr),Math.abs(g-cg),Math.abs(b-cb));
+              // A cor escolhida vira totalmente transparente; tons próximos
+              // recebem alfa proporcional para suavizar bordas antialias.
+              const remain=dist/255;
+              if (remain <= 0) {
+                d[i+3]=0;
+              } else {
+                d[i+3]=clampByte(a*remain);
+                R=clampByte(cr+(r-cr)/remain);
+                G=clampByte(cg+(g-cg)/remain);
+                B=clampByte(cb+(b-cb)/remain);
+              }
+              break;
+            }
             case 'high-contrast': { const f=contrastFactor(65); R=f*(r-128)+128; G=f*(g-128)+128; B=f*(b-128)+128; break; }
             case 'noise': { const n=(Math.random()-.5)*70; R=r+n; G=g+n; B=b+n; break; }
             case 'edge-detect':
@@ -1800,10 +1859,23 @@
       const output = document.createElement('canvas');
       output.width = w; output.height = h;
       const outCtx = output.getContext('2d');
-      outCtx.drawImage(source, 0, 0);
-      outCtx.globalAlpha = Math.max(0, Math.min(100, Number(strength))) / 100;
-      outCtx.drawImage(filtered, 0, 0);
-      outCtx.globalAlpha = 1;
+      if (filterType === 'color-to-alpha') {
+        // Cor para Alfa precisa substituir os pixels, não compor o resultado
+        // sobre a imagem original; caso contrário os pixels transparentes
+        // deixam de parecer transparentes porque a imagem original fica atrás.
+        outCtx.clearRect(0, 0, w, h);
+        outCtx.globalAlpha = 1;
+        outCtx.globalCompositeOperation = 'copy';
+        outCtx.drawImage(filtered, 0, 0);
+        outCtx.globalCompositeOperation = 'source-over';
+      } else {
+        // Nos demais filtros, mistura a imagem original com o resultado
+        // conforme a intensidade escolhida.
+        outCtx.drawImage(source, 0, 0);
+        outCtx.globalAlpha = Math.max(0, Math.min(100, Number(strength))) / 100;
+        outCtx.drawImage(filtered, 0, 0);
+        outCtx.globalAlpha = 1;
+      }
 
       // Atualiza a camada imediatamente durante a prévia, sem registrar histórico.
       layer.ctx = layer.canvas.getContext('2d');
@@ -2560,6 +2632,11 @@
       const startAction = (e) => {
         if (isPanning || isSpacePressed || e.button === 1 || e.button === 2) return;
         const coords = getCanvasCoords(e);
+        if (filterDialogSession && filterDialogSession.filterType === 'color-to-alpha' && filterDialogSession.pickingAlphaColor) {
+          e.preventDefault();
+          selectAlphaColorAt(coords.x, coords.y);
+          return;
+        }
         if (currentTool === 'pointer') return;
 
         if (currentTool === 'crop') {
@@ -3971,10 +4048,22 @@
   <div id="filterDialog" class="hidden" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="filterDialogTitle">
     <div id="filterDialogHeader"><span id="filterDialogTitle">Filtro</span><button class="filter-close" type="button" title="Fechar" aria-label="Fechar janela" onclick="cancelFilterDialog()">×</button></div>
     <div class="filter-dialog-body">
-      <div class="flex items-center justify-between mb-3"><label for="filterStrength" class="text-sm">Intensidade do filtro</label><strong id="filterStrengthValue" class="text-sm text-blue-300">50%</strong></div>
-      <input id="filterStrength" type="range" min="0" max="100" step="1" value="50" oninput="previewFilterStrength(this.value)">
-      <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0% — Original</span><span>100% — Máximo</span></div>
-      <p class="text-xs text-gray-400 mt-4">Prévia em tempo real: mova a barra para ver o efeito na imagem. Confirme para aplicar ou cancele para restaurar a imagem original.</p>
+      <div id="filterStrengthSection">
+        <div class="flex items-center justify-between mb-3"><label for="filterStrength" class="text-sm">Intensidade do filtro</label><strong id="filterStrengthValue" class="text-sm text-blue-300">50%</strong></div>
+        <input id="filterStrength" type="range" min="0" max="100" step="1" value="50" oninput="previewFilterStrength(this.value)">
+        <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0% — Original</span><span>100% — Máximo</span></div>
+        <p class="text-xs text-gray-400 mt-4">Prévia em tempo real: mova a barra para ver o efeito na imagem. Confirme para aplicar ou cancele para restaurar a imagem original.</p>
+      </div>
+      <div id="colorToAlphaSection" class="hidden">
+        <p class="text-sm mb-3">Selecione a cor que deseja transformar em transparência.</p>
+        <div class="flex items-center gap-3 mb-3">
+          <div id="alphaColorSwatch" title="Prévia da cor selecionada" style="width:42px;height:42px;flex:0 0 42px;border:2px solid #cbd5e1;border-radius:6px;background:#ffffff;box-shadow:inset 0 0 0 1px #111827;"></div>
+          <div><div class="text-xs text-gray-400">Cor selecionada</div><strong id="alphaColorHex" class="text-sm">#FFFFFF</strong></div>
+        </div>
+        <button id="alphaPickButton" type="button" class="filter-btn" onclick="startAlphaColorPicker()">⌖ Conta-gotas na imagem</button>
+        <p id="alphaPickerStatus" class="text-xs text-gray-300 mt-3">Clique em “Conta-gotas” e depois escolha uma cor na imagem.</p>
+        <p class="text-xs text-gray-400 mt-3">A prévia é atualizada assim que a cor é selecionada. Confirme para aplicar ou cancele para restaurar a imagem original.</p>
+      </div>
     </div>
     <div class="filter-actions"><button type="button" class="filter-btn" onclick="cancelFilterDialog()">Cancelar</button><button type="button" class="filter-btn primary" onclick="confirmFilterDialog()">Confirmar</button></div>
   </div>
