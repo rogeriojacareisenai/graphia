@@ -1599,14 +1599,83 @@
       showToast(`Tela redimensionada para ${newW} × ${newH} px`);
     }
 
-    async function applyFilter(filterType) {
+    let filterDialogSession = null;
+    const filterDisplayNames = {
+      'gaussian-blur':'Desfoque Gaussiano','pixelize':'Pixelizar','motion-blur':'Desfoque de movimento',
+      'grayscale':'Escala de cinzento','sepia':'Sépia','invert-colors':'Inverter cores',
+      'brightness-contrast':'Brilho e contraste','hue-saturation':'Matiz e saturação','colorize':'Colorizar',
+      'posterize':'Posterizar','threshold':'Limiar (preto e branco)','color-to-alpha':'Cor para Alfa',
+      'sharpen':'Aumentar nitidez','high-contrast':'Alto contraste','noise':'Adicionar ruído',
+      'edge-detect':'Detecção de bordas','emboss':'Relevo (Emboss)','vignette':'Vinheta'
+    };
+
+    function applyFilter(filterType) {
       commitMove();
       cancelTransformSession();
       if (activeLayerIndex < 0 || !layers[activeLayerIndex]) {
         showToast('Selecione uma camada primeiro');
         return;
       }
+      closeFilterDialog(true);
+      const layer = layers[activeLayerIndex];
+      const original = document.createElement('canvas');
+      original.width = layer.canvas.width; original.height = layer.canvas.height;
+      original.getContext('2d').drawImage(layer.canvas, 0, 0);
+      filterDialogSession = { filterType, layer, original, strength: 50 };
+      document.getElementById('filterDialogTitle').textContent = filterDisplayNames[filterType] || 'Filtro';
+      document.getElementById('filterStrength').value = '50';
+      document.getElementById('filterStrengthValue').textContent = '50%';
+      document.getElementById('filterDialog').classList.remove('hidden');
+      document.getElementById('filterDialog').setAttribute('aria-hidden', 'false');
+      previewFilterStrength(50);
+    }
 
+    function previewFilterStrength(value) {
+      if (!filterDialogSession) return;
+      const strength = Math.max(0, Math.min(100, Number(value) || 0));
+      filterDialogSession.strength = strength;
+      document.getElementById('filterStrengthValue').textContent = strength + '%';
+      const { layer, original, filterType } = filterDialogSession;
+      const ctx = layer.canvas.getContext('2d');
+      ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      ctx.drawImage(original, 0, 0);
+      processFilter(filterType, strength, true);
+    }
+
+    function closeFilterDialog(restoreOriginal = true) {
+      const dialog = document.getElementById('filterDialog');
+      if (!dialog) return;
+      if (filterDialogSession && restoreOriginal) {
+        const { layer, original } = filterDialogSession;
+        const ctx = layer.canvas.getContext('2d');
+        ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+        ctx.drawImage(original, 0, 0);
+        renderLayersList(); renderCompositeCanvas();
+      }
+      filterDialogSession = null;
+      dialog.classList.add('hidden');
+      dialog.setAttribute('aria-hidden', 'true');
+    }
+
+    function cancelFilterDialog() {
+      closeFilterDialog(true);
+      showToast('Filtro cancelado; imagem original restaurada');
+    }
+
+    function confirmFilterDialog() {
+      if (!filterDialogSession) return;
+      const name = filterDisplayNames[filterDialogSession.filterType] || filterDialogSession.filterType;
+      const strength = filterDialogSession.strength;
+      renderLayersList(); renderCompositeCanvas();
+      saveHistoryState('Filtro: ' + name + ' (' + strength + '%)');
+      filterDialogSession = null;
+      document.getElementById('filterDialog').classList.add('hidden');
+      document.getElementById('filterDialog').setAttribute('aria-hidden', 'true');
+      showToast('Filtro aplicado: ' + name + ' (' + strength + '%)');
+    }
+
+    async function processFilter(filterType, strength = 100, previewOnly = false) {
+      if (activeLayerIndex < 0 || !layers[activeLayerIndex]) return;
       const layer = layers[activeLayerIndex];
       const source = layer.canvas;
       const w = source.width, h = source.height;
@@ -1618,21 +1687,6 @@
       const wctx = work.getContext('2d', { willReadFrequently: true });
       wctx.drawImage(source, 0, 0);
 
-      const askNumber = (message, initial, min, max) => {
-        const raw = prompt(message, String(initial));
-        if (raw === null) return null;
-        const n = Number(raw);
-        if (!Number.isFinite(n)) { showToast('Valor inválido'); return null; }
-        return Math.max(min, Math.min(max, n));
-      };
-      const askColor = (message, initial) => {
-        const raw = prompt(message, initial);
-        if (raw === null) return null;
-        if (!/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw.trim())) {
-          showToast('Informe uma cor hexadecimal, por exemplo #ffffff'); return null;
-        }
-        return raw.trim();
-      };
       const read = () => wctx.getImageData(0, 0, w, h);
       const write = img => wctx.putImageData(img, 0, 0);
       const clampByte = n => Math.max(0, Math.min(255, Math.round(n)));
@@ -1660,8 +1714,7 @@
 
       // Efeitos espaciais via Canvas 2D.
       if (filterType === 'gaussian-blur' || filterType === 'motion-blur') {
-        const amount = askNumber(filterType === 'gaussian-blur' ? 'Raio do desfoque (px):' : 'Intensidade do desfoque de movimento (px):', 4, 1, 50);
-        if (amount === null) return;
+        const amount = 12;
         wctx.clearRect(0,0,w,h);
         if (filterType === 'gaussian-blur') {
           wctx.filter = `blur(${amount}px)`;
@@ -1678,8 +1731,7 @@
           wctx.globalAlpha = 1;
         }
       } else if (filterType === 'pixelize') {
-        const block = askNumber('Tamanho dos blocos de pixelização (px):', 8, 2, 100);
-        if (block === null) return;
+        const block = 24;
         const small = document.createElement('canvas');
         small.width=Math.max(1,Math.ceil(w/block)); small.height=Math.max(1,Math.ceil(h/block));
         const sctx=small.getContext('2d');
@@ -1689,29 +1741,16 @@
         const img = read(), d = img.data;
         const contrastFactor = c => { const f=(259*(c+255))/(255*(259-c)); return f; };
         let brightness=0, contrast=0, hueShift=0, satFactor=1, colorize=null, threshold=128, posterLevels=4, alphaColor=null, sharpenAmount=1;
-        if (filterType === 'brightness-contrast') {
-          brightness=askNumber('Brilho (-100 a 100):',0,-100,100); if(brightness===null)return;
-          contrast=askNumber('Contraste (-100 a 100):',0,-100,100); if(contrast===null)return;
-        }
-        if (filterType === 'hue-saturation') {
-          hueShift=askNumber('Matiz em graus (-180 a 180):',0,-180,180); if(hueShift===null)return;
-          satFactor=1+askNumber('Saturação (-100 a 100):',0,-100,100)/100;
-        }
-        if (filterType === 'colorize') {
-          colorize=askColor('Cor para colorizar (hexadecimal):','#d06030'); if(colorize===null)return;
-        }
-        if (filterType === 'threshold') {
-          threshold=askNumber('Limiar (0 a 255):',128,0,255); if(threshold===null)return;
-        }
-        if (filterType === 'posterize') {
-          posterLevels=askNumber('Número de níveis por canal (2 a 32):',4,2,32); if(posterLevels===null)return;
-        }
+        if (filterType === 'brightness-contrast') { brightness=0; contrast=45; }
+        if (filterType === 'hue-saturation') { hueShift=0; satFactor=1.8; }
+        if (filterType === 'colorize') colorize='#d06030';
+        if (filterType === 'threshold') threshold=128;
+        if (filterType === 'posterize') posterLevels=4;
         if (filterType === 'color-to-alpha') {
-          alphaColor=askColor('Qual cor deve ficar transparente?','#ffffff'); if(alphaColor===null)return;
-          const hex=alphaColor.slice(1); const full=hex.length===3?hex.split('').map(c=>c+c).join(''):hex;
-          alphaColor=[parseInt(full.slice(0,2),16),parseInt(full.slice(2,4),16),parseInt(full.slice(4,6),16)];
+          const hex='#ffffff'.slice(1);
+          alphaColor=[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)];
         }
-        if (filterType === 'sharpen') { sharpenAmount=askNumber('Intensidade da nitidez (0 a 3):',1,0,3); if(sharpenAmount===null)return; }
+        if (filterType === 'sharpen') sharpenAmount=1.5;
         const original = new Uint8ClampedArray(d);
         const get = (x,y,c) => original[(Math.max(0,Math.min(h-1,y))*w+Math.max(0,Math.min(w-1,x)))*4+c];
         const hexToRgb = hex => { let z=hex.slice(1); if(z.length===3)z=z.split('').map(c=>c+c).join(''); return [parseInt(z.slice(0,2),16),parseInt(z.slice(2,4),16),parseInt(z.slice(4,6),16)]; };
@@ -1753,14 +1792,29 @@
         write(img);
       }
 
-      // Copia o resultado do processamento para a camada original.
+      // Combina a imagem original com o resultado conforme a intensidade.
+      // 'source' continua sendo a referência original porque work é um canvas separado.
+      const filtered = document.createElement('canvas');
+      filtered.width = w; filtered.height = h;
+      filtered.getContext('2d').drawImage(work, 0, 0);
+      const output = document.createElement('canvas');
+      output.width = w; output.height = h;
+      const outCtx = output.getContext('2d');
+      outCtx.drawImage(source, 0, 0);
+      outCtx.globalAlpha = Math.max(0, Math.min(100, Number(strength))) / 100;
+      outCtx.drawImage(filtered, 0, 0);
+      outCtx.globalAlpha = 1;
+
+      // Atualiza a camada imediatamente durante a prévia, sem registrar histórico.
       layer.ctx = layer.canvas.getContext('2d');
       layer.ctx.clearRect(0, 0, w, h);
-      layer.ctx.drawImage(work, 0, 0);
+      layer.ctx.drawImage(output, 0, 0);
       renderLayersList();
       renderCompositeCanvas();
-      saveHistoryState('Filtro: ' + filterType);
-      showToast('Filtro aplicado: ' + filterType);
+      if (!previewOnly) {
+        saveHistoryState('Filtro: ' + filterType);
+        showToast('Filtro aplicado: ' + filterType);
+      }
     }
 
     function applyCropToSelection() {
@@ -3901,5 +3955,38 @@
     setupBrushPanel();
   </script>
 <script>document.addEventListener("DOMContentLoaded", setupCanvasResizeHandles);</script>
+
+  <style>
+    #filterDialog { position: fixed; z-index: 12000; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(390px, calc(100vw - 28px)); color: #e5e7eb; background: #252a34; border: 1px solid #566171; border-radius: 9px; box-shadow: 0 8px 24px rgba(0,0,0,.38); }
+    #filterDialog.hidden { display: none; }
+    #filterDialogHeader { cursor: move; user-select: none; display:flex; align-items:center; justify-content:space-between; padding: 11px 14px; background:#303744; border-bottom:1px solid #4b5563; border-radius:9px 9px 0 0; font-weight:600; }
+    #filterDialog .filter-dialog-body { padding: 18px 16px 14px; }
+    #filterStrength { width:100%; accent-color:#4f9cf9; cursor:pointer; }
+    #filterDialog .filter-actions { display:flex; justify-content:flex-end; gap:8px; padding: 0 16px 15px; }
+    #filterDialog .filter-btn { border:1px solid #596273; border-radius:5px; padding:7px 12px; font-size:13px; background:#394150; color:#f3f4f6; }
+    #filterDialog .filter-btn:hover { filter:brightness(1.15); }
+    #filterDialog .filter-btn.primary { background:#2563eb; border-color:#3b82f6; }
+    #filterDialog .filter-close { border:0; background:transparent; color:#cbd5e1; font-size:20px; line-height:1; padding:0 3px; cursor:pointer; }
+  </style>
+  <div id="filterDialog" class="hidden" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="filterDialogTitle">
+    <div id="filterDialogHeader"><span id="filterDialogTitle">Filtro</span><button class="filter-close" type="button" title="Fechar" aria-label="Fechar janela" onclick="cancelFilterDialog()">×</button></div>
+    <div class="filter-dialog-body">
+      <div class="flex items-center justify-between mb-3"><label for="filterStrength" class="text-sm">Intensidade do filtro</label><strong id="filterStrengthValue" class="text-sm text-blue-300">50%</strong></div>
+      <input id="filterStrength" type="range" min="0" max="100" step="1" value="50" oninput="previewFilterStrength(this.value)">
+      <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0% — Original</span><span>100% — Máximo</span></div>
+      <p class="text-xs text-gray-400 mt-4">Prévia em tempo real: mova a barra para ver o efeito na imagem. Confirme para aplicar ou cancele para restaurar a imagem original.</p>
+    </div>
+    <div class="filter-actions"><button type="button" class="filter-btn" onclick="cancelFilterDialog()">Cancelar</button><button type="button" class="filter-btn primary" onclick="confirmFilterDialog()">Confirmar</button></div>
+  </div>
+  <script>
+    (function(){
+      const panel=document.getElementById('filterDialog'), header=document.getElementById('filterDialogHeader');
+      let drag=null;
+      header.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; const r=panel.getBoundingClientRect(); drag={x:e.clientX-r.left,y:e.clientY-r.top}; header.setPointerCapture(e.pointerId); e.preventDefault(); });
+      header.addEventListener('pointermove',e=>{ if(!drag)return; const left=Math.max(0,Math.min(window.innerWidth-panel.offsetWidth,e.clientX-drag.x)); const top=Math.max(0,Math.min(window.innerHeight-40,e.clientY-drag.y)); panel.style.left=left+'px'; panel.style.top=top+'px'; panel.style.transform='none'; });
+      const stop=()=>drag=null; header.addEventListener('pointerup',stop); header.addEventListener('pointercancel',stop);
+    })();
+  </script>
+
 </body>
 </html>
