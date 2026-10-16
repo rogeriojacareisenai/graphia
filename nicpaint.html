@@ -84,7 +84,7 @@
       margin-left: 4px;
     }
   </style>
-<style>
+  <style>
     /* Abertura animada do NicPaint */
     #nicpaint-splash{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at center,rgba(48,57,72,.78),rgba(12,14,20,.94));backdrop-filter:blur(3px);animation:splashFadeOut 1.1s ease-in 3.45s forwards}
     #nicpaint-splash .splash-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:clamp(24px,5vw,58px);}
@@ -101,19 +101,19 @@
     @keyframes splashFadeOut{to{opacity:0;visibility:hidden;pointer-events:none}}
     @media(prefers-reduced-motion:reduce){#nicpaint-splash,#nicpaint-splash *{animation-duration:.01ms!important;animation-delay:0ms!important}}
 
+    input[type="range"] { height: 18px; background: transparent; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 999px; background: #4b5563; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; margin-top: -5px; width: 15px; height: 15px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
+    input[type="range"]::-moz-range-track { height: 5px; border-radius: 999px; background: #4b5563; }
+    input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
 
-input[type="range"] { height: 18px; background: transparent; }
-input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 999px; background: #4b5563; }
-input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; margin-top: -5px; width: 15px; height: 15px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
-input[type="range"]::-moz-range-track { height: 5px; border-radius: 999px; background: #4b5563; }
-input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #60a5fa; border: 2px solid #dbeafe; }
-
-.brush-floating-panel{display:none;position:fixed;right:12px;top:42px;left:auto;width:300px;max-height:calc(100vh - 54px);overflow:hidden;background:#292929;color:#eee;border:1px solid #555;border-radius:8px;box-shadow:0 12px 32px #0009;z-index:1000;font-size:12px}
-.brush-panel-header{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;background:#3b3b3b;border-bottom:1px solid #555;cursor:move;touch-action:none;font-weight:600;user-select:none}
-.brush-window-btn{width:23px;height:23px;border-radius:4px;color:#ddd;background:#4a4a4a}.brush-window-btn:hover{background:#666;color:white}
-.brush-panel-body{overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 90px);padding:9px}.brush-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}
-.brush-choice{display:flex;align-items:center;gap:9px;text-align:left;padding:6px;background:#363636;border:1px solid #4a4a4a;border-radius:5px;color:#ddd;min-width:0;width:100%}.brush-choice:hover{background:#444}.brush-choice.active{border-color:#60a5fa;background:#183b5d;color:#fff}.brush-swatch{width:76px;height:28px;flex:none;border-radius:3px;background:repeating-conic-gradient(#333 0% 25%,#242424 0% 50%) 0/8px 8px;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}.brush-swatch svg{width:70px;height:24px;overflow:visible}.brush-choice strong{display:block;font-size:11px}.brush-choice small{font-size:10px;line-height:1.25}.brush-settings{border-top:1px solid #4a4a4a;margin-top:9px;padding-top:9px;display:grid;gap:8px}.brush-settings>label{display:grid;grid-template-columns:1fr auto;gap:3px 8px;color:#ddd}.brush-settings input[type=range]{grid-column:1 / -1;width:100%;accent-color:#60a5fa}.brush-checks{display:grid;gap:5px}.brush-checks label{display:flex;align-items:center;gap:6px}.brush-help{font-size:10px;line-height:1.35;color:#aaa}.brush-restore-btn{position:fixed;right:12px;top:42px;left:auto;z-index:999;background:#333;border:1px solid #555;color:#eee;border-radius:5px;padding:6px 9px;font-size:12px;box-shadow:0 4px 12px #0008}
-</style>
+    /* Fixado no canto direito da tela */
+    .brush-floating-panel{display:none;position:fixed;right:12px;top:42px;left:auto !important;width:300px;max-height:calc(100vh - 54px);overflow:hidden;background:#292929;color:#eee;border:1px solid #555;border-radius:8px;box-shadow:0 12px 32px #0009;z-index:1000;font-size:12px}
+    .brush-panel-header{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;background:#3b3b3b;border-bottom:1px solid #555;cursor:move;touch-action:none;font-weight:600;user-select:none}
+    .brush-window-btn{width:23px;height:23px;border-radius:4px;color:#ddd;background:#4a4a4a}.brush-window-btn:hover{background:#666;color:white}
+    .brush-panel-body{overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 90px);padding:9px}.brush-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}
+    .brush-choice{display:flex;align-items:center;gap:9px;text-align:left;padding:6px;background:#363636;border:1px solid #4a4a4a;border-radius:5px;color:#ddd;min-width:0;width:100%}.brush-choice:hover{background:#444}.brush-choice.active{border-color:#60a5fa;background:#183b5d;color:#fff}.brush-swatch{width:76px;height:28px;flex:none;border-radius:3px;background:repeating-conic-gradient(#333 0% 25%,#242424 0% 50%) 0/8px 8px;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}.brush-swatch svg{width:70px;height:24px;overflow:visible}.brush-choice strong{display:block;font-size:11px}.brush-choice small{font-size:10px;line-height:1.25}.brush-settings{border-top:1px solid #4a4a4a;margin-top:9px;padding-top:9px;display:grid;gap:8px}.brush-settings>label{display:grid;grid-template-columns:1fr auto;gap:3px 8px;color:#ddd}.brush-settings input[type=range]{grid-column:1 / -1;width:100%;accent-color:#60a5fa}.brush-checks{display:grid;gap:5px}.brush-checks label{display:flex;align-items:center;gap:6px}.brush-help{font-size:10px;line-height:1.35;color:#aaa}.brush-restore-btn{position:fixed;right:12px;top:42px;left:auto;z-index:999;background:#333;border:1px solid #555;color:#eee;border-radius:5px;padding:6px 9px;font-size:12px;box-shadow:0 4px 12px #0008}
+  </style>
 </head>
 <body class="bg-gimp-darkest text-gray-200 h-screen flex flex-col font-sans overflow-hidden select-none">
   <div id="nicpaint-splash" role="presentation" aria-label="NicPaint">
@@ -437,7 +437,8 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         <i class="fa-solid fa-paint-brush text-xs"></i>
       </button>
 
-      <button onclick="toggleBrushPanel()" id="openBrushPanelBtn" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Biblioteca de pincéis (20 tipos)">
+      <!-- Botão alterado para abrir o painel de pincéis com apenas 1 clique e selecionar a ferramenta -->
+      <button onclick="handleBrushButtonClick()" id="openBrushPanelBtn" class="tool-btn p-1.5 rounded hover:bg-gimp-hover text-gray-300 hover:text-white transition w-8 h-8 flex items-center justify-center" title="Biblioteca de pincéis (20 tipos)">
         <i class="fa-solid fa-brush text-xs"></i>
       </button>
 
@@ -681,7 +682,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     </div>
   </div>
 
-  <!-- Biblioteca flutuante de pincéis, otimizada para caneta digitalizadora -->
+  <!-- Biblioteca flutuante de pincéis, otimizada para caneta digitalizadora e fixada na direita -->
   <section id="brushPanel" class="brush-floating-panel" role="dialog" aria-label="Biblioteca de pincéis">
     <div id="brushPanelHeader" class="brush-panel-header">
       <span><i class="fa-solid fa-brush mr-2"></i>Pincéis — mesa digitalizadora</span>
@@ -694,7 +695,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       <div class="brush-grid" id="brushChoices"></div>
       <div class="brush-settings">
         <label>Tamanho <span id="brushSizeLabel">10 px</span><input id="brushSizeControl" type="range" min="1" max="120" value="10"></label>
-        <label>Opacidade <span id="brushOpacityLabel">100%</span><input id="brushOpacityControl" type="range" min="1" max="100" value="100"></label>
+        <label>Opacidade <span id="brushOpacityLabel">100%</span><input id="brushOpacityControl" type="range" min="1" max="10" value="100"></label>
         <label>Precisão da pressão <span id="pressurePrecisionLabel">5/10</span><input id="pressurePrecisionControl" type="range" min="1" max="10" value="5"></label>
         <div class="brush-checks">
           <label><input id="pressureSizeToggle" type="checkbox" checked> Pressão controla tamanho</label>
@@ -1430,7 +1431,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         if (e.button !== undefined && e.button !== 0) return;
         if (e.target.closest('button, input, select, textarea, a')) return;
         const rect = dialog.getBoundingClientRect();
-        // Ao iniciar o arrasto, fixa a posição atual antes de mover.
         dialog.style.position = 'fixed';
         dialog.style.left = rect.left + 'px';
         dialog.style.top = rect.top + 'px';
@@ -1462,7 +1462,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     async function askFilterValues(title, controls, onPreview) {
       return new Promise(resolve => {
         const overlay = document.createElement('div');
-        // MODIFICAÇÃO: Fundo limpo sem escurecimento/blur (removido bg-black/70 e backdrop-blur-sm)
         overlay.className = 'fixed inset-0 flex items-center justify-center z-[100] p-4 pointer-events-none';
         overlay.innerHTML = `<div data-filter-dialog class="w-full max-w-md rounded-lg border border-gimp-border bg-gimp-panel text-gray-200 shadow-2xl pointer-events-auto">
           <div data-filter-titlebar class="px-4 py-3 border-b border-gimp-border font-semibold flex items-center justify-between">
@@ -1507,8 +1506,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       const w = canvasWidth, h = canvasHeight;
       const originalBackup = ctx.getImageData(0, 0, w, h);
 
-      // GIMP-like Color to Alpha: remove a chosen color with adjustable tolerance,
-      // preserving partial transparency at antialiased edges.
       if (filterType === 'color-to-alpha') {
         const colorDialog = document.createElement('div');
         colorDialog.className = 'fixed inset-0 flex items-center justify-center z-[100] p-4';
@@ -1676,7 +1673,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       }
     }
 
-    // NOVA FUNÇÃO DE RECORTE (CROP)
     function applyCropToSelection() {
       commitMove();
       cancelTransformSession();
@@ -3050,25 +3046,29 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       showToast(hasActiveSelection ? 'Seleção aplicada' : 'Nenhuma área seleccionada');
     }
 
+    /* CORREÇÃO DO DESENHO EM TABLET/CANETA DIGITALIZADORA */
     function readPenPressure(e) {
-      if (e && e.pointerType === 'pen' && Number.isFinite(e.pressure) && e.pressure > 0) {
-        // Precisão 1 = resposta mais suave; 10 = resposta mais direta à pressão.
-        const raw = Math.max(0.01, Math.min(1, e.pressure));
+      if (e && (e.pointerType === 'pen' || e.pointerType === 'touch')) {
+        let rawPressure = e.pressure;
+        // Se o evento não reportar a pressão corretamente durante o traço continuo, garante valor funcional prévio ou padrão
+        if (!Number.isFinite(rawPressure) || rawPressure <= 0) {
+          rawPressure = currentPenPressure || 0.5;
+        }
+        const raw = Math.max(0.05, Math.min(1, rawPressure));
         const exponent = 1.65 - (pressurePrecision - 1) * 0.13;
-        return Math.max(0.025, Math.min(1, Math.pow(raw, exponent)));
+        return Math.max(0.05, Math.min(1, Math.pow(raw, exponent)));
       }
-      if (e && e.pointerType === 'touch' && Number.isFinite(e.pressure) && e.pressure > 0) return Math.max(0.25, Math.min(1, e.pressure));
-      return 0.5; // Mouse ou dispositivo sem leitura de pressão.
+      return 0.5; // Mouse ou entrada sem leitor de pressão.
     }
 
     function drawStroke(x, y, isStart) {
       if (activeLayerIndex < 0) return;
       const ctx = layers[activeLayerIndex].ctx;
       const brush = brushLibrary.find(b => b.id === currentBrushType) || brushLibrary[0];
-      const pressure = Math.max(0.025, Math.min(1, currentPenPressure || 0.5));
-      const sizeFactor = pressureControlsSize ? (0.18 + pressure * 0.92) : 1;
-      const opacityFactor = pressureControlsOpacity ? (0.12 + pressure * 0.88) : 1;
-      const width = Math.max(0.35, brushSize * sizeFactor);
+      const pressure = Math.max(0.05, Math.min(1, currentPenPressure || 0.5));
+      const sizeFactor = pressureControlsSize ? (0.2 + pressure * 0.9) : 1;
+      const opacityFactor = pressureControlsOpacity ? (0.15 + pressure * 0.85) : 1;
+      const width = Math.max(0.5, brushSize * sizeFactor);
       const x0 = isStart ? x : lastX, y0 = isStart ? y : lastY;
       ctx.save();
       if (hasActiveSelection && activeSelectionPath) ctx.clip(activeSelectionPath);
@@ -3104,10 +3104,15 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
         }
       }
       ctx.beginPath();
-      if (isStart) { ctx.moveTo(x, y); ctx.lineTo(x + 0.01, y + 0.01); }
-      else { ctx.moveTo(x0, y0); ctx.lineTo(x, y); }
-      ctx.stroke();
-      // Pontilhado e carvão recebem uma textura leve para não parecerem apenas uma linha tracejada.
+      if (isStart) { 
+        ctx.arc(x, y, width / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else { 
+        ctx.moveTo(x0, y0); 
+        ctx.lineTo(x, y); 
+        ctx.stroke();
+      }
+      
       if (!isStart && currentTool !== 'eraser' && (brush.id === 'charcoal' || brush.id === 'colored-pencil')) {
         const dist = Math.hypot(x-x0,y-y0), count = Math.min(16, Math.ceil(dist / Math.max(3, brushSize*.35)));
         ctx.globalAlpha *= 0.32; ctx.setLineDash([]);
@@ -3639,7 +3644,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       reader.onload = function(event) {
         const img = new Image();
         img.onload = function() {
-          // Ajusta automaticamente a área de trabalho às dimensões da imagem importada.
           initProject(img.width, img.height, 'transparent');
           layers[0].ctx.drawImage(img, 0, 0);
           layers[0].name = file.name;
@@ -3692,8 +3696,6 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
     }
 
-    // Abre outra instância completa do editor numa nova aba do navegador.
-    // Cada aba possui seu próprio documento, camadas, histórico e ferramentas.
     function openNewApplicationTab() {
       const newTab = window.open(window.location.href, '_blank');
 
@@ -3738,6 +3740,12 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       }, 2500);
     }
 
+    /* Ação ao clicar no ícone de pincéis (1 único clique abre e ativa) */
+    function handleBrushButtonClick() {
+      selectTool('brush');
+      openBrushPanel();
+    }
+
     function toggleBrushPanel() {
       const panel = document.getElementById('brushPanel');
       if (panel.style.display === 'none') openBrushPanel(); else closeBrushPanel();
@@ -3745,6 +3753,8 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
     function openBrushPanel() {
       const panel = document.getElementById('brushPanel');
       panel.style.display = 'block';
+      panel.style.left = 'auto';
+      panel.style.right = '12px';
       document.getElementById('restoreBrushPanelBtn').style.display = 'none';
     }
     function closeBrushPanel() {
@@ -3783,7 +3793,7 @@ input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius
       precision.addEventListener('input', () => { pressurePrecision = Number(precision.value); document.getElementById('pressurePrecisionLabel').textContent = pressurePrecision+'/10'; });
       document.getElementById('pressureSizeToggle').addEventListener('change', e => pressureControlsSize = e.target.checked);
       document.getElementById('pressureOpacityToggle').addEventListener('change', e => pressureControlsOpacity = e.target.checked);
-      // Arraste pela barra de título, com mouse, caneta ou toque.
+      
       const panel = document.getElementById('brushPanel'), header = document.getElementById('brushPanelHeader');
       let drag = null;
       header.addEventListener('pointerdown', e => {
