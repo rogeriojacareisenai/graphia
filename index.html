@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hi-Tech HTML Web App Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Dark Mode Styling */
+        .dark body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+
+        /* Light Mode Styling */
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(51, 65, 85, 0.6);
+        }
+
+        .dark .glass-card:hover {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: #38bdf8;
+            box-shadow: 0 4px 20px -2px rgba(56, 189, 248, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .dark .glass-card.active {
+            background: rgba(15, 23, 42, 0.95);
+            border-color: #0284c7;
+            box-shadow: 0 0 25px rgba(2, 132, 199, 0.3);
+        }
+
+        /* Light Mode Cards */
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-card:hover {
+            background: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .glass-card.active {
+            background: #f0f9ff;
+            border-color: #0284c7;
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.2);
+        }
+
+        /* Snackbar Styles */
+        .snackbar-bottom {
+            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .dark .snackbar-bottom {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.96) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.15);
+        }
+
+        .snackbar-bottom {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.98) 100%);
+            border: 1px solid rgba(2, 132, 199, 0.3);
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.08), 0 0 15px rgba(2, 132, 199, 0.1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::webkit-scrollbar-thumb { background: #334155; }
+        ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
+    </style>
+</head>
+<body class="w-full h-screen flex flex-col justify-between overflow-hidden relative selection:bg-sky-500 selection:text-white">
+
+    <!-- CABEÇALHO SUPERIOR -->
+    <header class="w-full shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-3 z-10 transition-colors">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            
+            <!-- Logo & Título -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                        <i class="fa-solid fa-code text-base"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold text-slate-800 dark:text-white tracking-wide flex items-center gap-2">
+                            WEB APPS HUB 
+                            <span class="text-xs px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-500/30 font-mono-code font-normal">
+                                12 APLICAÇÕES
+                            </span>
+                        </h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Launcher e Gerenciador de Scripts HTML</p>
+                    </div>
+                </div>
+
+                <!-- Botão Toggle Tema (visível no mobile à direita) -->
+                <button id="theme-toggle-mobile" class="md:hidden p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
+                    <i class="fa-solid fa-sun dark:hidden"></i>
+                    <i class="fa-solid fa-moon hidden dark:block"></i>
+                </button>
+            </div>
+
+            <!-- Pesquisa, Filtros e Alternador de Tema (Desktop) -->
+            <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                <!-- Campo de Pesquisa -->
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                    <input type="text" id="search-input" placeholder="Buscar aplicação .html..." 
+                        class="w-full bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-lg py-1.5 pl-8 pr-7 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                    <button id="clear-search" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hidden">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Botões de Categoria -->
+                <div class="flex items-center gap-1 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 text-xs font-medium">
+                    <button data-filter="all" class="filter-btn active px-3 py-1.5 rounded-lg bg-sky-500 text-white dark:bg-sky-500/20 dark:text-sky-300 border border-sky-600 dark:border-sky-500/40 transition-all shrink-0">
+                        Todos (12)
+                    </button>
+                    <button data-filter="paint" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200 transition-all shrink-0">
+                        Editores / Paint
+                    </button>
+                    <button data-filter="engine" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200 transition-all shrink-0">
+                        Jogos & 3D
+                    </button>
+                    <button data-filter="backup" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200 transition-all shrink-0">
+                        Backups
+                    </button>
+                </div>
+
+                <!-- Botão Alternador de Tema (Desktop) -->
+                <button id="theme-toggle" title="Alternar Tema Claro/Escuro" class="hidden md:flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-sky-600 dark:hover:text-sky-400 transition-colors shrink-0 ml-1">
+                    <i class="fa-solid fa-sun text-amber-500 dark:hidden text-sm"></i>
+                    <i class="fa-solid fa-moon hidden dark:block text-sky-400 text-sm"></i>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL: GRADE DOS 12 ARQUIVOS .HTML -->
+    <main class="flex-1 w-full overflow-y-auto px-4 py-6">
+        <div class="max-w-7xl mx-auto">
+            <!-- Grid de Cards -->
+            <div id="files-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-44">
+                <!-- Cards renderizados via JS -->
+            </div>
+
+            <!-- Estado Vazio / Sem resultados -->
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center text-slate-400 dark:text-slate-500">
+                <i class="fa-solid fa-file-code text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+                <p class="text-sm font-medium">Nenhuma aplicação HTML corresponde à busca.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- BARRA INFERIOR / HUD SNACKBAR RETANGULAR -->
+    <footer class="fixed bottom-0 left-0 w-full p-3 md:p-4 z-30 pointer-events-none">
+        <div class="max-w-5xl mx-auto pointer-events-auto">
+            <div id="snackbar-card" class="snackbar-bottom rounded-2xl p-4 text-slate-800 dark:text-slate-100 backdrop-blur-md">
+                
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    
+                    <!-- Ícone + Informações do Arquivo -->
+                    <div class="flex items-start gap-3.5 w-full md:w-auto flex-1">
+                        <div id="snack-icon-wrapper" class="w-12 h-12 rounded-xl bg-sky-50 dark:bg-slate-900 border border-sky-300 dark:border-sky-500/50 flex items-center justify-center text-xl text-sky-600 dark:text-sky-400 shrink-0">
+                            <i id="snack-icon" class="fa-solid fa-palette"></i>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap mb-1">
+                                <span id="snack-title" class="font-bold text-base text-slate-900 dark:text-white truncate max-w-xs md:max-w-md">gimpnic.html</span>
+                                <span id="snack-badge" class="px-2 py-0.5 rounded text-[10px] font-mono-code font-semibold bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-500/30">EDITOR GRÁFICO</span>
+                            </div>
+
+                            <div class="flex items-center gap-4 text-xs font-mono-code text-slate-500 dark:text-slate-400">
+                                <span><i class="fa-solid fa-hard-drive mr-1.5 text-slate-400 dark:text-slate-500"></i><span id="snack-size">177.441 bytes</span></span>
+                                <span><i class="fa-regular fa-clock mr-1.5 text-slate-400 dark:text-slate-500"></i><span id="snack-date">20/10/2026 11:16</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botão de Ação ABRIR APLICAÇÃO -->
+                    <div class="w-full md:w-auto shrink-0 flex justify-end">
+                        <button id="snack-open-btn" class="w-full md:w-auto bg-sky-600 hover:bg-sky-500 dark:bg-gradient-to-r dark:from-sky-500 dark:to-blue-600 dark:hover:from-sky-400 dark:hover:to-blue-500 text-white dark:text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow-md hover:shadow-sky-500/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span>ABRIR APLICAÇÃO</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Campo de Descrição Editável -->
+                <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-pen absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                        <input type="text" id="snack-desc-input" 
+                            placeholder="Descreva o que este programa faz (digite e salve)..." 
+                            class="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                    </div>
+                    <button id="snack-save-desc" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors flex items-center justify-center gap-1.5 shrink-0 font-medium">
+                        <i class="fa-solid fa-floppy-disk text-sky-600 dark:text-sky-400"></i>
+                        <span>Salvar Descrição</span>
+                    </button>
+                    <span id="save-status" class="text-[11px] font-mono-code text-emerald-600 dark:text-emerald-400 opacity-0 transition-opacity self-center font-semibold">Salvo!</span>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // DATASET EXCLUSIVO DOS 12 ARQUIVOS .HTML
+        const htmlFilesData = [
+            { name: "gimpnic.html", bytes: 177441, category: "paint", icon: "fa-palette", badge: "EDITOR GRÁFICO", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "gimpnic_back.html", bytes: 156595, category: "backup", icon: "fa-box-archive", badge: "BACKUP / EDITOR", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "jogo.html", bytes: 87014, category: "engine", icon: "fa-gamepad", badge: "JOGO 2D", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "motor3d.html", bytes: 40680, category: "engine", icon: "fa-cubes", badge: "MOTOR 3D", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "nicpaint _16_10_26.html", bytes: 197042, category: "paint", icon: "fa-paint-brush", badge: "PAINT DIGITAL", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "nicpaint.html", bytes: 205875, category: "paint", icon: "fa-paint-roller", badge: "PAINT DIGITAL", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "nicpaint_back.html", bytes: 181917, category: "backup", icon: "fa-box-archive", badge: "BACKUP / PAINT", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "nicpaint_back_16_10_26.html", bytes: 185480, category: "backup", icon: "fa-box-archive", badge: "BACKUP HISTÓRICO", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "nicpaint_back_2.html", bytes: 170532, category: "backup", icon: "fa-box-archive", badge: "BACKUP / PAINT", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "nicpaint_back_3.html", bytes: 176219, category: "backup", icon: "fa-box-archive", badge: "BACKUP / PAINT", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "Rbones_Profisional.html", bytes: 80406, category: "engine", icon: "fa-bone", badge: "RIGGING 2D", desc: "[Complete com a descrição sobre este programa]" },
+            { name: "studiorogerv2.html", bytes: 72432, category: "engine", icon: "fa-clapperboard", badge: "ESTÚDIO / ANIMAÇÃO", desc: "[Complete com a descrição sobre este programa]" }
+        ];
+
+        // DATA FIXA
+        const FILE_DATE = "20/10/2026 11:16";
+
+        // ESTADO GLOBAL
+        let selectedFile = htmlFilesData[0];
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // Formatador de Tamanho em Bytes
+        function formatBytes(bytes) {
+            return `${bytes.toLocaleString('pt-BR')} bytes (${(bytes / 1024).toFixed(1)} KB)`;
+        }
+
+        // INICIALIZAÇÃO
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadSavedDescriptions();
+            renderGrid();
+            updateSnackbar(selectedFile);
+            setupEventListeners();
+        });
+
+        // TEMA CLARO / ESCURO
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                // Padrão escuro elegante
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        // Carregar descrições salvas no localStorage
+        function loadSavedDescriptions() {
+            htmlFilesData.forEach(file => {
+                const saved = localStorage.getItem(`desc_html_${file.name}`);
+                if (saved) file.desc = saved;
+            });
+        }
+
+        // RENDERIZAR GRADE DE CARDS 2D
+        function renderGrid() {
+            const grid = document.getElementById('files-grid');
+            const emptyState = document.getElementById('empty-state');
+            grid.innerHTML = '';
+
+            const filtered = htmlFilesData.filter(file => {
+                const matchSearch = file.name.toLowerCase().includes(searchQuery) || file.desc.toLowerCase().includes(searchQuery);
+                const matchCategory = (currentFilter === 'all') || (file.category === currentFilter);
+                return matchSearch && matchCategory;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            filtered.forEach(file => {
+                const isSelected = selectedFile.name === file.name;
+                const card = document.createElement('div');
+                card.className = `glass-card p-4 rounded-xl cursor-pointer flex flex-col justify-between group ${isSelected ? 'active' : ''}`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono-code font-semibold bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-500/30">
+                                ${file.badge}
+                            </span>
+                            <span class="text-[10px] font-mono-code text-slate-500 dark:text-slate-400">${(file.bytes / 1024).toFixed(0)} KB</span>
+                        </div>
+                        
+                        <div class="flex items-start gap-3 my-1">
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 group-hover:border-sky-500 transition-colors">
+                                <i class="fa-solid ${file.icon} text-sky-600 dark:text-sky-400 text-sm group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="font-bold text-xs text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors truncate">${file.name}</h3>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">${file.desc}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-mono-code text-slate-400 dark:text-slate-500">
+                        <span><i class="fa-regular fa-clock mr-1"></i>20/10/2026</span>
+                        <span class="text-sky-600 dark:text-sky-400 font-semibold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                            Acessar <i class="fa-solid fa-angle-right"></i>
+                        </span>
+                    </div>
+                `;
+
+                // Resposta instantânea ao passar o cursor
+                card.addEventListener('mouseenter', () => {
+                    selectFile(file);
+                });
+
+                // Clique seleciona e abre diretamente
+                card.addEventListener('click', () => {
+                    selectFile(file);
+                    openFile(file.name);
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        // SELEÇÃO DO ARQUIVO
+        function selectFile(file) {
+            selectedFile = file;
+            updateSnackbar(file);
+
+            // Destacar o card ativo
+            document.querySelectorAll('.glass-card').forEach(card => {
+                const title = card.querySelector('h3').innerText;
+                card.classList.toggle('active', title === file.name);
+            });
+        }
+
+        // ATUALIZAR SNACKBAR RETANGULAR INFERIOR
+        function updateSnackbar(file) {
+            document.getElementById('snack-title').innerText = file.name;
+            document.getElementById('snack-badge').innerText = file.badge;
+            document.getElementById('snack-size').innerText = formatBytes(file.bytes);
+            document.getElementById('snack-date').innerText = FILE_DATE;
+            document.getElementById('snack-icon').className = `fa-solid ${file.icon}`;
+            document.getElementById('snack-desc-input').value = file.desc || '';
+        }
+
+        // CONFIGURAR LISTENERS E EVENTOS
+        function setupEventListeners() {
+            // Toggles de Tema
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('theme-toggle-mobile').addEventListener('click', toggleTheme);
+
+            // Busca em tempo real
+            const searchInput = document.getElementById('search-input');
+            const clearBtn = document.getElementById('clear-search');
+
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                clearBtn.classList.toggle('hidden', searchQuery === '');
+                renderGrid();
+            });
+
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchQuery = '';
+                clearBtn.classList.add('hidden');
+                renderGrid();
+            });
+
+            // Filtros de Categoria
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('active', 'bg-sky-500', 'text-white', 'dark:bg-sky-500/20', 'dark:text-sky-300', 'border-sky-600', 'dark:border-sky-500/40');
+                        b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400', 'border-slate-200', 'dark:border-slate-700');
+                    });
+
+                    btn.classList.add('active', 'bg-sky-500', 'text-white', 'dark:bg-sky-500/20', 'dark:text-sky-300', 'border-sky-600', 'dark:border-sky-500/40');
+                    btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-400', 'border-slate-200', 'dark:border-slate-700');
+
+                    currentFilter = btn.getAttribute('data-filter');
+                    renderGrid();
+                });
+            });
+
+            // Salvar Descrição
+            const saveBtn = document.getElementById('snack-save-desc');
+            const descInput = document.getElementById('snack-desc-input');
+
+            function saveCurrentDesc() {
+                if (selectedFile) {
+                    const newDesc = descInput.value;
+                    selectedFile.desc = newDesc;
+                    localStorage.setItem(`desc_html_${selectedFile.name}`, newDesc);
+
+                    const status = document.getElementById('save-status');
+                    status.classList.remove('opacity-0');
+                    setTimeout(() => status.classList.add('opacity-0'), 1800);
+                    renderGrid();
+                }
+            }
+
+            saveBtn.addEventListener('click', saveCurrentDesc);
+            descInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveCurrentDesc();
+            });
+
+            // Botão Executar ABRIR APLICAÇÃO
+            document.getElementById('snack-open-btn').addEventListener('click', () => {
+                if (selectedFile) {
+                    openFile(selectedFile.name);
+                }
+            });
+        }
+
+        // EXECUTAR / ABRIR EM NOVA ABA
+        function openFile(fileName) {
+            window.open(fileName, '_blank');
+        }
+    </script>
+</body>
+</html>
